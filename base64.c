@@ -146,8 +146,7 @@ base64_stream_decode (const char *const src, size_t srclen, char *const out, siz
 	{
 		for (;;)
 		{
-		case 0:	/* First byte: */
-			if (srclen-- == 0) {
+		case 0:	if (srclen-- == 0) {
 				return 1;
 			}
 			if ((q = base64_table_dec[(unsigned char)*c++]) >= 254) {
@@ -158,8 +157,7 @@ base64_stream_decode (const char *const src, size_t srclen, char *const out, siz
 			carry_decode = q << 2;
 			bytes_decode++;
 
-		case 1:	/* Second byte: */
-			if (srclen-- == 0) {
+		case 1:	if (srclen-- == 0) {
 				return 1;
 			}
 			if ((q = base64_table_dec[(unsigned char)*c++]) >= 254) {
@@ -172,8 +170,7 @@ base64_stream_decode (const char *const src, size_t srclen, char *const out, siz
 			bytes_decode++;
 			(*outlen)++;
 
-		case 2:	/* Third byte: */
-			if (srclen-- == 0) {
+		case 2:	if (srclen-- == 0) {
 				return 1;
 			}
 			if ((q = base64_table_dec[(unsigned char)*c++]) >= 254) {
@@ -188,8 +185,7 @@ base64_stream_decode (const char *const src, size_t srclen, char *const out, siz
 			bytes_decode++;
 			(*outlen)++;
 
-		case 3:	/* Fourth byte: */
-			if (srclen-- == 0) {
+		case 3:	if (srclen-- == 0) {
 				return 1;
 			}
 			if ((q = base64_table_dec[(unsigned char)*c++]) >= 254) {
