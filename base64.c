@@ -47,7 +47,7 @@ base64_stream_encode_init (void)
 }
 
 void
-base64_stream_encode (const char *const src, size_t srclen, char *const out, size_t *outlen)
+base64_stream_encode (const char *const src, size_t srclen, char *const out, size_t *const outlen)
 {
 	/* Assume that *out is large enough to contain the output.
 	 * Theoretically it should be 4/3 the length of src. */
@@ -95,7 +95,7 @@ base64_stream_encode (const char *const src, size_t srclen, char *const out, siz
 }
 
 void
-base64_stream_encode_final (char *const out, size_t *outlen)
+base64_stream_encode_final (char *const out, size_t *const outlen)
 {
 	char *o = out;
 
@@ -124,7 +124,7 @@ base64_stream_decode_init (void)
 }
 
 int
-base64_stream_decode (const char *const src, size_t srclen, char *const out, size_t *outlen)
+base64_stream_decode (const char *const src, size_t srclen, char *const out, size_t *const outlen)
 {
 	const char *c = src;
 	char *o = out;
@@ -209,7 +209,7 @@ base64_stream_decode (const char *const src, size_t srclen, char *const out, siz
 }
 
 void
-base64_encode (const char *const src, size_t srclen, char *const out, size_t *outlen)
+base64_encode (const char *const src, size_t srclen, char *const out, size_t *const outlen)
 {
 	size_t s;
 	size_t t;
