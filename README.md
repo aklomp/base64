@@ -18,6 +18,13 @@ the API simpler. If we wanted to make the functions reentrant, the caller would
 need to allocate a struct containing the state variables, at the expense of
 cluttering the API.
 
+Another conscious decision is to not zero-terminate the output. Instead,
+strings are represented as a pointer and a length. In the decoding step,
+relying on zero-termination would make no sense since the output could contain
+legitimate zero bytes. In the encoding step, returning the length saves the
+overhead of calling strlen() on the output. If you insist on the trailing zero,
+you can easily add it yourself at the given offset.
+
 The API itself is documented in `base64.h`.
 
 ## Examples
@@ -43,6 +50,39 @@ int main ()
 	return 0;
 }
 ```
+
+A simple example (no error checking, etc) of stream encoding standard input to
+standard output:
+
+```c
+#include <stdio.h>
+#include "base64.h"
+
+int main ()
+{
+	size_t nread, nout;
+	char buf[12000], out[16000];
+
+	base64_stream_encode_init();
+	while ((nread = fread(buf, 1, sizeof(buf), stdin)) > 0) {
+		base64_stream_encode(buf, nread, out, &nout);
+		if (nout) fwrite(out, nout, 1, stdout);
+		if (feof(stdin)) break;
+	}
+	base64_stream_encode_final(out, &nout);
+	if (nout) fwrite(out, nout, 1, stdout);
+
+	return 0;
+}
+```
+
+Also see `main.c` for a simple re-implementation of the `base64` utility. A
+file or standard input is fed through the encoder/decoder, and the output is
+written to standard output.
+
+## Tests
+
+See `tests/` for a small test suite.
 
 ## License
 
