@@ -1,5 +1,4 @@
 #include <stddef.h>	/* size_t */
-#include "base64.h"
 
 static int eof_decode = 0;
 static int bytes_encode = 0;
@@ -39,25 +38,6 @@ base64_table_dec[] =
 	255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
 	255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
 };
-
-void
-base64_encode (const char *const src, size_t srclen, char *const out, size_t *outlen)
-{
-	size_t s;
-	size_t t;
-
-	/* Init the stream reader: */
-	base64_stream_encode_init();
-
-	/* Feed the whole string to the stream reader: */
-	base64_stream_encode(src, srclen, out, &s);
-
-	/* Finalize the stream by writing trailer if any: */
-	base64_stream_encode_final(out + s, &t);
-
-	/* Final output length is stream length plus tail: */
-	*outlen = s + t;
-}
 
 void
 base64_stream_encode_init (void)
@@ -133,13 +113,6 @@ base64_stream_encode_final (char *const out, size_t *outlen)
 		return;
 	}
 	*outlen = 0;
-}
-
-int
-base64_decode (const char *const src, size_t srclen, char *const out, size_t *outlen)
-{
-	base64_stream_decode_init();
-	return base64_stream_decode(src, srclen, out, outlen);
 }
 
 void
@@ -233,4 +206,30 @@ base64_stream_decode (const char *const src, size_t srclen, char *const out, siz
 	}
 	/* Never reached, but pacifies compiler: */
 	return 0;
+}
+
+void
+base64_encode (const char *const src, size_t srclen, char *const out, size_t *outlen)
+{
+	size_t s;
+	size_t t;
+
+	/* Init the stream reader: */
+	base64_stream_encode_init();
+
+	/* Feed the whole string to the stream reader: */
+	base64_stream_encode(src, srclen, out, &s);
+
+	/* Finalize the stream by writing trailer if any: */
+	base64_stream_encode_final(out + s, &t);
+
+	/* Final output length is stream length plus tail: */
+	*outlen = s + t;
+}
+
+int
+base64_decode (const char *const src, size_t srclen, char *const out, size_t *outlen)
+{
+	base64_stream_decode_init();
+	return base64_stream_decode(src, srclen, out, outlen);
 }
