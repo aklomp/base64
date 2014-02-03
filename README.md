@@ -12,11 +12,7 @@ Notable features:
 - Fairly fast;
 - Uses Duff's Device.
 
-The stream encoder/decoders are not reentrant, they keep a few bytes of state
-locked up within themselves. This was a conscious decision, because it makes
-the API simpler. If we wanted to make the functions reentrant, the caller would
-need to allocate a struct containing the state variables, at the expense of
-cluttering the API.
+The stream encoder/decoders made reentrant with BASE64_STATE.
 
 The API itself is documented in `base64.h`.
 

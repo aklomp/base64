@@ -1,13 +1,6 @@
 #include <stddef.h>	/* size_t */
 #include "base64.h"
-
-static int eof_decode = 0;
-static int bytes_encode = 0;
-static int bytes_decode = 0;
-static unsigned char carry_encode = 0;
-static unsigned char carry_decode = 0;
-
-static char encode_lut[] =
+static char base64_enc_table[] =
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	"abcdefghijklmnopqrstuvwxyz"
 	"0123456789+/";
@@ -18,7 +11,7 @@ static char encode_lut[] =
  * and + / are mapped to their "decoded" values. The other bytes all map to
  * the value 255, which flags them as "invalid input". */
 
-static unsigned char decode_lut[] =
+static unsigned char base64_dec_table[] =
 {
 	255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,		/*   0..15 */
 	255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,		/*  16..31 */
@@ -41,31 +34,30 @@ static unsigned char decode_lut[] =
 void
 base64_encode (const char *const src, size_t srclen, char *const out, size_t *outlen)
 {
-	size_t s;
-	size_t t;
+	size_t          s, t;
+	BASE64_STATE    state;
 
 	/* Init the stream reader: */
-	base64_stream_encode_init();
+	base64_stream_encode_init( &state);
 
 	/* Feed the whole string to the stream reader: */
-	base64_stream_encode(src, srclen, out, &s);
+	base64_stream_encode( &state, src, srclen, out, &s);
 
 	/* Finalize the stream by writing trailer if any: */
-	base64_stream_encode_final(out + s, &t);
+	base64_stream_encode_final( &state, out + s, &t);
 
 	/* Final output length is stream length plus tail: */
 	*outlen = s + t;
 }
 
 void
-base64_stream_encode_init (void)
+base64_stream_encode_init( BASE64_STATE *state)
 {
-	bytes_encode = 0;
-	carry_encode = 0;
+	state->bytes_encode = 0; state->carry_encode = 0;
 }
 
 void
-base64_stream_encode (const char *const src, size_t srclen, char *const out, size_t *outlen)
+base64_stream_encode ( BASE64_STATE *state, const char *const src, size_t srclen, char *const out, size_t *outlen)
 {
 	/* Assume that *out is large enough to contain the output.
 	 * Theoretically it should be 4/3 the length of src. */
@@ -81,75 +73,86 @@ base64_stream_encode (const char *const src, size_t srclen, char *const out, siz
 	/* in[3] = 00333333 */
 
 	/* Duff's device, a for() loop inside a switch() statement. Legal! */
-	switch (bytes_encode)
+	switch (state->bytes_encode)
 	{
 		for (;;)
 		{
 		case 0:	if (srclen-- == 0) {
 				return;
 			}
-			*o++ = encode_lut[*c >> 2];
-			carry_encode = (*c++ << 4) & 0x30;
-			bytes_encode++;
+			*o++ = base64_enc_table[*c >> 2];
+			state->carry_encode = (*c++ << 4) & 0x30;
+			state->bytes_encode++;
 			*outlen += 1;
 
 		case 1:	if (srclen-- == 0) {
 				return;
 			}
-			*o++ = encode_lut[carry_encode | (*c >> 4)];
-			carry_encode = (*c++ << 2) & 0x3C;
-			bytes_encode++;
+			*o++ = base64_enc_table[state->carry_encode | (*c >> 4)];
+			state->carry_encode = (*c++ << 2) & 0x3C;
+			state->bytes_encode++;
 			*outlen += 1;
 
 		case 2:	if (srclen-- == 0) {
 				return;
 			}
-			*o++ = encode_lut[carry_encode | (*c >> 6)];
-			*o++ = encode_lut[*c++ & 0x3F];
-			bytes_encode = 0;
+			*o++ = base64_enc_table[state->carry_encode | (*c >> 6)];
+			*o++ = base64_enc_table[*c++ & 0x3F];
+			state->bytes_encode = 0;
 			*outlen += 2;
 		}
 	}
 }
 
 void
-base64_stream_encode_final (char *const out, size_t *outlen)
+base64_stream_encode_final ( BASE64_STATE *state, char *const out, size_t *outlen)
 {
 	char *o = out;
 
-	if (bytes_encode == 1) {
-		*o++ = encode_lut[carry_encode];
-		*o++ = '=';
-		*o++ = '=';
-		*outlen = 3;
-		return;
+    switch( state->bytes_encode){
+
+        case 1:
+
+            *o++ = base64_enc_table[state->carry_encode];
+            *o++ = '=';
+            *o++ = '=';
+            *outlen = 3;
+
+        break;
+
+        case 2:
+
+            *o++ = base64_enc_table[state->carry_encode];
+            *o++ = '=';
+            *outlen = 2;
+
+		break;
+
+		default: *outlen = 0;
 	}
-	if (bytes_encode == 2) {
-		*o++ = encode_lut[carry_encode];
-		*o++ = '=';
-		*outlen = 2;
-		return;
-	}
-	*outlen = 0;
+
+	*o = 0;
 }
 
 int
 base64_decode (const char *const src, size_t srclen, char *const out, size_t *outlen)
 {
-	base64_stream_decode_init();
-	return base64_stream_decode(src, srclen, out, outlen);
+    int             rc;
+    BASE64_STATE    state;
+	base64_stream_decode_init( &state);
+	rc = base64_stream_decode( &state, src, srclen, out, outlen);
+	out[*outlen] = 0;
+	return rc;
 }
 
 void
-base64_stream_decode_init (void)
+base64_stream_decode_init (BASE64_STATE *state)
 {
-	eof_decode = 0;
-	bytes_decode = 0;
-	carry_decode = 0;
+	state->eof_decode = 0; state->bytes_decode = 0; state->carry_decode = 0;
 }
 
 int
-base64_stream_decode (const char *const src, size_t srclen, char *const out, size_t *outlen)
+base64_stream_decode (BASE64_STATE *state, const char *const src, size_t srclen, char *const out, size_t *outlen)
 {
 	const char *c = src;
 	char *o = out;
@@ -158,7 +161,7 @@ base64_stream_decode (const char *const src, size_t srclen, char *const out, siz
 	*outlen = 0;
 
 	/* If we previously saw an EOF or an invalid character, bail out: */
-	if (eof_decode) {
+	if (state->eof_decode) {
 		return 0;
 	}
 	/* Turn four 6-bit numbers into three bytes: */
@@ -167,7 +170,7 @@ base64_stream_decode (const char *const src, size_t srclen, char *const out, siz
 	/* out[2] = 33444444 */
 
 	/* Duff's device again: */
-	switch (bytes_decode)
+	switch (state->bytes_decode)
 	{
 		for (;;)
 		{
@@ -175,57 +178,57 @@ base64_stream_decode (const char *const src, size_t srclen, char *const out, siz
 			if (srclen-- == 0) {
 				return 1;
 			}
-			if ((q = decode_lut[(unsigned char)*c++]) >= 254) {
-				eof_decode = 1;
+			if ((q = base64_dec_table[(unsigned char)*c++]) >= 254) {
+				state->eof_decode = 1;
 				/* Treat character '=' as invalid for byte 0: */
 				return 0;
 			}
-			carry_decode = q << 2;
-			bytes_decode++;
+			state->carry_decode = q << 2;
+			state->bytes_decode++;
 
 		case 1:	/* Second byte: */
 			if (srclen-- == 0) {
 				return 1;
 			}
-			if ((q = decode_lut[(unsigned char)*c++]) >= 254) {
-				eof_decode = 1;
+			if ((q = base64_dec_table[(unsigned char)*c++]) >= 254) {
+				state->eof_decode = 1;
 				/* Treat character '=' as invalid for byte 1: */
 				return 0;
 			}
-			*o++ = carry_decode | (q >> 4);
-			carry_decode = q << 4;
-			bytes_decode++;
+			*o++ = state->carry_decode | (q >> 4);
+			state->carry_decode = q << 4;
+			state->bytes_decode++;
 			(*outlen)++;
 
 		case 2:	/* Third byte: */
 			if (srclen-- == 0) {
 				return 1;
 			}
-			if ((q = decode_lut[(unsigned char)*c++]) >= 254) {
-				eof_decode = 1;
+			if ((q = base64_dec_table[(unsigned char)*c++]) >= 254) {
+				state->eof_decode = 1;
 				/* When q == 254, the input char is '='. Return 1 and EOF.
 				 * Technically, should check if next byte is also '=', but never mind.
 				 * When q == 255, the input char is invalid. Return 0 and EOF. */
 				return (q == 254);
 			}
-			*o++ = carry_decode | (q >> 2);
-			carry_decode = q << 6;
-			bytes_decode++;
+			*o++ = state->carry_decode | (q >> 2);
+			state->carry_decode = q << 6;
+			state->bytes_decode++;
 			(*outlen)++;
 
 		case 3:	/* Fourth byte: */
 			if (srclen-- == 0) {
 				return 1;
 			}
-			if ((q = decode_lut[(unsigned char)*c++]) >= 254) {
-				eof_decode = 1;
+			if ((q = base64_dec_table[(unsigned char)*c++]) >= 254) {
+				state->eof_decode = 1;
 				/* When q == 254, the input char is '='. Return 1 and EOF.
 				 * When q == 255, the input char is invalid. Return 0 and EOF. */
 				return (q == 254);
 			}
-			*o++ = carry_decode | q;
-			carry_decode = 0;
-			bytes_decode = 0;
+			*o++ = state->carry_decode | q;
+			state->carry_decode = 0;
+			state->bytes_decode = 0;
 			(*outlen)++;
 		}
 	}
