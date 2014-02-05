@@ -82,6 +82,42 @@ assert_roundtrip (char *src)
 	return 1;
 }
 
+static void
+test_char_table (void)
+{
+	int i;
+	char chr[256];
+	char enc[400], dec[400];
+	size_t enclen, declen;
+
+	/* Fill array with all characters 0..255: */
+	for (i = 0; i < 256; i++) {
+		chr[i] = (unsigned char)i;
+	}
+	/* Loop, using each char as a starting position to increase test coverage: */
+	for (i = 0; i < 256; i++)
+	{
+		size_t chrlen = 256 - i;
+
+		base64_encode(&chr[i], chrlen, enc, &enclen);
+
+		if (!base64_decode(enc, enclen, dec, &declen)) {
+			printf("FAIL: decoding @ %d: decoding error\n", i);
+			ret = 1;
+			continue;
+		}
+		if (declen != chrlen) {
+			printf("FAIL: roundtrip @ %d: length expected %d, got %d\n", i, chrlen, declen);
+			ret = 1;
+			continue;
+		}
+		if (strncmp(&chr[i], dec, declen) != 0) {
+			printf("FAIL: roundtrip @ %d: decoded output not same as input\n", i);
+			ret = 1;
+		}
+	}
+}
+
 int
 main ()
 {
@@ -118,6 +154,10 @@ main ()
 	assert_roundtrip("Zm9vYg==");
 	assert_roundtrip("Zm9vYmE=");
 	assert_roundtrip("Zm9vYmFy");
+
+	test_char_table();
+
+	if (ret == 0) fprintf(stderr, "All tests passed.\n");
 
 	return ret;
 }
