@@ -8,18 +8,13 @@ Notable features:
 - Reads/writes blocks of streaming data;
 - Does not dynamically allocate memory;
 - Valid C89 that compiles with pedantic options on;
+- Re-entrant and threadsafe;
 - Unit tested;
 - Fairly fast;
 - Uses Duff's Device.
 
-The stream encoder/decoders are not reentrant, they keep a few bytes of state
-locked up within themselves. This was a conscious decision, because it makes
-the API simpler. If we wanted to make the functions reentrant, the caller would
-need to allocate a struct containing the state variables, at the expense of
-cluttering the API.
-
-Another conscious decision is to not zero-terminate the output. Instead,
-strings are represented as a pointer and a length. In the decoding step,
+Strings are represented as a pointer and a length; they are not
+zero-terminated. This was a conscious design decision. In the decoding step,
 relying on zero-termination would make no sense since the output could contain
 legitimate zero bytes. In the encoding step, returning the length saves the
 overhead of calling strlen() on the output. If you insist on the trailing zero,
@@ -62,14 +57,15 @@ int main ()
 {
 	size_t nread, nout;
 	char buf[12000], out[16000];
+	struct base64_state state;
 
-	base64_stream_encode_init();
+	base64_stream_encode_init(&state);
 	while ((nread = fread(buf, 1, sizeof(buf), stdin)) > 0) {
-		base64_stream_encode(buf, nread, out, &nout);
+		base64_stream_encode(&state, buf, nread, out, &nout);
 		if (nout) fwrite(out, nout, 1, stdout);
 		if (feof(stdin)) break;
 	}
-	base64_stream_encode_final(out, &nout);
+	base64_stream_encode_final(&state, out, &nout);
 	if (nout) fwrite(out, nout, 1, stdout);
 
 	return 0;

@@ -15,11 +15,12 @@ static int
 enc (FILE *fp)
 {
 	int ret = 1;
+	struct base64_state state;
 
-	base64_stream_encode_init();
+	base64_stream_encode_init(&state);
 
 	while ((nread = fread(buf, 1, BUFSIZE, fp)) > 0) {
-		base64_stream_encode(buf, nread, out, &nout);
+		base64_stream_encode(&state, buf, nread, out, &nout);
 		if (nout) {
 			fwrite(out, nout, 1, stdout);
 		}
@@ -32,7 +33,7 @@ enc (FILE *fp)
 		ret = 0;
 		goto out;
 	}
-	base64_stream_encode_final(out, &nout);
+	base64_stream_encode_final(&state, out, &nout);
 
 	if (nout) {
 		fwrite(out, nout, 1, stdout);
@@ -46,11 +47,12 @@ static int
 dec (FILE *fp)
 {
 	int ret = 1;
+	struct base64_state state;
 
-	base64_stream_decode_init();
+	base64_stream_decode_init(&state);
 
 	while ((nread = fread(buf, 1, BUFSIZE, fp)) > 0) {
-		if (!base64_stream_decode(buf, nread, out, &nout)) {
+		if (!base64_stream_decode(&state, buf, nread, out, &nout)) {
 			fprintf(stderr, "decoding error\n");
 			ret = 0;
 			goto out;
