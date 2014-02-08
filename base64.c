@@ -50,7 +50,11 @@ base64_stream_encode (struct base64_state *state, const char *const src, size_t 
 	const unsigned char *c = (unsigned char *)src;
 	char *o = out;
 
-	*outlen = 0;
+	/* Use local temporaries to avoid cache thrashing: */
+	size_t outl = 0;
+	struct base64_state st;
+	st.bytes = state->bytes;
+	st.carry = state->carry;
 
 	/* Turn three bytes into four 6-bit numbers: */
 	/* in[0] = 00111111 */
@@ -59,35 +63,38 @@ base64_stream_encode (struct base64_state *state, const char *const src, size_t 
 	/* in[3] = 00333333 */
 
 	/* Duff's device, a for() loop inside a switch() statement. Legal! */
-	switch (state->bytes)
+	switch (st.bytes)
 	{
 		for (;;)
 		{
 		case 0:	if (srclen-- == 0) {
-				return;
+				break;
 			}
 			*o++ = base64_table_enc[*c >> 2];
-			state->carry = (*c++ << 4) & 0x30;
-			state->bytes++;
-			*outlen += 1;
+			st.carry = (*c++ << 4) & 0x30;
+			st.bytes++;
+			outl += 1;
 
 		case 1:	if (srclen-- == 0) {
-				return;
+				break;
 			}
-			*o++ = base64_table_enc[state->carry | (*c >> 4)];
-			state->carry = (*c++ << 2) & 0x3C;
-			state->bytes++;
-			*outlen += 1;
+			*o++ = base64_table_enc[st.carry | (*c >> 4)];
+			st.carry = (*c++ << 2) & 0x3C;
+			st.bytes++;
+			outl += 1;
 
 		case 2:	if (srclen-- == 0) {
-				return;
+				break;
 			}
-			*o++ = base64_table_enc[state->carry | (*c >> 6)];
+			*o++ = base64_table_enc[st.carry | (*c >> 6)];
 			*o++ = base64_table_enc[*c++ & 0x3F];
-			state->bytes = 0;
-			*outlen += 2;
+			st.bytes = 0;
+			outl += 2;
 		}
 	}
+	state->bytes = st.bytes;
+	state->carry = st.carry;
+	*outlen = outl;
 }
 
 void
