@@ -129,14 +129,21 @@ base64_stream_decode_init (struct base64_state *state)
 int
 base64_stream_decode (struct base64_state *state, const char *const src, size_t srclen, char *const out, size_t *const outlen)
 {
+	int ret = 0;
 	const char *c = src;
 	char *o = out;
 	unsigned char q;
 
-	*outlen = 0;
+	/* Use local temporaries to avoid cache thrashing: */
+	size_t outl = 0;
+	struct base64_state st;
+	st.eof = state->eof;
+	st.bytes = state->bytes;
+	st.carry = state->carry;
 
 	/* If we previously saw an EOF or an invalid character, bail out: */
-	if (state->eof) {
+	if (st.eof) {
+		*outlen = 0;
 		return 0;
 	}
 	/* Turn four 6-bit numbers into three bytes: */
@@ -145,66 +152,75 @@ base64_stream_decode (struct base64_state *state, const char *const src, size_t 
 	/* out[2] = 33444444 */
 
 	/* Duff's device again: */
-	switch (state->bytes)
+	switch (st.bytes)
 	{
 		for (;;)
 		{
 		case 0:	if (srclen-- == 0) {
-				return 1;
+				ret = 1;
+				break;
 			}
 			if ((q = base64_table_dec[(unsigned char)*c++]) >= 254) {
-				state->eof = 1;
+				st.eof = 1;
 				/* Treat character '=' as invalid for byte 0: */
-				return 0;
+				break;
 			}
-			state->carry = q << 2;
-			state->bytes++;
+			st.carry = q << 2;
+			st.bytes++;
 
 		case 1:	if (srclen-- == 0) {
-				return 1;
+				ret = 1;
+				break;
 			}
 			if ((q = base64_table_dec[(unsigned char)*c++]) >= 254) {
-				state->eof = 1;
+				st.eof = 1;
 				/* Treat character '=' as invalid for byte 1: */
-				return 0;
+				break;
 			}
-			*o++ = state->carry | (q >> 4);
-			state->carry = q << 4;
-			state->bytes++;
-			(*outlen)++;
+			*o++ = st.carry | (q >> 4);
+			st.carry = q << 4;
+			st.bytes++;
+			outl++;
 
 		case 2:	if (srclen-- == 0) {
-				return 1;
+				ret = 1;
+				break;
 			}
 			if ((q = base64_table_dec[(unsigned char)*c++]) >= 254) {
-				state->eof = 1;
+				st.eof = 1;
 				/* When q == 254, the input char is '='. Return 1 and EOF.
 				 * Technically, should check if next byte is also '=', but never mind.
 				 * When q == 255, the input char is invalid. Return 0 and EOF. */
-				return (q == 254);
+				ret = (q == 254) ? 1 : 0;
+				break;
 			}
-			*o++ = state->carry | (q >> 2);
-			state->carry = q << 6;
-			state->bytes++;
-			(*outlen)++;
+			*o++ = st.carry | (q >> 2);
+			st.carry = q << 6;
+			st.bytes++;
+			outl++;
 
 		case 3:	if (srclen-- == 0) {
-				return 1;
+				ret = 1;
+				break;
 			}
 			if ((q = base64_table_dec[(unsigned char)*c++]) >= 254) {
-				state->eof = 1;
+				st.eof = 1;
 				/* When q == 254, the input char is '='. Return 1 and EOF.
 				 * When q == 255, the input char is invalid. Return 0 and EOF. */
-				return (q == 254);
+				ret = (q == 254) ? 1 : 0;
+				break;
 			}
-			*o++ = state->carry | q;
-			state->carry = 0;
-			state->bytes = 0;
-			(*outlen)++;
+			*o++ = st.carry | q;
+			st.carry = 0;
+			st.bytes = 0;
+			outl++;
 		}
 	}
-	/* Never reached, but pacifies compiler: */
-	return 0;
+	state->eof = st.eof;
+	state->bytes = st.bytes;
+	state->carry = st.carry;
+	*outlen = outl;
+	return ret;
 }
 
 void
