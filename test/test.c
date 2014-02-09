@@ -118,6 +118,77 @@ test_char_table (void)
 	}
 }
 
+static void
+test_streaming (void)
+{
+	int i;
+	size_t bs;
+	char chr[256];
+	char ref[400], enc[400];
+	size_t reflen, enclen;
+	struct base64_state state;
+
+	/* Fill array with all characters 0..255: */
+	for (i = 0; i < 256; i++) {
+		chr[i] = (unsigned char)i;
+	}
+	/* Create reference base64 encoding: */
+	base64_encode(chr, 256, ref, &reflen);
+
+	/* Encode the table with various block sizes and compare to reference: */
+	for (bs = 1; bs < 255; bs++)
+	{
+		size_t inpos = 0;
+		size_t partlen = 0;
+		enclen = 0;
+
+		base64_stream_encode_init(&state);
+		memset(enc, 0, 400);
+		for (;;) {
+			base64_stream_encode(&state, &chr[inpos], (inpos + bs > 256) ? 256 - inpos : bs, &enc[enclen], &partlen);
+			enclen += partlen;
+			if (inpos + bs > 256) {
+				break;
+			}
+			inpos += bs;
+		}
+		base64_stream_encode_final(&state, &enc[enclen], &partlen);
+		enclen += partlen;
+
+		if (enclen != reflen) {
+			printf("FAIL: stream encoding gave incorrect size: %d instead of %d\n", enclen, reflen);
+			ret = 1;
+		}
+		if (strncmp(ref, enc, reflen) != 0) {
+			printf("FAIL: stream encoding with blocksize %d failed\n", bs);
+			ret = 1;
+		}
+	}
+	/* Decode the reference encoding with various block sizes and
+	 * compare to input char table: */
+	for (bs = 1; bs < 255; bs++)
+	{
+		size_t inpos = 0;
+		size_t partlen = 0;
+		enclen = 0;
+
+		base64_stream_decode_init(&state);
+		memset(enc, 0, 400);
+		while (base64_stream_decode(&state, &ref[inpos], (inpos + bs > reflen) ? reflen - inpos : bs, &enc[enclen], &partlen)) {
+			enclen += partlen;
+			inpos += bs;
+		}
+		if (enclen != 256) {
+			printf("FAIL: stream decoding gave incorrect size: %d instead of 255\n", enclen);
+			ret = 1;
+		}
+		if (strncmp(chr, enc, 256) != 0) {
+			printf("FAIL: stream decoding with blocksize %d failed\n", bs);
+			ret = 1;
+		}
+	}
+}
+
 int
 main ()
 {
@@ -156,6 +227,8 @@ main ()
 	assert_roundtrip("Zm9vYmFy");
 
 	test_char_table();
+
+	test_streaming();
 
 	if (ret == 0) fprintf(stderr, "All tests passed.\n");
 
