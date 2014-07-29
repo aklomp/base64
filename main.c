@@ -102,14 +102,12 @@ main (int argc, char **argv)
 	/* No options left on command line? Read from stdin: */
 	if (optind >= argc) {
 		fp = stdin;
-		freopen(NULL, "rb", stdin);
 	}
 	/* One option left on command line? Treat it as a file: */
 	else if (optind + 1 == argc) {
 		file = argv[optind];
 		if (strcmp(file, "-") == 0) {
 			fp = stdin;
-			freopen(NULL, "rb", stdin);
 		}
 		else if ((fp = fopen(file, "rb")) == NULL) {
 			printf("cannot open %s\n", file);
