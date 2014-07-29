@@ -78,7 +78,9 @@ written to standard output.
 
 ## Tests
 
-See `tests/` for a small test suite.
+See `tests/` for a small test suite. Testing is automated with [Travis CI](https://travis-ci.org/aklomp/base64):
+
+[![Build Status](https://travis-ci.org/aklomp/base64.png?branch=master)](https://travis-ci.org/aklomp/base64)
 
 ## License
 
