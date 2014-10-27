@@ -3,14 +3,19 @@
 This is an implementation of a base64 stream encoder/decoder in C89. It also
 contains wrapper functions to encode/decode simple length-delimited strings.
 
+If your processor supports SSSE3, encoding speed is about four times higher
+than the competition, because this library uses SSE intrinsics to encode twelve
+bytes at a time. To the author's knowledge, this is the only Base64 library
+that does this.
+
 Notable features:
 
+- Really fast encoding on x86 systems, using SSE instructions;
 - Reads/writes blocks of streaming data;
 - Does not dynamically allocate memory;
 - Valid C89 that compiles with pedantic options on;
 - Re-entrant and threadsafe;
 - Unit tested;
-- Fairly fast;
 - Uses Duff's Device.
 
 Strings are represented as a pointer and a length; they are not
