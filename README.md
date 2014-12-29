@@ -25,6 +25,13 @@ legitimate zero bytes. In the encoding step, returning the length saves the
 overhead of calling strlen() on the output. If you insist on the trailing zero,
 you can easily add it yourself at the given offset.
 
+## Usage and building
+
+To use the library routines, include `base64.c` and `base64.h` into your
+project. No special compiler flags are necessary to build the files. If your
+target supports it, compile with `-mssse3` or equivalent to benefit from SSSE3
+acceleration.
+
 ## API reference
 
 ### Encoding
