@@ -1,9 +1,12 @@
-CFLAGS += -std=c89 -O3 -march=native -Wall -Wextra -pedantic
+CFLAGS += -std=c89 -O3 -Wall -Wextra -pedantic
 
-test: test.c ../base64.c
+.PHONY: clean test
+
+test_base64: test_base64.c ../base64.c
 	$(CC) $(CFLAGS) -o $@ $^
 
-.PHONY: clean
+test: clean test_base64
+	./test_base64
 
 clean:
-	rm -f test
+	rm -f test_base64
