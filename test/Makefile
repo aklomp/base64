@@ -5,11 +5,11 @@ CFLAGS += -std=c89 -O3 -Wall -Wextra -pedantic
 test: clean test_base64
 	./test_base64
 
-test_base64: test_base64.c ../libbase64.a
+test_base64: test_base64.c ../lib/libbase64.a
 	$(CC) $(CFLAGS) -o $@ $^
 
-../libbase64.a:
-	make -C .. libbase64.a
+../%:
+	make -C .. $*
 
 clean:
 	rm -f test_base64

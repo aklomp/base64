@@ -27,16 +27,26 @@ you can easily add it yourself at the given offset.
 
 ## Usage and building
 
-Typing `make` will generate a `base64` test binary (which works like the
-standard `base64` utility), and a library file called `libbase64.a`. You can
-link this library file against your own project. Matching header definitions
-are found in `libbase64.h`. No special compiler flags are necessary to build
-the files. If your target supports it, compile with `-mssse3` or equivalent to
-benefit from SSSE3 acceleration:
+The `lib` directory contains the code for the actual library. Typing `make` in
+the toplevel directory will build `lib/libbase64.a` and `bin/base64`. The first
+is a library archive that you can link against your own project. The second is
+a standalone test binary that works similarly to the `base64` system utility.
+
+To compile just the library, type:
 
 ```sh
-CFLAGS=-mssse3 make libbase64.a
+make lib/libbase64.a
 ```
+
+No special compiler flags are necessary to build the library. If your target
+supports it, compile with `-mssse3` or equivalent to benefit from SSSE3
+acceleration:
+
+```sh
+CFLAGS=-mssse3 make
+```
+
+The matching header file needed to use this library is in `include/libbase64.h`.
 
 ## API reference
 
@@ -164,8 +174,8 @@ int main ()
 }
 ```
 
-Also see `main.c` for a simple re-implementation of the `base64` utility. A
-file or standard input is fed through the encoder/decoder, and the output is
+Also see `bin/base64.c` for a simple re-implementation of the `base64` utility.
+A file or standard input is fed through the encoder/decoder, and the output is
 written to standard output.
 
 ## Tests

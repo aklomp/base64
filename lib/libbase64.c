@@ -2,7 +2,7 @@
 #ifdef __SSSE3__
 #include <tmmintrin.h>
 #endif
-#include "libbase64.h"
+#include "../include/libbase64.h"
 
 static const char
 base64_table_enc[] =

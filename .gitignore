@@ -1,4 +1,5 @@
-*.o
-base64
-libbase64.a
+bin/*.o
+lib/*.o
+bin/base64
+lib/libbase64.a
 test/test_base64

@@ -1,6 +1,6 @@
 #include <string.h>
 #include <stdio.h>
-#include "../libbase64.h"
+#include "../include/libbase64.h"
 
 static int ret = 0;
 static char out[100];
