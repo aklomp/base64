@@ -1,5 +1,5 @@
-#ifndef _BASE64_H
-#define _BASE64_H
+#ifndef _LIBBASE64_H
+#define _LIBBASE64_H
 
 struct base64_state {
 	int eof;
@@ -46,4 +46,4 @@ void base64_stream_decode_init (struct base64_state *);
  * well, and 0 if a decoding error was found, such as an invalid character. */
 int base64_stream_decode (struct base64_state *, const char *const src, size_t srclen, char *const out, size_t *const outlen);
 
-#endif /* _BASE64_H */
+#endif /* _LIBBASE64_H */

@@ -27,10 +27,16 @@ you can easily add it yourself at the given offset.
 
 ## Usage and building
 
-To use the library routines, include `base64.c` and `base64.h` into your
-project. No special compiler flags are necessary to build the files. If your
-target supports it, compile with `-mssse3` or equivalent to benefit from SSSE3
-acceleration.
+Typing `make` will generate a `base64` test binary (which works like the
+standard `base64` utility), and a library file called `libbase64.a`. You can
+link this library file against your own project. Matching header definitions
+are found in `libbase64.h`. No special compiler flags are necessary to build
+the files. If your target supports it, compile with `-mssse3` or equivalent to
+benefit from SSSE3 acceleration:
+
+```sh
+CFLAGS=-mssse3 make libbase64.a
+```
 
 ## API reference
 
@@ -115,7 +121,7 @@ to stdout:
 
 ```c
 #include <stdio.h>	/* fwrite */
-#include "base64.h"
+#include "libbase64.h"
 
 int main ()
 {
@@ -137,7 +143,7 @@ standard output:
 
 ```c
 #include <stdio.h>
-#include "base64.h"
+#include "libbase64.h"
 
 int main ()
 {

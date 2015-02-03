@@ -1,2 +1,4 @@
+*.o
 base64
+libbase64.a
 test/test_base64

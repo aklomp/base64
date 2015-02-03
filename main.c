@@ -2,7 +2,7 @@
 #include <stdio.h>	/* fopen() */
 #include <string.h>	/* strlen() */
 #include <getopt.h>
-#include "base64.h"
+#include "libbase64.h"
 
 #define BUFSIZE 1024 * 1024
 
