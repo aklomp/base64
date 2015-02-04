@@ -3,7 +3,11 @@ UNAME_S = $(shell uname -s)
 
 CFLAGS += -std=c89 -O3 -Wall -Wextra -pedantic
 
-OBJS = lib/libbase64.o
+OBJS = \
+  lib/libbase64.o \
+  lib/codec_choose.o \
+  lib/codec_plain.o \
+  lib/codec_ssse3.o
 
 .PHONY: all analyze clean
 
@@ -18,6 +22,8 @@ ifeq ($(UNAME_S), Darwin)
 else
 	$(AR) -r $@ $(OBJS)
 endif
+
+lib/codec_ssse3.o: CFLAGS += -mssse3
 
 %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $^

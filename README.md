@@ -38,14 +38,6 @@ To compile just the library, type:
 make lib/libbase64.a
 ```
 
-No special compiler flags are necessary to build the library. If your target
-supports it, compile with `-mssse3` or equivalent to benefit from SSSE3
-acceleration:
-
-```sh
-CFLAGS=-mssse3 make
-```
-
 The matching header file needed to use this library is in `include/libbase64.h`.
 
 ## API reference
