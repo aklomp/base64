@@ -5,12 +5,14 @@ CFLAGS += -std=c89 -O3 -Wall -Wextra -pedantic
 
 OBJS = \
   lib/libbase64.o \
+  lib/codec_avx2.o \
   lib/codec_choose.o \
   lib/codec_plain.o \
   lib/codec_ssse3.o
 
 # Compile-time feature detection;
-# specifying -mssse3 is a syntax error when compiling on non-x86:
+# specifying unavailable architecture flags causes compiler errors:
+HAVE_AVX2  ?= $(shell echo 'main(){}' | $(CC) -mavx2  -o /dev/null -x c - >/dev/null 2>&1 && echo 1 || echo 0)
 HAVE_SSSE3 ?= $(shell echo 'main(){}' | $(CC) -mssse3 -o /dev/null -x c - >/dev/null 2>&1 && echo 1 || echo 0)
 
 .PHONY: all analyze clean
@@ -28,9 +30,14 @@ else
 endif
 
 lib/config.h:
-	@echo "#define HAVE_SSSE3 $(HAVE_SSSE3)" > $@
+	@echo "#define HAVE_AVX2  $(HAVE_AVX2)"   > $@
+	@echo "#define HAVE_SSSE3 $(HAVE_SSSE3)" >> $@
 
 lib/codec_choose.o: lib/config.h
+
+ifeq ($(HAVE_AVX2), 1)
+lib/codec_avx2.o: CFLAGS += -mavx2
+endif
 
 ifeq ($(HAVE_SSSE3), 1)
 lib/codec_ssse3.o: CFLAGS += -mssse3
