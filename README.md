@@ -6,25 +6,30 @@ simple length-delimited strings.
 
 The first time it's called, the library will determine the appropriate
 encoding/decoding routines for the machine. It then remembers them for the
-lifetime of the program. If your processor supports SSSE3 instructions, the
-library will pick an optimized codec that lets it encode/decode twelve bytes at
-a time, which gives a speedup of around four times compared to the "plain"
-bytewise codec. To the author's knowledge, at the time of original release,
-this was the only Base64 library to offer such acceleration.
+lifetime of the program. If your processor supports AVX2 or SSSE3 instructions,
+the library will pick an optimized codec that lets it encode/decode 12 or 24
+bytes at a time, which gives a speedup of four or more times compared to the
+"plain" bytewise codec. To the author's knowledge, at the time of original
+release, this was the only Base64 library to offer such acceleration.
 
-Even if your processor does not support SSSE3, this is a very fast library. The
-fallback routine can process 32 or 64 bits of input in one round, depending on
-your processor's word width, which still makes it significantly faster than
-naive bytewise implementations. On some 64-bit machines, the 64-bit routines
-even outperform the SSSE3 ones.
+Even if your processor does not support AVX2 or SSSE3, this is a very fast
+library. The fallback routine can process 32 or 64 bits of input in one round,
+depending on your processor's word width, which still makes it significantly
+faster than naive bytewise implementations. On some 64-bit machines, the 64-bit
+routines even outperform the SSSE3 ones.
 
 The author wrote
 [an article](http://www.alfredklomp.com/programming/sse-base64) explaining one
 possible SIMD approach to encoding/decoding Base64.
 
+The AVX2 codec was generously contributed by
+[Inkymail](https://github.com/inkymail/base64), who, in their fork, also
+implemented NEON and NEON64 codecs and some additional features. Their work is
+slowly being backported into this project.
+
 Notable features:
 
-- Really fast on x86 systems by using SSE vector instructions;
+- Really fast on x86 systems by using SSSE3 or AVX2 vector instructions;
 - Really fast on other 32 or 64-bit platforms through optimized routines;
 - Reads/writes blocks of streaming data;
 - Does not dynamically allocate memory;
@@ -57,6 +62,17 @@ HAVE_SSSE3=0 make
 ```
 
 This causes the library to fall back on the generic routines.
+
+### AVX2
+
+At build time, the Makefile checks if your compiler supports the `-mavx2`
+architecture flag. If so, the AVX2 codec will be included. (That codec will
+only be used if feature detection shows that the target machine supports AVX2.)
+To disable AVX2 support in your build, type:
+
+```sh
+HAVE_AVX2=0 make
+```
 
 ## API reference
 
