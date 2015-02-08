@@ -1,5 +1,6 @@
 bin/*.o
 lib/*.o
 bin/base64
+lib/config.h
 lib/libbase64.a
 test/test_base64

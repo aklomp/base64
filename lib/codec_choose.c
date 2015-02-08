@@ -9,6 +9,7 @@
 
 #include "../include/libbase64.h"
 #include "codec_choose.h"
+#include "config.h"
 
 /* Function declarations: */
 #define BASE64_CODEC_FUNCS(x)	\
@@ -22,11 +23,12 @@ BASE64_CODEC_FUNCS(ssse3)
 static int
 codec_choose_x86 (struct codec *codec)
 {
-#if __x86_64__ || __i386__
+#if (__x86_64__ || __i386__) && HAVE_SSSE3
 
 	unsigned int eax, ebx, ecx = 0, edx;
 	unsigned int max_level = __get_cpuid_max(0, NULL);
 
+	#if HAVE_SSSE3
 	/* Check for SSSE3 support: */
 	if (max_level >= 1) {
 		__cpuid(1, eax, ebx, ecx, edx);
@@ -36,6 +38,7 @@ codec_choose_x86 (struct codec *codec)
 			return 1;
 		}
 	}
+	#endif
 
 #else
 	(void)codec;
