@@ -9,8 +9,15 @@
 
 #include "../include/libbase64.h"
 #include "codec_choose.h"
-#include "codec_plain.h"
-#include "codec_ssse3.h"
+
+/* Function declarations: */
+#define BASE64_CODEC_FUNCS(x)	\
+	void base64_stream_encode_##x BASE64_ENC_PARAMS; \
+	int  base64_stream_decode_##x BASE64_DEC_PARAMS;
+
+BASE64_CODEC_FUNCS(avx2)
+BASE64_CODEC_FUNCS(plain)
+BASE64_CODEC_FUNCS(ssse3)
 
 static int
 codec_choose_x86 (struct codec *codec)
