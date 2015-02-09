@@ -21,8 +21,27 @@
 	int  base64_stream_decode_##x BASE64_DEC_PARAMS;
 
 BASE64_CODEC_FUNCS(avx2)
+BASE64_CODEC_FUNCS(neon)
 BASE64_CODEC_FUNCS(plain)
 BASE64_CODEC_FUNCS(ssse3)
+
+static int
+codec_choose_arm (struct codec *codec)
+{
+#if __arm__ && HAVE_NEON
+
+	/* Unfortunately there is no portable way to check for NEON
+	 * support at runtime from userland in the same way that x86
+	 * has cpuid, so just stick to the compile-time configuration: */
+	codec->enc = base64_stream_encode_neon;
+	codec->dec = base64_stream_decode_neon;
+	return 1;
+#else
+	(void)codec;
+	return 0;
+
+#endif
+}
 
 static int
 codec_choose_x86 (struct codec *codec)
@@ -67,6 +86,9 @@ void
 codec_choose (struct codec *codec)
 {
 	/* Runtime feature detection: */
+	if (codec_choose_arm(codec)) {
+		return;
+	}
 	if (codec_choose_x86(codec)) {
 		return;
 	}
