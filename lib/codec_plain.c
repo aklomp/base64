@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <stdint.h>
 
 #include "../include/libbase64.h"
 
@@ -9,6 +10,9 @@ void
 base64_stream_encode_plain (struct base64_state *state, const char *const src, size_t srclen, char *const out, size_t *const outlen)
 {
 	#include "enc/head.c"
+#if __WORDSIZE == 32
+	#include "enc/uint32.c"
+#endif
 	#include "enc/tail.c"
 }
 
