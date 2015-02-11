@@ -20,5 +20,8 @@ int
 base64_stream_decode_plain (struct base64_state *state, const char *const src, size_t srclen, char *const out, size_t *const outlen)
 {
 	#include "dec/head.c"
+#if __WORDSIZE == 32
+	#include "dec/uint32.c"
+#endif
 	#include "dec/tail.c"
 }
