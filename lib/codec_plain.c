@@ -12,6 +12,8 @@ base64_stream_encode_plain (struct base64_state *state, const char *const src, s
 	#include "enc/head.c"
 #if __WORDSIZE == 32
 	#include "enc/uint32.c"
+#elif __WORDSIZE == 64
+	#include "enc/uint64.c"
 #endif
 	#include "enc/tail.c"
 }
