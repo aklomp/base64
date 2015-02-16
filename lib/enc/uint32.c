@@ -15,10 +15,10 @@ while (srclen >= 3)
 
 	/* Shift bits by 2, each time choosing just one byte to include.
 	 * For each byte, lookup its character in the Base64 encoding table: */
-	*o++ = base64_table_enc[(((str >> 2) & (mask >>  0)) >> 24)];
-	*o++ = base64_table_enc[(((str >> 4) & (mask >>  8)) >> 16) & 0xFF];
-	*o++ = base64_table_enc[(((str >> 6) & (mask >> 16)) >>  8) & 0xFF];
-	*o++ = base64_table_enc[(((str >> 8) & (mask >> 24)) >>  0) & 0xFF];
+	*o++ = base64_table_enc[((str & (mask <<  2)) >> 26)];
+	*o++ = base64_table_enc[((str & (mask >>  4)) >> 20)];
+	*o++ = base64_table_enc[((str & (mask >> 10)) >> 14)];
+	*o++ = base64_table_enc[((str & (mask >> 16)) >>  8)];
 
 	c += 3;		/* 3 bytes of input  */
 	outl += 4;	/* 4 bytes of output */
