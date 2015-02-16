@@ -28,9 +28,7 @@ else
 endif
 
 lib/config.h:
-	@echo "#ifndef HAVE_SSSE3"                > $@
-	@echo "#define HAVE_SSSE3 $(HAVE_SSSE3)" >> $@
-	@echo "#endif"                           >> $@
+	@echo "#define HAVE_SSSE3 $(HAVE_SSSE3)" > $@
 
 lib/codec_choose.o: lib/config.h
 
