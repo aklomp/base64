@@ -1,29 +1,37 @@
-# Base64 stream encoder/decoder in C89
+# Fast Base64 stream encoder/decoder
 
-This is an implementation of a base64 stream encoder/decoder in C89. It also
-contains wrapper functions to encode/decode simple length-delimited strings.
+This is an implementation of a base64 stream encoding/decoding library in C89
+with SIMD acceleration. It also contains wrapper functions to encode/decode
+simple length-delimited strings.
 
-If your processor supports SSSE3, encoding/decoding speed is about four times
-higher than the competition, because this library uses SSE intrinsics to
-encode/decode twelve bytes at a time. To the author's knowledge, this is the
-only Base64 library that does this.
+The first time it's called, the library will determine the appropriate
+encoding/decoding routines for the machine. It then remembers them for the
+lifetime of the program. If your processor supports SSSE3 instructions, the
+library will pick an optimized codec that lets it encode/decode twelve bytes at
+a time, which gives a speedup of around four times compared to the "plain"
+bytewise codec. To the author's knowledge, at the time of original release,
+this was the only Base64 library to offer such acceleration.
+
+Even if your processor does not support SSSE3, this is a very fast library. The
+fallback routine can process 32 or 64 bits of input in one round, depending on
+your processor's word width, which still makes it significantly faster than
+naive bytewise implementations. On some 64-bit machines, the 64-bit routines
+even outperform the SSSE3 ones.
+
+The author wrote
+[an article](http://www.alfredklomp.com/programming/sse-base64) explaining one
+possible SIMD approach to encoding/decoding Base64.
 
 Notable features:
 
 - Really fast on x86 systems by using SSE vector instructions;
+- Really fast on other 32 or 64-bit platforms through optimized routines;
 - Reads/writes blocks of streaming data;
 - Does not dynamically allocate memory;
 - Valid C89 that compiles with pedantic options on;
 - Re-entrant and threadsafe;
 - Unit tested;
 - Uses Duff's Device.
-
-Strings are represented as a pointer and a length; they are not
-zero-terminated. This was a conscious design decision. In the decoding step,
-relying on zero-termination would make no sense since the output could contain
-legitimate zero bytes. In the encoding step, returning the length saves the
-overhead of calling strlen() on the output. If you insist on the trailing zero,
-you can easily add it yourself at the given offset.
 
 ## Usage and building
 
@@ -40,7 +48,24 @@ make lib/libbase64.a
 
 The matching header file needed to use this library is in `include/libbase64.h`.
 
+On some 64-bit machines, the generic 64-bit routine outperforms the SSSE3
+routine, though not by much. You can test if this is the case on your machine
+by disabling SSSE3 support as follows:
+
+```sh
+HAVE_SSSE3=0 make
+```
+
+This causes the library to fall back on the generic routines.
+
 ## API reference
+
+Strings are represented as a pointer and a length; they are not
+zero-terminated. This was a conscious design decision. In the decoding step,
+relying on zero-termination would make no sense since the output could contain
+legitimate zero bytes. In the encoding step, returning the length saves the
+overhead of calling strlen() on the output. If you insist on the trailing zero,
+you can easily add it yourself at the given offset.
 
 ### Encoding
 
