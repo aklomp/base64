@@ -64,8 +64,8 @@ Strings are represented as a pointer and a length; they are not
 zero-terminated. This was a conscious design decision. In the decoding step,
 relying on zero-termination would make no sense since the output could contain
 legitimate zero bytes. In the encoding step, returning the length saves the
-overhead of calling strlen() on the output. If you insist on the trailing zero,
-you can easily add it yourself at the given offset.
+overhead of calling `strlen()` on the output. If you insist on the trailing
+zero, you can easily add it yourself at the given offset.
 
 ### Encoding
 
