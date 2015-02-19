@@ -2,9 +2,6 @@
  * time for as long as we can: */
 while (srclen >= 3)
 {
-	/* Mask to pass through only the lower 6 bits of one byte: */
-	uint32_t mask = 0x3F000000;
-
 	/* Load string: */
 	uint32_t str = *(uint32_t *)c;
 
@@ -13,12 +10,13 @@ while (srclen >= 3)
 	 * do not carry over properly among adjacent bytes: */
 	str = __builtin_bswap32(str);
 
-	/* Shift bits by 2, each time choosing just one byte to include.
-	 * For each byte, lookup its character in the Base64 encoding table: */
-	*o++ = base64_table_enc[((str & (mask <<  2)) >> 26)];
-	*o++ = base64_table_enc[((str & (mask >>  4)) >> 20)];
-	*o++ = base64_table_enc[((str & (mask >> 10)) >> 14)];
-	*o++ = base64_table_enc[((str & (mask >> 16)) >>  8)];
+	/* Shift input by 6 bytes each round and mask in only the
+	 * lower 6 bits; look up the character in the Base64 encoding
+	 * table and write it to the output location: */
+	*o++ = base64_table_enc[(str >> 26) & 0x3F];
+	*o++ = base64_table_enc[(str >> 20) & 0x3F];
+	*o++ = base64_table_enc[(str >> 14) & 0x3F];
+	*o++ = base64_table_enc[(str >>  8) & 0x3F];
 
 	c += 3;		/* 3 bytes of input  */
 	outl += 4;	/* 4 bytes of output */
