@@ -5,11 +5,9 @@ while (srclen >= 16)
 {
 	uint8x16_t res;
 	uint32x4_t str, mask;
-	uint8x16_t s1, s2, s3, s4, s5;
-	uint8x16_t s1mask, s2mask, s3mask, s4mask;
-	uint8x16_t blockmask;
 	uint8x8_t tbl_shuf, lo, hi;
 	uint8_t t[8] = { 2, 2, 1, 0, 5, 5, 4, 3 };
+	uint8x16_t loset, hiset, himask;
 
 	/* Load string: */
 	str = vld1q_u32((uint32_t *)c);
@@ -72,36 +70,29 @@ while (srclen >= 16)
 	res = vrev32q_u8(res);
 
 	/* The bits have now been shifted to the right locations;
-	 * translate their values 0..63 to the Base64 alphabet: */
+	 * translate their values 0..63 to the Base64 alphabet. */
 
-	/* set 1: 0..25, "ABCDEFGHIJKLMNOPQRSTUVWXYZ" */
-	s1mask = vcltq_u8(res, vdupq_n_u8(26));
-	blockmask = s1mask;
+	/* Make a mask for all bytes >= 32: */
+	himask = vcgeq_u8(res, vdupq_n_u8(32));
 
-	/* set 2: 26..51, "abcdefghijklmnopqrstuvwxyz" */
-	s2mask = vmvnq_u8(blockmask) & vcltq_u8(res, vdupq_n_u8(52));
-	blockmask |= s2mask;
+	/* Make two sets; saturate-subtract 32 from high set: */
+	loset = res;
+	hiset = vqsubq_u8(res, vdupq_n_u8(32));
 
-	/* set 3: 52..61, "0123456789" */
-	s3mask = vmvnq_u8(blockmask) & vcltq_u8(res, vdupq_n_u8(62));
-	blockmask |= s3mask;
+	/* Split sets into halves, do 32-bit table lookup on each half: */
+	loset = vcombine_u8(
+		vtbl4_u8(tbl_enc_lo, vget_low_u8(loset)),
+		vtbl4_u8(tbl_enc_lo, vget_high_u8(loset))
+	);
+	hiset = vcombine_u8(
+		vtbl4_u8(tbl_enc_hi, vget_low_u8(hiset)),
+		vtbl4_u8(tbl_enc_hi, vget_high_u8(hiset))
+	);
+	/* Mask out unwanted results: */
+	hiset &= himask;
 
-	/* set 4: 62, "+" */
-	s4mask = vceqq_u8(res, vdupq_n_u8(62));
-	blockmask |= s4mask;
-
-	/* set 5: 63, "/"
-	 * Everything that is not blockmasked */
-
-	/* Create the masked character sets: */
-	s1 = s1mask & vaddq_u8(res, vdupq_n_u8('A'));
-	s2 = s2mask & vaddq_u8(res, vdupq_n_u8('a' - 26));
-	s3 = s3mask & vaddq_u8(res, vdupq_n_u8('0' - 52));
-	s4 = s4mask & vdupq_n_u8('+');
-	s5 = vmvnq_u8(blockmask) & vdupq_n_u8('/');
-
-	/* Blend all the sets together and store: */
-	vst1q_u8((uint8_t *)o, s1 | s2 | s3 | s4 | s5);
+	/* Combine and store result: */
+	vst1q_u8((uint8_t *)o, hiset | loset);
 
 	c += 12;	/* 3 * 4 bytes of input  */
 	o += 16;	/* 4 * 4 bytes of output */
