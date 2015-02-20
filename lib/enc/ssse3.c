@@ -1,6 +1,7 @@
-/* If we have SSSE3 support, pick off 12 bytes at a
- * time for as long as we can: */
-while (srclen >= 12)
+/* If we have SSSE3 support, pick off 12 bytes at a time for as long as we can.
+ * But because we read 16 bytes at a time, ensure we have enough room to do a
+ * full 16-byte read without segfaulting: */
+while (srclen >= 16)
 {
 	__m128i str, mask, res, blockmask;
 	__m128i s1, s2, s3, s4, s5;
