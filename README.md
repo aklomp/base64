@@ -1,24 +1,32 @@
 # Fast Base64 stream encoder/decoder
 
 This is an implementation of a base64 stream encoding/decoding library in C89
-with SIMD acceleration. It also contains wrapper functions to encode/decode
-simple length-delimited strings.
+with SIMD (AVX2, NEON, SSSE3) acceleration. It also contains wrapper functions
+to encode/decode simple length-delimited strings. This library aims to be:
+
+- FAST;
+- easy to use;
+- elegant.
 
 The first time it's called, the library will determine the appropriate
 encoding/decoding routines for the machine. It then remembers them for the
-lifetime of the program. If your processor supports AVX2 or SSSE3 instructions,
-the library will pick an optimized codec that lets it encode/decode 12 or 24
-bytes at a time, which gives a speedup of four or more times compared to the
-"plain" bytewise codec. To the author's knowledge, at the time of original
-release, this was the only Base64 library to offer such acceleration.
+lifetime of the program. If your processor supports AVX2, NEON or SSSE3
+instructions, the library will pick an optimized codec that lets it
+encode/decode 12 or 24 bytes at a time, which gives a speedup of four or more
+times compared to the "plain" bytewise codec.
 
-Even if your processor does not support AVX2 or SSSE3, this is a very fast
+NEON support can unfortunately not be portably detected at runtime from
+userland (the `mrc` instruction is privileged), so NEON support is enabled or
+disabled at compile time.
+
+Even if your processor does not support SIMD instructions, this is a very fast
 library. The fallback routine can process 32 or 64 bits of input in one round,
 depending on your processor's word width, which still makes it significantly
 faster than naive bytewise implementations. On some 64-bit machines, the 64-bit
 routines even outperform the SSSE3 ones.
 
-The author wrote
+To the author's knowledge, at the time of original release, this was the only
+Base64 library to offer SIMD acceleration. The author wrote
 [an article](http://www.alfredklomp.com/programming/sse-base64) explaining one
 possible SIMD approach to encoding/decoding Base64.
 
@@ -29,7 +37,7 @@ slowly being backported into this project.
 
 Notable features:
 
-- Really fast on x86 systems by using SSSE3 or AVX2 vector instructions;
+- Really fast on x86 and ARM systems by using SIMD vector processing;
 - Really fast on other 32 or 64-bit platforms through optimized routines;
 - Reads/writes blocks of streaming data;
 - Does not dynamically allocate memory;
@@ -72,6 +80,17 @@ To disable AVX2 support in your build, type:
 
 ```sh
 HAVE_AVX2=0 make
+```
+
+### NEON
+
+NEON support cannot be portably detected at runtime due to the required
+instruction being privileged, so support is hardcoded to on or off at compile
+time. If your compiler supports the `-mfpu=neon` flag, the library will be
+built with NEON support. To build without NEON support, type:
+
+```sh
+HAVE_NEON=0 make
 ```
 
 ## API reference
