@@ -15,7 +15,10 @@ assert_enc (char *src, char *dst)
 	base64_encode(src, srclen, out, &outlen);
 
 	if (outlen != dstlen) {
-		printf("FAIL: encoding of '%s': length expected %lu, got %lu\n", src, dstlen, outlen);
+		printf("FAIL: encoding of '%s': length expected %lu, got %lu\n", src,
+			(unsigned long)dstlen,
+			(unsigned long)outlen
+		);
 		ret = 1;
 		return 0;
 	}
@@ -40,7 +43,11 @@ assert_dec (char *src, char *dst)
 		return 0;
 	}
 	if (outlen != dstlen) {
-		printf("FAIL: encoding of '%s': length expected %lu, got %lu\n", src, dstlen, outlen);
+		printf("FAIL: encoding of '%s': "
+			"length expected %lu, got %lu\n", src,
+			(unsigned long)dstlen,
+			(unsigned long)outlen
+		);
 		ret = 1;
 		return 0;
 	}
@@ -69,7 +76,11 @@ assert_roundtrip (char *src)
 	}
 	/* Check that 'src' is identical to 'tmp': */
 	if (srclen != tmplen) {
-		printf("FAIL: roundtrip of '%s': length expected %lu, got %lu\n", src, srclen, tmplen);
+		printf("FAIL: roundtrip of '%s': "
+			"length expected %lu, got %lu\n", src,
+			(unsigned long)srclen,
+			(unsigned long)tmplen
+		);
 		ret = 1;
 		return 0;
 	}
@@ -107,7 +118,11 @@ test_char_table (void)
 			continue;
 		}
 		if (declen != chrlen) {
-			printf("FAIL: roundtrip @ %d: length expected %lu, got %lu\n", i, chrlen, declen);
+			printf("FAIL: roundtrip @ %d: "
+				"length expected %lu, got %lu\n", i,
+				(unsigned long)chrlen,
+				(unsigned long)declen
+			);
 			ret = 1;
 			continue;
 		}
@@ -156,11 +171,17 @@ test_streaming (void)
 		enclen += partlen;
 
 		if (enclen != reflen) {
-			printf("FAIL: stream encoding gave incorrect size: %lu instead of %lu\n", enclen, reflen);
+			printf("FAIL: stream encoding gave incorrect size: "
+				"%lu instead of %lu\n",
+				(unsigned long)enclen,
+				(unsigned long)reflen
+			);
 			ret = 1;
 		}
 		if (strncmp(ref, enc, reflen) != 0) {
-			printf("FAIL: stream encoding with blocksize %lu failed\n", bs);
+			printf("FAIL: stream encoding with blocksize %lu failed\n",
+				(unsigned long)bs
+			);
 			ret = 1;
 		}
 	}
@@ -179,11 +200,16 @@ test_streaming (void)
 			inpos += bs;
 		}
 		if (enclen != 256) {
-			printf("FAIL: stream decoding gave incorrect size: %lu instead of 255\n", enclen);
+			printf("FAIL: stream decoding gave incorrect size: "
+				"%lu instead of 255\n",
+				(unsigned long)enclen
+			);
 			ret = 1;
 		}
 		if (strncmp(chr, enc, 256) != 0) {
-			printf("FAIL: stream decoding with blocksize %lu failed\n", bs);
+			printf("FAIL: stream decoding with blocksize %lu failed\n",
+				(unsigned long)bs
+			);
 			ret = 1;
 		}
 	}
