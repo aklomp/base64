@@ -5,7 +5,6 @@ while (srclen >= 32)
 {
 	__m128i l0, l1;
 	__m256i str, mask, res, blockmask;
-	__m256i s1, s2, s3, s4, s5;
 	__m256i s2mask, s3mask, s4mask, s5mask;
 
 	/* _mm256_shuffle_epi8 works on 128-bit lanes, so we need to get
@@ -77,14 +76,14 @@ while (srclen >= 32)
 	 * Everything that is not blockmasked */
 
 	/* Create the masked character sets: */
-	s5 = s5mask & _mm256_set1_epi8('/');
-	s4 = s4mask & _mm256_set1_epi8('+');
-	s3 = s3mask & _mm256_add_epi8(res, _mm256_set1_epi8('0' - 52));
-	s2 = s2mask & _mm256_add_epi8(res, _mm256_set1_epi8('a' - 26));
-	s1 = _mm256_andnot_si256(blockmask, _mm256_add_epi8(res, _mm256_set1_epi8('A')));
+	str = _mm256_set1_epi8('/') & s5mask;
+	str = _mm256_blendv_epi8(str, _mm256_set1_epi8('+'), s4mask);
+	str = _mm256_blendv_epi8(str, _mm256_add_epi8(res, _mm256_set1_epi8('0' - 52)), s3mask);
+	str = _mm256_blendv_epi8(str, _mm256_add_epi8(res, _mm256_set1_epi8('a' - 26)), s2mask);
+	str = _mm256_blendv_epi8(_mm256_add_epi8(res, _mm256_set1_epi8('A')), str, blockmask);
 
 	/* Blend all the sets together and store: */
-	_mm256_storeu_si256((__m256i *)o, s1 | s2 | s3 | s4 | s5);
+	_mm256_storeu_si256((__m256i *)o, str);
 
 	c += 24;	/* 6 * 4 bytes of input  */
 	o += 32;	/* 8 * 4 bytes of output */

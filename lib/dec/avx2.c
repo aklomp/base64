@@ -40,11 +40,11 @@ while (srclen >= 45)
 		break;
 	}
 	/* Subtract sets from byte values: */
-	res  = s1mask & _mm256_sub_epi8(str, _mm256_set1_epi8('A'));
-	res |= s2mask & _mm256_sub_epi8(str, _mm256_set1_epi8('a' - 26));
-	res |= s3mask & _mm256_sub_epi8(str, _mm256_set1_epi8('0' - 52));
-	res |= s4mask & _mm256_set1_epi8(62);
-	res |= s5mask & _mm256_set1_epi8(63);
+	res = _mm256_sub_epi8(str, _mm256_set1_epi8('A')) & s1mask;
+	res = _mm256_blendv_epi8(res, _mm256_sub_epi8(str, _mm256_set1_epi8('a' - 26)), s2mask);
+	res = _mm256_blendv_epi8(res, _mm256_sub_epi8(str, _mm256_set1_epi8('0' - 52)), s3mask);
+	res = _mm256_blendv_epi8(res, _mm256_set1_epi8(62), s4mask);
+	res = _mm256_blendv_epi8(res, _mm256_set1_epi8(63), s5mask);
 
 	/* Shuffle bytes to 32-bit bigendian: */
 	res = _mm256_shuffle_epi8(res,
