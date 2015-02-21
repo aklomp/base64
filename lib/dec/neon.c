@@ -48,11 +48,11 @@ while (srclen >= 24)
 		break;
 	}
 	/* Subtract sets from byte values: */
-	res  = s1mask & vsubq_u8(str, vdupq_n_u8('A'));
-	res |= s2mask & vsubq_u8(str, vdupq_n_u8('a' - 26));
-	res |= s3mask & vsubq_u8(str, vdupq_n_u8('0' - 52));
-	res |= s4mask & vdupq_n_u8(62);
-	res |= s5mask & vdupq_n_u8(63);
+	res = s1mask & vsubq_u8(str, vdupq_n_u8('A'));
+	res = vbslq_u8(s2mask, vsubq_u8(str, vdupq_n_u8('a' - 26)), res);
+	res = vbslq_u8(s3mask, vsubq_u8(str, vdupq_n_u8('0' - 52)), res);
+	res = vbslq_u8(s4mask, vdupq_n_u8(62), res);
+	res = vbslq_u8(s5mask, vdupq_n_u8(63), res);
 
 	/* Shuffle bytes to 32-bit bigendian: */
 	res = vrev32q_u8(res);
