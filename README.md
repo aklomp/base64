@@ -8,16 +8,15 @@ to encode/decode simple length-delimited strings. This library aims to be:
 - easy to use;
 - elegant.
 
-The first time it's called, the library will determine the appropriate
-encoding/decoding routines for the machine. It then remembers them for the
-lifetime of the program. If your processor supports AVX2, NEON or SSSE3
-instructions, the library will pick an optimized codec that lets it
-encode/decode 12 or 24 bytes at a time, which gives a speedup of four or more
-times compared to the "plain" bytewise codec.
+On x86, the library does runtime feature detection. The first time it's called,
+the library will determine the appropriate encoding/decoding routines for the
+machine. It then remembers them for the lifetime of the program. If your
+processor supports AVX2 or SSSE3 instructions, the library will pick an
+optimized codec that lets it encode/decode 12 or 24 bytes at a time, which
+gives a speedup of four or more times compared to the "plain" bytewise codec.
 
-NEON support can unfortunately not be portably detected at runtime from
-userland (the `mrc` instruction is privileged), so NEON support is enabled or
-disabled at compile time.
+NEON support is hardcoded to on or off at compile time, because portable
+runtime feature detection is unavailable on ARM.
 
 Even if your processor does not support SIMD instructions, this is a very fast
 library. The fallback routine can process 32 or 64 bits of input in one round,
@@ -28,11 +27,12 @@ routines even outperform the SSSE3 ones.
 To the author's knowledge, at the time of original release, this was the only
 Base64 library to offer SIMD acceleration. The author wrote
 [an article](http://www.alfredklomp.com/programming/sse-base64) explaining one
-possible SIMD approach to encoding/decoding Base64.
+possible SIMD approach to encoding/decoding Base64. The article can help figure
+out what the code is doing, and why.
 
-The AVX2 codec was generously contributed by
+The original AVX2 and NEON codecs were generously contributed by
 [Inkymail](https://github.com/inkymail/base64), who, in their fork, also
-implemented NEON and NEON64 codecs and some additional features. Their work is
+implemented a NEON64 codec and some additional features. Their work is
 slowly being backported into this project.
 
 Notable features:
@@ -61,9 +61,10 @@ make lib/libbase64.a
 
 The matching header file needed to use this library is in `include/libbase64.h`.
 
-On some 64-bit machines, the generic 64-bit routine outperforms the SSSE3
-routine, though not by much. You can test if this is the case on your machine
-by disabling SSSE3 support as follows:
+On some low-end 64-bit machines without AVX2 (such as the AMD E-450), the
+generic 64-bit routine outperforms the SSSE3 routine, though not by much. You
+can test if this is the case on your machine by disabling SSSE3 support as
+follows:
 
 ```sh
 HAVE_SSSE3=0 make
@@ -74,7 +75,7 @@ This causes the library to fall back on the generic routines.
 ### AVX2
 
 At build time, the Makefile checks if your compiler supports the `-mavx2`
-architecture flag. If so, the AVX2 codec will be included. (That codec will
+architecture flag. If so, the AVX2 codec will be included. (The codec will
 only be used if feature detection shows that the target machine supports AVX2.)
 To disable AVX2 support in your build, type:
 
@@ -84,10 +85,10 @@ HAVE_AVX2=0 make
 
 ### NEON
 
-NEON support cannot be portably detected at runtime due to the required
-instruction being privileged, so support is hardcoded to on or off at compile
-time. If your compiler supports the `-mfpu=neon` flag, the library will be
-built with NEON support. To build without NEON support, type:
+NEON support can unfortunately not be portably detected at runtime from
+userland (the `mrc` instruction is privileged), so NEON support is enabled or
+disabled at compile time. If your compiler supports the `-mfpu=neon` flag, the
+library will be built with NEON support. To build without NEON support, type:
 
 ```sh
 HAVE_NEON=0 make
