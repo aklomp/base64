@@ -13,9 +13,9 @@ OBJS = \
 
 # Compile-time feature detection;
 # specifying unavailable architecture flags causes compiler errors:
-HAVE_AVX2  ?= $(shell echo 'main(){}' | $(CC) -mavx2     -o /dev/null -x c - >/dev/null 2>&1 && echo 1 || echo 0)
-HAVE_NEON  ?= $(shell echo 'main(){}' | $(CC) -mfpu=neon -o /dev/null -x c - >/dev/null 2>&1 && echo 1 || echo 0)
-HAVE_SSSE3 ?= $(shell echo 'main(){}' | $(CC) -mssse3    -o /dev/null -x c - >/dev/null 2>&1 && echo 1 || echo 0)
+HAVE_AVX2  ?= $(shell echo 'int main;' | $(CC) -mavx2     -Werror -o /dev/null -x c - >/dev/null 2>&1 && echo 1 || echo 0)
+HAVE_NEON  ?= $(shell echo 'int main;' | $(CC) -mfpu=neon -Werror -o /dev/null -x c - >/dev/null 2>&1 && echo 1 || echo 0)
+HAVE_SSSE3 ?= $(shell echo 'int main;' | $(CC) -mssse3    -Werror -o /dev/null -x c - >/dev/null 2>&1 && echo 1 || echo 0)
 
 .PHONY: all analyze clean
 
