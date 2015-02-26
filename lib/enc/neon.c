@@ -1,104 +1,90 @@
-/* If we have ARM NEON support, pick off 12 bytes at a time for as long as we
- * can. But because we read 16 bytes at a time, ensure we have enough room to
- * do a full 16-byte read without segfaulting: */
-while (srclen >= 16)
+/* If we have ARM NEON support, pick off 48 bytes at a time for as long as we can: */
+while (srclen >= 48)
 {
-	uint8x16_t str, res;
-	uint32x4_t mask;
-	uint8x8_t tbl_shuf, lo, hi;
-	uint8_t t[8] = { 2, 2, 1, 0, 5, 5, 4, 3 };
-	uint8x16_t loset, hiset, himask;
+	uint8x16x3_t str;
+	uint8x16x4_t res, hiset, himask;
 
-	/* Load string: */
-	str = vld1q_u8((uint8_t *)c);
+	/* Load 48 bytes, interleaved: */
+	str = vld3q_u8((uint8_t *)c);
 
-	/* Reorder to 32-bit big-endian.
-	 * The workset must be in big-endian, otherwise the shifted bits do not
-	 * carry over properly among adjacent bytes. If we read in the string:
-	 *
-	 *   ABCDEFGHIJKLMNOP
-	 *
-	 * it will be represented in memory as:
-	 *
-	 *   PONMLKJIHGFEDCBA
-	 *      |   |   |   |
-	 *     12   8   4   0
-	 *
-	 * For efficient processing, we want to reorder the bytes into:
-	 *
-	 *   JKLLGHIIDEFFABCC
-	 *
-	 * First we reorder the low half using a table:
-	 *
-	 *   HGFEDCBA -> DEFFABCC (lo)
-	 *
-	 * Then we left-rotate the whole string by 2 bytes:
-	 *
-	 *   NMLKJIHGFEDCBAPO
-	 *
-	 * Take the high half and reorder using the table:
-	 *
-	 *   NMLKJIHG -> JKLLGHII (hi)
-	 *
-	 * Then combine upper and lower into the desired vector.
-	 *
-	 */
-	tbl_shuf = vld1_u8((uint8_t *)t);
-	lo = vtbl1_u8(vget_low_u8(str), tbl_shuf);
-	hi = vtbl1_u8(vget_high_u8(vextq_u8(str, str, 14)), tbl_shuf);
-	str = vcombine_u8(lo, hi);
+	/* Divide bits of three input bytes over four output bytes: */
+	res.val[0] = vshrq_n_u8(str.val[0], 2);
+	res.val[1] = vshrq_n_u8(str.val[1], 4) | vshlq_n_u8(str.val[0], 4);
+	res.val[2] = vshrq_n_u8(str.val[2], 6) | vshlq_n_u8(str.val[1], 2);
+	res.val[3] = str.val[2];
 
-	/* Mask to pass through only the lower 6 bits of one byte: */
-	mask = vdupq_n_u32(0x3F000000);
-
-	/* Shift bits by 2, mask in only the first byte: */
-	res = (uint8x16_t)(vshrq_n_u32((uint32x4_t)str, 2) & mask);
-
-	/* Shift bits by 4, mask in only the second byte: */
-	res = vbslq_u8(
-		(uint8x16_t)vshrq_n_u32(mask, 8),
-		(uint8x16_t)vshrq_n_u32((uint32x4_t)str, 4),
-		res
-	);
-	/* Shift bits by 6, mask in only the third byte: */
-	res = vbslq_u8(
-		(uint8x16_t)vshrq_n_u32(mask, 16),
-		(uint8x16_t)vshrq_n_u32((uint32x4_t)str, 6),
-		res
-	);
-	/* Shift bits by 8, mask in only the fourth byte: */
-	res = vbslq_u8(
-		(uint8x16_t)vshrq_n_u32(mask, 24),
-		str,
-		res
-	);
-	/* Reorder to 32-bit little-endian: */
-	res = vrev32q_u8(res);
+	/* Clear top two bits: */
+	res.val[0] &= vdupq_n_u8(0x3F);
+	res.val[1] &= vdupq_n_u8(0x3F);
+	res.val[2] &= vdupq_n_u8(0x3F);
+	res.val[3] &= vdupq_n_u8(0x3F);
 
 	/* The bits have now been shifted to the right locations;
 	 * translate their values 0..63 to the Base64 alphabet. */
 
 	/* Make a mask for all bytes >= 32: */
-	himask = vcgeq_u8(res, vdupq_n_u8(32));
+	himask.val[0] = vcgeq_u8(res.val[0], vdupq_n_u8(32));
+	himask.val[1] = vcgeq_u8(res.val[1], vdupq_n_u8(32));
+	himask.val[2] = vcgeq_u8(res.val[2], vdupq_n_u8(32));
+	himask.val[3] = vcgeq_u8(res.val[3], vdupq_n_u8(32));
 
 	/* Make two sets; saturate-subtract 32 from high set: */
-	loset = res;
-	hiset = vqsubq_u8(res, vdupq_n_u8(32));
+	hiset.val[0] = vqsubq_u8(res.val[0], vdupq_n_u8(32));
+	hiset.val[1] = vqsubq_u8(res.val[1], vdupq_n_u8(32));
+	hiset.val[2] = vqsubq_u8(res.val[2], vdupq_n_u8(32));
+	hiset.val[3] = vqsubq_u8(res.val[3], vdupq_n_u8(32));
 
 	/* Split sets into halves, do 32-bit table lookup on each half: */
-	loset = vcombine_u8(
-		vtbl4_u8(tbl_enc_lo, vget_low_u8(loset)),
-		vtbl4_u8(tbl_enc_lo, vget_high_u8(loset))
+	res.val[0] = vcombine_u8(
+		vtbl4_u8(tbl_enc_lo, vget_low_u8(res.val[0])),
+		vtbl4_u8(tbl_enc_lo, vget_high_u8(res.val[0]))
 	);
-	hiset = vcombine_u8(
-		vtbl4_u8(tbl_enc_hi, vget_low_u8(hiset)),
-		vtbl4_u8(tbl_enc_hi, vget_high_u8(hiset))
+	res.val[1] = vcombine_u8(
+		vtbl4_u8(tbl_enc_lo, vget_low_u8(res.val[1])),
+		vtbl4_u8(tbl_enc_lo, vget_high_u8(res.val[1]))
 	);
-	/* Combine and store result: */
-	vst1q_u8((uint8_t *)o, vbslq_u8(himask, hiset, loset));
+	res.val[2] = vcombine_u8(
+		vtbl4_u8(tbl_enc_lo, vget_low_u8(res.val[2])),
+		vtbl4_u8(tbl_enc_lo, vget_high_u8(res.val[2]))
+	);
+	res.val[3] = vcombine_u8(
+		vtbl4_u8(tbl_enc_lo, vget_low_u8(res.val[3])),
+		vtbl4_u8(tbl_enc_lo, vget_high_u8(res.val[3]))
+	);
 
-	c += 12;	/* 3 * 4 bytes of input  */
-	o += 16;	/* 4 * 4 bytes of output */
-	outl += 16;
-	srclen -= 12;
+	hiset.val[0] = vcombine_u8(
+		vtbl4_u8(tbl_enc_hi, vget_low_u8(hiset.val[0])),
+		vtbl4_u8(tbl_enc_hi, vget_high_u8(hiset.val[0]))
+	);
+	hiset.val[1] = vcombine_u8(
+		vtbl4_u8(tbl_enc_hi, vget_low_u8(hiset.val[1])),
+		vtbl4_u8(tbl_enc_hi, vget_high_u8(hiset.val[1]))
+	);
+	hiset.val[2] = vcombine_u8(
+		vtbl4_u8(tbl_enc_hi, vget_low_u8(hiset.val[2])),
+		vtbl4_u8(tbl_enc_hi, vget_high_u8(hiset.val[2]))
+	);
+	hiset.val[3] = vcombine_u8(
+		vtbl4_u8(tbl_enc_hi, vget_low_u8(hiset.val[3])),
+		vtbl4_u8(tbl_enc_hi, vget_high_u8(hiset.val[3]))
+	);
+
+	/* Construct the result: */
+	res.val[0] = vbslq_u8(himask.val[0], hiset.val[0], res.val[0]);
+	res.val[1] = vbslq_u8(himask.val[1], hiset.val[1], res.val[1]);
+	res.val[2] = vbslq_u8(himask.val[2], hiset.val[2], res.val[2]);
+	res.val[3] = vbslq_u8(himask.val[3], hiset.val[3], res.val[3]);
+
+	/* Decrement source length, issue a preload instruction
+	 * for the next round if applicable: */
+	srclen -= 48;
+	if (srclen >= 48) {
+		__asm("pld [%0, #48]" : "+r" (c));
+	}
+	/* Store result: */
+	vst4q_u8((uint8_t *)o, res);
+
+	c += 48;	/* 3 * 16 bytes of input  */
+	o += 64;	/* 4 * 16 bytes of output */
+	outl += 64;
 }
