@@ -4,6 +4,13 @@
 #include "../include/libbase64.h"
 #include "codecs.h"
 
+/* Define machine endianness: */
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+	#define LITTLE_ENDIAN 1
+#else
+	#define LITTLE_ENDIAN 0
+#endif
+
 BASE64_ENC_FUNCTION(plain)
 {
 	#include "enc/head.c"

@@ -6,10 +6,14 @@ while (srclen >= 8)
 	/* Load string: */
 	uint64_t str = *(uint64_t *)c;
 
+#if LITTLE_ENDIAN
+
 	/* Reorder to 64-bit big-endian.
 	 * The workset must be in big-endian, otherwise the shifted bits
 	 * do not carry over properly among adjacent bytes: */
 	str = __builtin_bswap64(str);
+
+#endif
 
 	/* Shift input by 6 bytes each round and mask in only the
 	 * lower 6 bits; look up the character in the Base64 encoding

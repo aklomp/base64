@@ -10,8 +10,12 @@ while (srclen >= 13)
 	/* Load string: */
 	str = *(uint64_t *)c;
 
+#if LITTLE_ENDIAN
+
 	/* Shuffle bytes to 64-bit bigendian: */
 	str = __builtin_bswap64(str);
+
+#endif
 
 	/* Lookup each byte in the decoding table; if we encounter any
 	 * "invalid" values, fall back on the bytewise code: */
@@ -55,8 +59,12 @@ while (srclen >= 13)
 	}
 	res |= dec << 16;
 
+#if LITTLE_ENDIAN
+
 	/* Reshuffle and repack into 6-byte output format: */
 	res = __builtin_bswap64(res);
+
+#endif
 
 	/* Store back: */
 	*(uint64_t *)o = res;
