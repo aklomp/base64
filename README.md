@@ -87,8 +87,11 @@ HAVE_AVX2=0 make
 
 NEON support can unfortunately not be portably detected at runtime from
 userland (the `mrc` instruction is privileged), so NEON support is enabled or
-disabled at compile time. If your compiler supports the `-mfpu=neon` flag, and
-you specify a target processor, the library will be built with NEON support.
+disabled at compile time. As is usual on ARM, you are responsible for supplying
+the proper architecture flags to the compiler. Stuff them in the `CFLAGS`
+environment variable as demonstrated below. The library checks the builtin
+preprocessor defines in the environment to check if it should include NEON
+support.
 
 Use LLVM/Clang for compiling the NEON codec. The code generation of at least
 GCC 4.6 (the version shipped with Raspbian and used for testing) contains a bug
@@ -96,16 +99,10 @@ when compiling `vstq4_u8()`, and the generated assembly code is of low quality.
 NEON intrinsics are a known weak area of GCC. Clang does a decent job.
 
 Putting this together, this is how you should compile on ARM, substituting your
-own processor definition(s) of course:
+own system/processor definition(s) of course:
 
 ```sh
-CC=clang CFLAGS=-mcpu=cortex-a9 make
-```
-
-To build without NEON support, type:
-
-```sh
-HAVE_NEON=0 make
+CC=clang CFLAGS="-mcpu=cortex-a9 -mfpu=neon" make
 ```
 
 ## API reference

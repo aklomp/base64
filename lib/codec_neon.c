@@ -1,3 +1,7 @@
+#if (defined(__ARM_NEON) && !defined(__ARM_NEON__))
+#define __ARM_NEON__
+#endif
+
 #include <stddef.h>
 #ifdef __ARM_NEON__
 #include <arm_neon.h>

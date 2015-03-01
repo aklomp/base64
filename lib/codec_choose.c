@@ -11,7 +11,6 @@
 #endif
 
 #include "../include/libbase64.h"
-#include "codec_avx2.h"
 #include "codec_choose.h"
 #include "config.h"
 
@@ -28,7 +27,7 @@ BASE64_CODEC_FUNCS(ssse3)
 static int
 codec_choose_arm (struct codec *codec)
 {
-#if __arm__ && HAVE_NEON
+#if (defined(__ARM_NEON__) || defined(__ARM_NEON))
 
 	/* Unfortunately there is no portable way to check for NEON
 	 * support at runtime from userland in the same way that x86

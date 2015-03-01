@@ -13,9 +13,8 @@ OBJS = \
 
 # Compile-time feature detection;
 # specifying unavailable architecture flags causes compiler errors:
-HAVE_AVX2  ?= $(shell echo 'int main;' | $(CC) -mavx2     -Werror -o /dev/null -x c - >/dev/null 2>&1 && echo 1 || echo 0)
-HAVE_NEON  ?= $(shell echo 'int main;' | $(CC) -mfpu=neon -Werror -o /dev/null -x c - >/dev/null 2>&1 && echo 1 || echo 0)
-HAVE_SSSE3 ?= $(shell echo 'int main;' | $(CC) -mssse3    -Werror -o /dev/null -x c - >/dev/null 2>&1 && echo 1 || echo 0)
+HAVE_AVX2  ?= $(shell echo 'int main;' | $(CC) -mavx2  -Werror -o /dev/null -x c - >/dev/null 2>&1 && echo 1 || echo 0)
+HAVE_SSSE3 ?= $(shell echo 'int main;' | $(CC) -mssse3 -Werror -o /dev/null -x c - >/dev/null 2>&1 && echo 1 || echo 0)
 
 .PHONY: all analyze clean
 
@@ -33,17 +32,12 @@ endif
 
 lib/config.h:
 	@echo "#define HAVE_AVX2  $(HAVE_AVX2)"   > $@
-	@echo "#define HAVE_NEON  $(HAVE_NEON)"  >> $@
 	@echo "#define HAVE_SSSE3 $(HAVE_SSSE3)" >> $@
 
 lib/codec_choose.o: lib/config.h
 
 ifeq ($(HAVE_AVX2), 1)
 lib/codec_avx2.o: CFLAGS += -mavx2
-endif
-
-ifeq ($(HAVE_NEON), 1)
-lib/codec_neon.o: CFLAGS += -mfpu=neon
 endif
 
 ifeq ($(HAVE_SSSE3), 1)
