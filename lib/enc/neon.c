@@ -75,16 +75,11 @@ while (srclen >= 48)
 	res.val[2] = vbslq_u8(himask.val[2], hiset.val[2], res.val[2]);
 	res.val[3] = vbslq_u8(himask.val[3], hiset.val[3], res.val[3]);
 
-	/* Decrement source length, issue a preload instruction
-	 * for the next round if applicable: */
-	srclen -= 48;
-	if (srclen >= 48) {
-		__asm("pld [%0, #48]" : "+r" (c));
-	}
 	/* Store result: */
 	vst4q_u8((uint8_t *)o, res);
 
 	c += 48;	/* 3 * 16 bytes of input  */
 	o += 64;	/* 4 * 16 bytes of output */
 	outl += 64;
+	srclen -= 48;
 }
