@@ -7,7 +7,8 @@ OBJS = \
   lib/libbase64.o \
   lib/codec_avx2.o \
   lib/codec_choose.o \
-  lib/codec_neon.o \
+  lib/codec_neon32.o \
+  lib/codec_neon64.o \
   lib/codec_plain.o \
   lib/codec_ssse3.o
 
