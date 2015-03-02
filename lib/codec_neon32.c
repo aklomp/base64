@@ -38,6 +38,10 @@ static const char *base64_table_enc_transposed[2] =
 };
 #endif
 
+/* Stride size is so large on these NEON 32-bit functions
+ * (48 bytes encode, 32 bytes decode) that we inline the
+ * uint32 codec to stay performant on smaller inputs. */
+
 void
 base64_stream_encode_neon32 (struct base64_state *state, const char *const src, size_t srclen, char *const out, size_t *const outlen)
 {
@@ -47,6 +51,7 @@ base64_stream_encode_neon32 (struct base64_state *state, const char *const src, 
 
 	#include "enc/head.c"
 	#include "enc/neon32.c"
+	#include "enc/uint32.c"
 	#include "enc/tail.c"
 #else
 	(void)state;
@@ -63,6 +68,7 @@ base64_stream_decode_neon32 (struct base64_state *state, const char *const src, 
 #if (defined(__arm__) && defined(__ARM_NEON__))
 	#include "dec/head.c"
 	#include "dec/neon32.c"
+	#include "dec/uint32.c"
 	#include "dec/tail.c"
 #else
 	(void)state;
