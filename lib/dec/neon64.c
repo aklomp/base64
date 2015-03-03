@@ -1,9 +1,7 @@
-/* If we have NEON 64-bit support, pick off 64 bytes at a time for as
- * long as we can. Make sure that we quit before seeing any == markers
- * at the end of the string. Also, because we write four zeroes at the
- * end of the output, ensure that there are at least 6 valid bytes of
- * input data remaining to close the gap. 64 + 2 + 6 = 72 bytes: */
-while (srclen >= 72)
+/* If we have NEON 64-bit support, pick off 64 bytes at a time for as long as
+ * we can. Unlike the SSE codecs, we don't write trailing zero bytes to output,
+ * so we don't need to check if we have enough remaining input to cover them: */
+while (srclen >= 64)
 {
 	uint8x16_t classified;
 	uint32x2_t narrowed;

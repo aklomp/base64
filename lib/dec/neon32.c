@@ -1,12 +1,10 @@
-/* If we have NEON support, pick off 32 bytes at a time for as long as
- * we can. We use 64-bit wide vectors instead of 128-bit wide ones,
- * because this routine consumes a lot of registers. By working in
- * 64-bit space, we have enough registers to avoid using the stack.
- * Make sure that we quit before seeing any == markers at the end of
- * the string. Also, because we write four zeroes at the end of the
- * output, ensure that there are at least 6 valid bytes of input data
- * remaining to close the gap. 32 + 2 + 6 = 40 bytes: */
-while (srclen >= 40)
+/* If we have NEON support on 32-bit ARM, pick off 32 bytes at a time for as
+ * long as we can. We use 64-bit wide vectors instead of 128-bit wide ones,
+ * because this routine consumes a lot of registers. By working in 64-bit
+ * space, we have enough registers to avoid using the stack.
+ * Unlike the SSE codecs, we don't write trailing zero bytes to output, so we
+ * don't need to check if we have enough remaining input to cover them: */
+while (srclen >= 32)
 {
 	uint8x8_t classified;
 	uint8x8x4_t s1mask, s2mask, s3mask, s4mask, s5mask;
