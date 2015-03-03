@@ -1,8 +1,9 @@
 # Fast Base64 stream encoder/decoder
 
 This is an implementation of a base64 stream encoding/decoding library in C89
-with SIMD (AVX2, NEON, SSSE3) acceleration. It also contains wrapper functions
-to encode/decode simple length-delimited strings. This library aims to be:
+with SIMD (AVX2, NEON, AArch64/NEON, SSSE3) acceleration. It also contains
+wrapper functions to encode/decode simple length-delimited strings. This
+library aims to be:
 
 - FAST;
 - easy to use;
@@ -30,10 +31,10 @@ Base64 library to offer SIMD acceleration. The author wrote
 possible SIMD approach to encoding/decoding Base64. The article can help figure
 out what the code is doing, and why.
 
-The original AVX2 and NEON codecs were generously contributed by
+The original AVX2, NEON and Aarch64/NEON codecs were generously contributed by
 [Inkymail](https://github.com/inkymail/base64), who, in their fork, also
-implemented a NEON64 codec and some additional features. Their work is
-slowly being backported into this project.
+implemented some additional features. Their work is slowly being backported
+into this project.
 
 Notable features:
 
@@ -85,6 +86,12 @@ HAVE_AVX2=0 make
 
 ### NEON
 
+This library includes two NEON codecs: one for regular 32-bit ARM and one for
+the 64-bit AArch64 with NEON, which has double the amount of SIMD registers and
+can do full 64-byte table lookups. That codec encodes in 48-byte chunks and
+decodes in massive 64-byte chunks, so it had to be augmented with an uint64
+codec to stay fast on smaller inputs!
+
 NEON support can unfortunately not be portably detected at runtime from
 userland (the `mrc` instruction is privileged), so NEON support is enabled or
 disabled at compile time. As is usual on ARM, you are responsible for supplying
@@ -96,7 +103,7 @@ support.
 Use LLVM/Clang for compiling the NEON codec. The code generation of at least
 GCC 4.6 (the version shipped with Raspbian and used for testing) contains a bug
 when compiling `vstq4_u8()`, and the generated assembly code is of low quality.
-NEON intrinsics are a known weak area of GCC. Clang does a decent job.
+NEON intrinsics are a known weak area of GCC. Clang does a better job.
 
 Putting this together, this is how you should compile on ARM, substituting your
 own system/processor definition(s) of course:
