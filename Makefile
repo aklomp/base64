@@ -1,7 +1,7 @@
 LIBTOOL = libtool
 UNAME_S = $(shell uname -s)
 
-CFLAGS += -std=c89 -O3 -Wall -Wextra -pedantic
+CFLAGS += -O3 -Wall -Wextra -pedantic
 
 OBJS = \
   lib/libbase64.o \

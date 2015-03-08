@@ -1,4 +1,4 @@
-CFLAGS += -std=c89 -O3 -Wall -Wextra -pedantic
+CFLAGS += -O3 -Wall -Wextra -pedantic
 
 .PHONY: clean test
 
