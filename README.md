@@ -126,12 +126,27 @@ legitimate zero bytes. In the encoding step, returning the length saves the
 overhead of calling `strlen()` on the output. If you insist on the trailing
 zero, you can easily add it yourself at the given offset.
 
+### Flags
+
+Some API calls take a `flags` argument.
+That argument can be used to force the use of a specific codec, even if that codec is a no-op in the current build.
+Mainly there for testing purposes, this is also useful on ARM where the only way to do runtime NEON detection is to ask the OS if it's available.
+The following constants can be used:
+
+- `BASE64_FORCE_AVX2`
+- `BASE64_FORCE_NEON32`
+- `BASE64_FORCE_NEON64`
+- `BASE64_FORCE_PLAIN`
+- `BASE64_FORCE_SSSE3`
+
+Set `flags` to `0` for the default behavior, which is runtime feature detection on x86, a compile-time fixed codec on ARM, and the plain codec on other platforms.
+
 ### Encoding
 
 #### base64_encode
 
 ```c
-void base64_encode (const char *const src, size_t srclen, char *const out, size_t *const outlen);
+void base64_encode (const char *const src, size_t srclen, char *const out, size_t *const outlen, int flags);
 ```
 
 Wrapper function to encode a plain string of given length.
@@ -142,7 +157,7 @@ The buffer in `out` has been allocated by the caller and is at least 4/3 the siz
 #### base64_stream_encode_init
 
 ```c
-void base64_stream_encode_init (struct base64_state *);
+void base64_stream_encode_init (struct base64_state *, int flags);
 ```
 
 Call this before calling `base64_stream_encode()` to init the state.
@@ -173,7 +188,7 @@ Adds the required end-of-stream markers if appropriate.
 #### base64_decode
 
 ```c
-int base64_decode (const char *const src, size_t srclen, char *const out, size_t *const outlen);
+int base64_decode (const char *const src, size_t srclen, char *const out, size_t *const outlen, int flags);
 ```
 
 Wrapper function to decode a plain string of given length.
@@ -183,7 +198,7 @@ The buffer in `out` has been allocated by the caller and is at least 3/4 the siz
 #### base64_stream_decode_init
 
 ```c
-void base64_stream_decode_init (struct base64_state *);
+void base64_stream_decode_init (struct base64_state *, int flags);
 ```
 
 Call this before calling `base64_stream_decode()` to init the state.
@@ -218,7 +233,7 @@ int main ()
 	size_t srclen = sizeof(src) - 1;
 	size_t outlen;
 
-	base64_encode(src, srclen, out, &outlen);
+	base64_encode(src, srclen, out, &outlen, 0);
 
 	fwrite(out, outlen, 1, stdout);
 
@@ -239,7 +254,7 @@ int main ()
 	char buf[12000], out[16000];
 	struct base64_state state;
 
-	base64_stream_encode_init(&state);
+	base64_stream_encode_init(&state, 0);
 	while ((nread = fread(buf, 1, sizeof(buf), stdin)) > 0) {
 		base64_stream_encode(&state, buf, nread, out, &nout);
 		if (nout) fwrite(out, nout, 1, stdout);

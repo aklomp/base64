@@ -17,7 +17,7 @@ enc (FILE *fp)
 	int ret = 1;
 	struct base64_state state;
 
-	base64_stream_encode_init(&state);
+	base64_stream_encode_init(&state, 0);
 
 	while ((nread = fread(buf, 1, BUFSIZE, fp)) > 0) {
 		base64_stream_encode(&state, buf, nread, out, &nout);
@@ -49,7 +49,7 @@ dec (FILE *fp)
 	int ret = 1;
 	struct base64_state state;
 
-	base64_stream_decode_init(&state);
+	base64_stream_decode_init(&state, 0);
 
 	while ((nread = fread(buf, 1, BUFSIZE, fp)) > 0) {
 		if (!base64_stream_decode(&state, buf, nread, out, &nout)) {

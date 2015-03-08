@@ -12,7 +12,7 @@ assert_enc (char *src, char *dst)
 	size_t srclen = strlen(src);
 	size_t dstlen = strlen(dst);
 
-	base64_encode(src, srclen, out, &outlen);
+	base64_encode(src, srclen, out, &outlen, 0);
 
 	if (outlen != dstlen) {
 		printf("FAIL: encoding of '%s': length expected %lu, got %lu\n", src,
@@ -37,7 +37,7 @@ assert_dec (char *src, char *dst)
 	size_t srclen = strlen(src);
 	size_t dstlen = strlen(dst);
 
-	if (!base64_decode(src, srclen, out, &outlen)) {
+	if (!base64_decode(src, srclen, out, &outlen, 0)) {
 		printf("FAIL: decoding of '%s': decoding error\n", src);
 		ret = 1;
 		return 0;
@@ -67,9 +67,9 @@ assert_roundtrip (char *src)
 	size_t tmplen;
 	size_t srclen = strlen(src);
 
-	base64_encode(src, srclen, out, &outlen);
+	base64_encode(src, srclen, out, &outlen, 0);
 
-	if (!base64_decode(out, outlen, tmp, &tmplen)) {
+	if (!base64_decode(out, outlen, tmp, &tmplen, 0)) {
 		printf("FAIL: decoding of '%s': decoding error\n", out);
 		ret = 1;
 		return 0;
@@ -110,9 +110,9 @@ test_char_table (void)
 	{
 		size_t chrlen = 256 - i;
 
-		base64_encode(&chr[i], chrlen, enc, &enclen);
+		base64_encode(&chr[i], chrlen, enc, &enclen, 0);
 
-		if (!base64_decode(enc, enclen, dec, &declen)) {
+		if (!base64_decode(enc, enclen, dec, &declen, 0)) {
 			printf("FAIL: decoding @ %d: decoding error\n", i);
 			ret = 1;
 			continue;
@@ -148,7 +148,7 @@ test_streaming (void)
 		chr[i] = (unsigned char)i;
 	}
 	/* Create reference base64 encoding: */
-	base64_encode(chr, 256, ref, &reflen);
+	base64_encode(chr, 256, ref, &reflen, 0);
 
 	/* Encode the table with various block sizes and compare to reference: */
 	for (bs = 1; bs < 255; bs++)
@@ -157,7 +157,7 @@ test_streaming (void)
 		size_t partlen = 0;
 		enclen = 0;
 
-		base64_stream_encode_init(&state);
+		base64_stream_encode_init(&state, 0);
 		memset(enc, 0, 400);
 		for (;;) {
 			base64_stream_encode(&state, &chr[inpos], (inpos + bs > 256) ? 256 - inpos : bs, &enc[enclen], &partlen);
@@ -193,7 +193,7 @@ test_streaming (void)
 		size_t partlen = 0;
 		enclen = 0;
 
-		base64_stream_decode_init(&state);
+		base64_stream_decode_init(&state, 0);
 		memset(enc, 0, 400);
 		while (base64_stream_decode(&state, &ref[inpos], (inpos + bs > reflen) ? reflen - inpos : bs, &enc[enclen], &partlen)) {
 			enclen += partlen;

@@ -11,4 +11,4 @@ struct codec
 	func_dec_t dec;
 };
 
-void codec_choose (struct codec *);
+void codec_choose (struct codec *, int flags);

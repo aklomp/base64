@@ -1,20 +1,33 @@
 #ifndef _LIBBASE64_H
 #define _LIBBASE64_H
 
+/* These are the flags that can be passed in the `flags` argument. The values
+ * below force the use of a given codec, even if that codec is a no-op in the
+ * current build. Used in testing. Set to 0 for the default behavior, which is
+ * runtime feature detection on x86, a compile-time fixed codec on ARM, and
+ * the plain codec on other platforms: */
+#define BASE64_FORCE_AVX2	(1 << 0)
+#define BASE64_FORCE_NEON32	(1 << 1)
+#define BASE64_FORCE_NEON64	(1 << 2)
+#define BASE64_FORCE_PLAIN	(1 << 3)
+#define BASE64_FORCE_SSSE3	(1 << 4)
+
 struct base64_state {
 	int eof;
 	int bytes;
+	int flags;
 	unsigned char carry;
 };
 
 /* Wrapper function to encode a plain string of given length. Output is written
  * to *out without trailing zero. Output length in bytes is written to *outlen.
  * The buffer in `out` has been allocated by the caller and is at least 4/3 the
- * size of the input: */
-void base64_encode (const char *const src, size_t srclen, char *const out, size_t *const outlen);
+ * size of the input. See above for `flags`; set to 0 for default operation: */
+void base64_encode (const char *const src, size_t srclen, char *const out, size_t *const outlen, int flags);
 
-/* Call this before calling base64_stream_encode() to init the state: */
-void base64_stream_encode_init (struct base64_state *);
+/* Call this before calling base64_stream_encode() to init the state. See above
+ * for `flags`; set to 0 for default operation: */
+void base64_stream_encode_init (struct base64_state *, int flags);
 
 /* Encodes the block of data of given length at `src`, into the buffer at
  * `out`. Caller is responsible for allocating a large enough out-buffer; it
@@ -32,11 +45,12 @@ void base64_stream_encode_final (struct base64_state *, char *const out, size_t 
 /* Wrapper function to decode a plain string of given length. Output is written
  * to *out without trailing zero. Output length in bytes is written to *outlen.
  * The buffer in `out` has been allocated by the caller and is at least 3/4 the
- * size of the input. */
-int base64_decode (const char *const src, size_t srclen, char *const out, size_t *const outlen);
+ * size of the input. See above for `flags`, set to 0 for default operation: */
+int base64_decode (const char *const src, size_t srclen, char *const out, size_t *const outlen, int flags);
 
-/* Call this before calling base64_stream_decode() to init the state: */
-void base64_stream_decode_init (struct base64_state *);
+/* Call this before calling base64_stream_decode() to init the state. See above
+ * for `flags`; set to 0 for default operation: */
+void base64_stream_decode_init (struct base64_state *, int flags);
 
 /* Decodes the block of data of given length at `src`, into the buffer at
  * `out`. Caller is responsible for allocating a large enough out-buffer; it

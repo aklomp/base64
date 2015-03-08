@@ -42,14 +42,16 @@ base64_table_dec[] =
 };
 
 void
-base64_stream_encode_init (struct base64_state *state)
+base64_stream_encode_init (struct base64_state *state, int flags)
 {
-	if (codec.enc == NULL) {
-		codec_choose(&codec);
+	/* If any of the codec flags are set, redo choice: */
+	if (codec.enc == NULL || flags & 0x1F) {
+		codec_choose(&codec, flags);
 	}
 	state->eof = 0;
 	state->bytes = 0;
 	state->carry = 0;
+	state->flags = flags;
 }
 
 void
@@ -80,14 +82,16 @@ base64_stream_encode_final (struct base64_state *state, char *const out, size_t 
 }
 
 void
-base64_stream_decode_init (struct base64_state *state)
+base64_stream_decode_init (struct base64_state *state, int flags)
 {
-	if (codec.dec == NULL) {
-		codec_choose(&codec);
+	/* If any of the codec flags are set, redo choice: */
+	if (codec.dec == NULL || flags & 0x1F) {
+		codec_choose(&codec, flags);
 	}
 	state->eof = 0;
 	state->bytes = 0;
 	state->carry = 0;
+	state->flags = flags;
 }
 
 int
@@ -97,14 +101,14 @@ base64_stream_decode (struct base64_state *state, const char *const src, size_t 
 }
 
 void
-base64_encode (const char *const src, size_t srclen, char *const out, size_t *const outlen)
+base64_encode (const char *const src, size_t srclen, char *const out, size_t *const outlen, int flags)
 {
 	size_t s;
 	size_t t;
 	struct base64_state state;
 
 	/* Init the stream reader: */
-	base64_stream_encode_init(&state);
+	base64_stream_encode_init(&state, flags);
 
 	/* Feed the whole string to the stream reader: */
 	base64_stream_encode(&state, src, srclen, out, &s);
@@ -117,10 +121,10 @@ base64_encode (const char *const src, size_t srclen, char *const out, size_t *co
 }
 
 int
-base64_decode (const char *const src, size_t srclen, char *const out, size_t *outlen)
+base64_decode (const char *const src, size_t srclen, char *const out, size_t *outlen, int flags)
 {
 	struct base64_state state;
 
-	base64_stream_decode_init(&state);
+	base64_stream_decode_init(&state, flags);
 	return base64_stream_decode(&state, src, srclen, out, outlen);
 }
