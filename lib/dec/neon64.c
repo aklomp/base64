@@ -50,7 +50,7 @@ while (srclen >= 64)
 	classified &= (s1mask.val[2] | s2mask.val[2] | s3mask.val[2] | s4mask.val[2] | s5mask.val[2]);
 	classified &= (s1mask.val[3] | s2mask.val[3] | s3mask.val[3] | s4mask.val[3] | s5mask.val[3]);
 
-	/* Perform a narrowing shift to make a 64-byte vector: */
+	/* Perform a narrowing shift to make a 64-bit vector: */
 	narrowed = (uint32x2_t)vshrn_n_u16(vmvnq_u8(classified), 4);
 
 	/* Extract both 32-bit halves; check that all bits are zero: */
@@ -89,7 +89,7 @@ while (srclen >= 64)
 	dec.val[1] = vshlq_n_u8(res.val[1], 4) | vshrq_n_u8(res.val[2], 2);
 	dec.val[2] = vshlq_n_u8(res.val[2], 6) | res.val[3];
 
-	/* Store decoded result: */
+	/* Interleave and store decoded result: */
 	vst3q_u8((uint8_t *)o, dec);
 
 	c += 64;

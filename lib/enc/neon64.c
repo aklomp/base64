@@ -4,7 +4,7 @@ while (srclen >= 48)
 	uint8x16x3_t str;
 	uint8x16x4_t res;
 
-	/* Load 48 bytes, interleaved: */
+	/* Load 48 bytes and deinterleave: */
 	str = vld3q_u8((uint8_t *)c);
 
 	/* Divide bits of three input bytes over four output bytes: */
@@ -21,13 +21,13 @@ while (srclen >= 48)
 
 	/* The bits have now been shifted to the right locations;
 	 * translate their values 0..63 to the Base64 alphabet.
-	 * Use a 64-bit table lookup: */
+	 * Use a 64-byte table lookup: */
 	res.val[0] = vqtbl4q_u8(tbl_enc, res.val[0]);
 	res.val[1] = vqtbl4q_u8(tbl_enc, res.val[1]);
 	res.val[2] = vqtbl4q_u8(tbl_enc, res.val[2]);
 	res.val[3] = vqtbl4q_u8(tbl_enc, res.val[3]);
 
-	/* Store result: */
+	/* Interleave and store result: */
 	vst4q_u8((uint8_t *)o, res);
 
 	c += 48;	/* 3 * 16 bytes of input  */

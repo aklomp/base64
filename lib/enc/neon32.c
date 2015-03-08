@@ -4,7 +4,7 @@ while (srclen >= 48)
 	uint8x16x3_t str;
 	uint8x16x4_t res, hiset, himask;
 
-	/* Load 48 bytes, interleaved: */
+	/* Load 48 bytes and deinterleave: */
 	str = vld3q_u8((uint8_t *)c);
 
 	/* Divide bits of three input bytes over four output bytes: */
@@ -34,7 +34,7 @@ while (srclen >= 48)
 	hiset.val[2] = vqsubq_u8(res.val[2], vdupq_n_u8(32));
 	hiset.val[3] = vqsubq_u8(res.val[3], vdupq_n_u8(32));
 
-	/* Split sets into halves, do 32-bit table lookup on each half: */
+	/* Split sets into halves, do 32-byte table lookup on each half: */
 	res.val[0] = vcombine_u8(
 		vtbl4_u8(tbl_enc_lo, vget_low_u8(res.val[0])),
 		vtbl4_u8(tbl_enc_lo, vget_high_u8(res.val[0]))
@@ -75,7 +75,7 @@ while (srclen >= 48)
 	res.val[2] = vbslq_u8(himask.val[2], hiset.val[2], res.val[2]);
 	res.val[3] = vbslq_u8(himask.val[3], hiset.val[3], res.val[3]);
 
-	/* Store result: */
+	/* Interleave and store result: */
 	vst4q_u8((uint8_t *)o, res);
 
 	c += 48;	/* 3 * 16 bytes of input  */

@@ -89,7 +89,7 @@ while (srclen >= 32)
 	dec.val[1] = vshl_n_u8(res.val[1], 4) | vshr_n_u8(res.val[2], 2);
 	dec.val[2] = vshl_n_u8(res.val[2], 6) | res.val[3];
 
-	/* Store decoded result: */
+	/* Interleave and store decoded result: */
 	vst3_u8((uint8_t *)o, dec);
 
 	c += 32;
