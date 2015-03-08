@@ -20,7 +20,8 @@ base64_stream_encode_avx2 (struct base64_state *state, const char *const src, si
 	(void)src;
 	(void)srclen;
 	(void)out;
-	(void)outlen;
+
+	*outlen = 0;
 #endif
 }
 
@@ -38,6 +39,6 @@ base64_stream_decode_avx2 (struct base64_state *state, const char *const src, si
 	(void)out;
 	(void)outlen;
 
-	return 0;
+	return -1;
 #endif
 }

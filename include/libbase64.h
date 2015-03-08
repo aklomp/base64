@@ -43,7 +43,9 @@ void base64_stream_decode_init (struct base64_state *);
  * must be at least 3/4 the size of the in-buffer, but take some margin. Places
  * the number of new bytes written into `outlen` (which is set to zero when the
  * function starts). Does not zero-terminate the output. Returns 1 if all is
- * well, and 0 if a decoding error was found, such as an invalid character. */
+ * well, and 0 if a decoding error was found, such as an invalid character.
+ * Returns -1 if the chosen codec is not included in the current build. Used by
+ * the test harness to check whether a codec is available for testing. */
 int base64_stream_decode (struct base64_state *, const char *const src, size_t srclen, char *const out, size_t *const outlen);
 
 #endif /* _LIBBASE64_H */

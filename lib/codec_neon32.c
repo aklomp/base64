@@ -58,7 +58,8 @@ base64_stream_encode_neon32 (struct base64_state *state, const char *const src, 
 	(void)src;
 	(void)srclen;
 	(void)out;
-	(void)outlen;
+
+	*outlen = 0;
 #endif
 }
 
@@ -77,6 +78,6 @@ base64_stream_decode_neon32 (struct base64_state *state, const char *const src, 
 	(void)out;
 	(void)outlen;
 
-	return 0;
+	return -1;
 #endif
 }

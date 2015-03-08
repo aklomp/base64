@@ -194,6 +194,8 @@ Caller is responsible for allocating a large enough out-buffer; it must be at le
 Places the number of new bytes written into `outlen` (which is set to zero when the function starts).
 Does not zero-terminate the output.
 Returns 1 if all is well, and 0 if a decoding error was found, such as an invalid character.
+Returns -1 if the chosen codec is not included in the current build.
+Used by the test harness to check whether a codec is available for testing.
 
 ## Examples
 
