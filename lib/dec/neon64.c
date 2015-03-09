@@ -49,9 +49,10 @@ while (srclen >= 64)
 	classified &= (s1mask.val[1] | s2mask.val[1] | s3mask.val[1] | s4mask.val[1] | s5mask.val[1]);
 	classified &= (s1mask.val[2] | s2mask.val[2] | s3mask.val[2] | s4mask.val[2] | s5mask.val[2]);
 	classified &= (s1mask.val[3] | s2mask.val[3] | s3mask.val[3] | s4mask.val[3] | s5mask.val[3]);
+	classified  = vmvnq_u8(classified);
 
 	/* Perform a narrowing shift to make a 64-bit vector: */
-	narrowed = (uint32x2_t)vshrn_n_u16(vmvnq_u8(classified), 4);
+	narrowed = (uint32x2_t)vshrn_n_u16(classified, 4);
 
 	/* Extract both 32-bit halves; check that all bits are zero: */
 	if (vget_lane_u32(narrowed, 0) != 0
