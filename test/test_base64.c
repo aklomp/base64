@@ -2,44 +2,55 @@
 #include <stdio.h>
 #include "../include/libbase64.h"
 
-static int ret = 0;
+static int fail = 0;
 static char out[100];
 static size_t outlen;
 
 static int
-assert_enc (char *src, char *dst)
+codec_supported (int flags)
+{
+	/* Check if given codec is supported by trying to decode a test string: */
+	char *a = "aGVsbG8=";
+	char b[10];
+	size_t outlen;
+
+	return (base64_decode(a, strlen(a), b, &outlen, flags) != -1);
+}
+
+static int
+assert_enc (int flags, char *src, char *dst)
 {
 	size_t srclen = strlen(src);
 	size_t dstlen = strlen(dst);
 
-	base64_encode(src, srclen, out, &outlen, 0);
+	base64_encode(src, srclen, out, &outlen, flags);
 
 	if (outlen != dstlen) {
 		printf("FAIL: encoding of '%s': length expected %lu, got %lu\n", src,
 			(unsigned long)dstlen,
 			(unsigned long)outlen
 		);
-		ret = 1;
+		fail = 1;
 		return 0;
 	}
 	if (strncmp(dst, out, outlen) != 0) {
 		out[outlen] = '\0';
 		printf("FAIL: encoding of '%s': expected output '%s', got '%s'\n", src, dst, out);
-		ret = 1;
+		fail = 1;
 		return 0;
 	}
 	return 1;
 }
 
 static int
-assert_dec (char *src, char *dst)
+assert_dec (int flags, char *src, char *dst)
 {
 	size_t srclen = strlen(src);
 	size_t dstlen = strlen(dst);
 
-	if (!base64_decode(src, srclen, out, &outlen, 0)) {
+	if (!base64_decode(src, srclen, out, &outlen, flags)) {
 		printf("FAIL: decoding of '%s': decoding error\n", src);
-		ret = 1;
+		fail = 1;
 		return 0;
 	}
 	if (outlen != dstlen) {
@@ -48,30 +59,30 @@ assert_dec (char *src, char *dst)
 			(unsigned long)dstlen,
 			(unsigned long)outlen
 		);
-		ret = 1;
+		fail = 1;
 		return 0;
 	}
 	if (strncmp(dst, out, outlen) != 0) {
 		out[outlen] = '\0';
 		printf("FAIL: decoding of '%s': expected output '%s', got '%s'\n", src, dst, out);
-		ret = 1;
+		fail = 1;
 		return 0;
 	}
 	return 1;
 }
 
 static int
-assert_roundtrip (char *src)
+assert_roundtrip (int flags, char *src)
 {
 	char tmp[100];
 	size_t tmplen;
 	size_t srclen = strlen(src);
 
-	base64_encode(src, srclen, out, &outlen, 0);
+	base64_encode(src, srclen, out, &outlen, flags);
 
-	if (!base64_decode(out, outlen, tmp, &tmplen, 0)) {
+	if (!base64_decode(out, outlen, tmp, &tmplen, flags)) {
 		printf("FAIL: decoding of '%s': decoding error\n", out);
-		ret = 1;
+		fail = 1;
 		return 0;
 	}
 	/* Check that 'src' is identical to 'tmp': */
@@ -81,20 +92,20 @@ assert_roundtrip (char *src)
 			(unsigned long)srclen,
 			(unsigned long)tmplen
 		);
-		ret = 1;
+		fail = 1;
 		return 0;
 	}
 	if (strncmp(src, tmp, tmplen) != 0) {
 		tmp[tmplen] = '\0';
 		printf("FAIL: roundtrip of '%s': got '%s'\n", src, tmp);
-		ret = 1;
+		fail = 1;
 		return 0;
 	}
 	return 1;
 }
 
 static void
-test_char_table (void)
+test_char_table (int flags)
 {
 	int i;
 	char chr[256];
@@ -110,11 +121,11 @@ test_char_table (void)
 	{
 		size_t chrlen = 256 - i;
 
-		base64_encode(&chr[i], chrlen, enc, &enclen, 0);
+		base64_encode(&chr[i], chrlen, enc, &enclen, BASE64_FORCE_PLAIN);
 
-		if (!base64_decode(enc, enclen, dec, &declen, 0)) {
+		if (!base64_decode(enc, enclen, dec, &declen, flags)) {
 			printf("FAIL: decoding @ %d: decoding error\n", i);
-			ret = 1;
+			fail = 1;
 			continue;
 		}
 		if (declen != chrlen) {
@@ -123,18 +134,18 @@ test_char_table (void)
 				(unsigned long)chrlen,
 				(unsigned long)declen
 			);
-			ret = 1;
+			fail = 1;
 			continue;
 		}
 		if (strncmp(&chr[i], dec, declen) != 0) {
 			printf("FAIL: roundtrip @ %d: decoded output not same as input\n", i);
-			ret = 1;
+			fail = 1;
 		}
 	}
 }
 
 static void
-test_streaming (void)
+test_streaming (int flags)
 {
 	int i;
 	size_t bs;
@@ -148,7 +159,7 @@ test_streaming (void)
 		chr[i] = (unsigned char)i;
 	}
 	/* Create reference base64 encoding: */
-	base64_encode(chr, 256, ref, &reflen, 0);
+	base64_encode(chr, 256, ref, &reflen, BASE64_FORCE_PLAIN);
 
 	/* Encode the table with various block sizes and compare to reference: */
 	for (bs = 1; bs < 255; bs++)
@@ -157,7 +168,7 @@ test_streaming (void)
 		size_t partlen = 0;
 		enclen = 0;
 
-		base64_stream_encode_init(&state, 0);
+		base64_stream_encode_init(&state, flags);
 		memset(enc, 0, 400);
 		for (;;) {
 			base64_stream_encode(&state, &chr[inpos], (inpos + bs > 256) ? 256 - inpos : bs, &enc[enclen], &partlen);
@@ -176,13 +187,13 @@ test_streaming (void)
 				(unsigned long)enclen,
 				(unsigned long)reflen
 			);
-			ret = 1;
+			fail = 1;
 		}
 		if (strncmp(ref, enc, reflen) != 0) {
 			printf("FAIL: stream encoding with blocksize %lu failed\n",
 				(unsigned long)bs
 			);
-			ret = 1;
+			fail = 1;
 		}
 	}
 	/* Decode the reference encoding with various block sizes and
@@ -193,7 +204,7 @@ test_streaming (void)
 		size_t partlen = 0;
 		enclen = 0;
 
-		base64_stream_decode_init(&state, 0);
+		base64_stream_decode_init(&state, flags);
 		memset(enc, 0, 400);
 		while (base64_stream_decode(&state, &ref[inpos], (inpos + bs > reflen) ? reflen - inpos : bs, &enc[enclen], &partlen)) {
 			enclen += partlen;
@@ -204,13 +215,13 @@ test_streaming (void)
 				"%lu instead of 255\n",
 				(unsigned long)enclen
 			);
-			ret = 1;
+			fail = 1;
 		}
 		if (strncmp(chr, enc, 256) != 0) {
 			printf("FAIL: stream decoding with blocksize %lu failed\n",
 				(unsigned long)bs
 			);
-			ret = 1;
+			fail = 1;
 		}
 	}
 }
@@ -218,45 +229,71 @@ test_streaming (void)
 int
 main ()
 {
-	/* These are the test vectors from RFC4648: */
-	assert_enc("", "");
-	assert_enc("f", "Zg==");
-	assert_enc("fo", "Zm8=");
-	assert_enc("foo", "Zm9v");
-	assert_enc("foob", "Zm9vYg==");
-	assert_enc("fooba", "Zm9vYmE=");
-	assert_enc("foobar", "Zm9vYmFy");
+	static char *codecs[] =
+	{ "AVX2"
+	, "NEON32"
+	, "NEON64"
+	, "plain"
+	, "SSSE3"
+	} ;
+	unsigned int i, flags;
+	int ret = 0;
 
-	/* And their inverse: */
-	assert_dec("", "");
-	assert_dec("Zg==", "f");
-	assert_dec("Zm8=", "fo");
-	assert_dec("Zm9v", "foo");
-	assert_dec("Zm9vYg==", "foob");
-	assert_dec("Zm9vYmE=", "fooba");
-	assert_dec("Zm9vYmFy", "foobar");
+	/* Loop over all codecs: */
+	for (i = 0; i < sizeof(codecs) / sizeof(codecs[0]); i++)
+	{
+		fail = 0;
+		flags = (1 << i);
 
-	assert_roundtrip("");
-	assert_roundtrip("f");
-	assert_roundtrip("fo");
-	assert_roundtrip("foo");
-	assert_roundtrip("foob");
-	assert_roundtrip("fooba");
-	assert_roundtrip("foobar");
+		/* Is this codec supported? */
+		if (!codec_supported(flags)) {
+			printf("Codec %s:\n  skipping\n", codecs[i]);
+			continue;
+		}
+		printf("Codec %s:\n", codecs[i]);
 
-	assert_roundtrip("");
-	assert_roundtrip("Zg==");
-	assert_roundtrip("Zm8=");
-	assert_roundtrip("Zm9v");
-	assert_roundtrip("Zm9vYg==");
-	assert_roundtrip("Zm9vYmE=");
-	assert_roundtrip("Zm9vYmFy");
+		/* These are the test vectors from RFC4648: */
+		assert_enc(flags, "", "");
+		assert_enc(flags, "f", "Zg==");
+		assert_enc(flags, "fo", "Zm8=");
+		assert_enc(flags, "foo", "Zm9v");
+		assert_enc(flags, "foob", "Zm9vYg==");
+		assert_enc(flags, "fooba", "Zm9vYmE=");
+		assert_enc(flags, "foobar", "Zm9vYmFy");
 
-	test_char_table();
+		/* And their inverse: */
+		assert_dec(flags, "", "");
+		assert_dec(flags, "Zg==", "f");
+		assert_dec(flags, "Zm8=", "fo");
+		assert_dec(flags, "Zm9v", "foo");
+		assert_dec(flags, "Zm9vYg==", "foob");
+		assert_dec(flags, "Zm9vYmE=", "fooba");
+		assert_dec(flags, "Zm9vYmFy", "foobar");
 
-	test_streaming();
+		assert_roundtrip(flags, "");
+		assert_roundtrip(flags, "f");
+		assert_roundtrip(flags, "fo");
+		assert_roundtrip(flags, "foo");
+		assert_roundtrip(flags, "foob");
+		assert_roundtrip(flags, "fooba");
+		assert_roundtrip(flags, "foobar");
 
-	if (ret == 0) fprintf(stderr, "All tests passed.\n");
+		assert_roundtrip(flags, "");
+		assert_roundtrip(flags, "Zg==");
+		assert_roundtrip(flags, "Zm8=");
+		assert_roundtrip(flags, "Zm9v");
+		assert_roundtrip(flags, "Zm9vYg==");
+		assert_roundtrip(flags, "Zm9vYmE=");
+		assert_roundtrip(flags, "Zm9vYmFy");
 
+		test_char_table(flags);
+
+		test_streaming(flags);
+
+		if (fail == 0) {
+			printf("  all tests passed.\n");
+		}
+		ret |= fail;
+	}
 	return ret;
 }
