@@ -28,13 +28,13 @@ BASE64_CODEC_FUNCS(ssse3)
 static int
 codec_choose_arm (struct codec *codec)
 {
-#if (defined(__ARM_NEON__) || defined(__ARM_NEON))
+#if (defined(__ARM_NEON__) || defined(__ARM_NEON)) && ((defined(__aarch64__) && HAVE_NEON64) || HAVE_NEON32)
 
 	/* Unfortunately there is no portable way to check for NEON
 	 * support at runtime from userland in the same way that x86
 	 * has cpuid, so just stick to the compile-time configuration: */
 
-	#ifdef __aarch64__
+	#if defined(__aarch64__) && HAVE_NEON64
 	codec->enc = base64_stream_encode_neon64;
 	codec->dec = base64_stream_decode_neon64;
 	#else
