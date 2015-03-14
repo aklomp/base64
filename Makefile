@@ -12,10 +12,25 @@ OBJS = \
   lib/codec_plain.o \
   lib/codec_ssse3.o
 
-# Compile-time feature detection;
-# specifying unavailable architecture flags causes compiler errors:
-HAVE_AVX2  ?= $(shell echo 'int main;' | $(CC) -mavx2  -Werror -o /dev/null -x c - >/dev/null 2>&1 && echo 1 || echo 0)
-HAVE_SSSE3 ?= $(shell echo 'int main;' | $(CC) -mssse3 -Werror -o /dev/null -x c - >/dev/null 2>&1 && echo 1 || echo 0)
+HAVE_AVX2   = 0
+HAVE_NEON32 = 0
+HAVE_NEON64 = 0
+HAVE_SSSE3  = 0
+
+# The user should supply compiler flags for the codecs they want to build.
+# Check which codecs we're going to include:
+ifdef AVX2_CFLAGS
+  HAVE_AVX2 = 1
+endif
+ifdef NEON32_CFLAGS
+  HAVE_NEON32 = 1
+endif
+ifdef NEON64_CFLAGS
+  HAVE_NEON64 = 1
+endif
+ifdef SSSE3_CFLAGS
+  HAVE_SSSE3 = 1
+endif
 
 .PHONY: all analyze clean
 
@@ -32,18 +47,17 @@ else
 endif
 
 lib/config.h:
-	@echo "#define HAVE_AVX2  $(HAVE_AVX2)"   > $@
-	@echo "#define HAVE_SSSE3 $(HAVE_SSSE3)" >> $@
+	@echo "#define HAVE_AVX2   $(HAVE_AVX2)"    > $@
+	@echo "#define HAVE_NEON32 $(HAVE_NEON32)" >> $@
+	@echo "#define HAVE_NEON64 $(HAVE_NEON64)" >> $@
+	@echo "#define HAVE_SSSE3  $(HAVE_SSSE3)"  >> $@
 
 lib/codec_choose.o: lib/config.h
 
-ifeq ($(HAVE_AVX2), 1)
-lib/codec_avx2.o: CFLAGS += -mavx2
-endif
-
-ifeq ($(HAVE_SSSE3), 1)
-lib/codec_ssse3.o: CFLAGS += -mssse3
-endif
+lib/codec_avx2.o:   CFLAGS += $(AVX2_CFLAGS)
+lib/codec_neon32.o: CFLAGS += $(NEON32_CFLAGS)
+lib/codec_neon64.o: CFLAGS += $(NEON64_CFLAGS)
+lib/codec_ssse3.o:  CFLAGS += $(SSSE3_CFLAGS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $<

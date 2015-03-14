@@ -47,69 +47,74 @@ Notable features:
 - Unit tested;
 - Uses Duff's Device.
 
-## Usage and building
+## Building
 
 The `lib` directory contains the code for the actual library. Typing `make` in
 the toplevel directory will build `lib/libbase64.a` and `bin/base64`. The first
 is a library archive that you can link against your own project. The second is
 a standalone test binary that works similarly to the `base64` system utility.
 
-To compile just the library, type:
+The matching header file needed to use this library is in `include/libbase64.h`.
+
+To compile just the "plain" library without SIMD codecs, type:
 
 ```sh
 make lib/libbase64.a
 ```
 
-The matching header file needed to use this library is in `include/libbase64.h`.
-
-On some low-end 64-bit machines without AVX2 (such as the AMD E-450), the
-generic 64-bit routine outperforms the SSSE3 routine, though not by much. You
-can test if this is the case on your machine by disabling SSSE3 support as
-follows:
+Optional SIMD codecs can be included by specifying the `AVX2_CFLAGS`, `NEON32_CFLAGS`, `NEON64_CFLAGS` and/or `SSSE3_CFLAGS` environment variables.
+A typical build invocation on x86 looks like this:
 
 ```sh
-HAVE_SSSE3=0 make
+AVX2_CFLAGS=-mavx2 SSSE3_CFLAGS=-mssse3 make lib/libbase64.a
 ```
-
-This causes the library to fall back on the generic routines.
 
 ### AVX2
 
-At build time, the Makefile checks if your compiler supports the `-mavx2`
-architecture flag. If so, the AVX2 codec will be included. (The codec will
-only be used if feature detection shows that the target machine supports AVX2.)
-To disable AVX2 support in your build, type:
+To build and include the AVX2 codec, set the `AVX2_CFLAGS` environment variable to a value that will turn on AVX2 support in your compiler, typically `-mavx2`.
+Example:
 
 ```sh
-HAVE_AVX2=0 make
+AVX2_CFLAGS=-mavx2 make
 ```
+
+The codec will only be used if feature detection shows that the target machine supports AVX2.
+
+### SSSE3
+
+To build and include the SSSE3 codec, set the `SSSE3_CFLAGS` environment variable to a value that will turn on SSSE3 support in your compiler, typically `-mssse3`.
+Example:
+
+```sh
+SSSE3_CFLAGS=-mssse3 make
+```
+
+The codec will only be used if feature detection shows that the target machine supports SSSE3.
 
 ### NEON
 
-This library includes two NEON codecs: one for regular 32-bit ARM and one for
-the 64-bit AArch64 with NEON, which has double the amount of SIMD registers and
-can do full 64-byte table lookups. That codec encodes in 48-byte chunks and
-decodes in massive 64-byte chunks, so it had to be augmented with an uint64
-codec to stay fast on smaller inputs!
+This library includes two NEON codecs: one for regular 32-bit ARM and one for the 64-bit AArch64 with NEON, which has double the amount of SIMD registers and can do full 64-byte table lookups.
+That codec encodes in 48-byte chunks and decodes in massive 64-byte chunks, so it had to be augmented with an uint64 codec to stay fast on smaller inputs!
 
-NEON support can unfortunately not be portably detected at runtime from
-userland (the `mrc` instruction is privileged), so NEON support is enabled or
-disabled at compile time. As is usual on ARM, you are responsible for supplying
-the proper architecture flags to the compiler. Stuff them in the `CFLAGS`
-environment variable as demonstrated below. The library checks the builtin
-preprocessor defines in the environment to check if it should include NEON
-support.
+Use LLVM/Clang for compiling the NEON codec.
+The code generation of at least GCC 4.6 (the version shipped with Raspbian and used for testing) contains a bug when compiling `vstq4_u8()`, and the generated assembly code is of low quality.
+NEON intrinsics are a known weak area of GCC.
+Clang does a better job.
 
-Use LLVM/Clang for compiling the NEON codec. The code generation of at least
-GCC 4.6 (the version shipped with Raspbian and used for testing) contains a bug
-when compiling `vstq4_u8()`, and the generated assembly code is of low quality.
-NEON intrinsics are a known weak area of GCC. Clang does a better job.
-
-Putting this together, this is how you should compile on ARM, substituting your
-own system/processor definition(s) of course:
+NEON support can unfortunately not be portably detected at runtime from userland (the `mrc` instruction is privileged), so NEON support is enabled or disabled at compile time.
+To build and include the NEON32 codec, set the `NEON32_CFLAGS` environment variable to a value that will turn on NEON support in your compiler, typically `-mfpu=neon` or specify a CPU with NEON support.
+Example:
 
 ```sh
-CC=clang CFLAGS="-mcpu=cortex-a9 -mfpu=neon" make
+CC=clang NEON32_CFLAGS="--target=arm-linux-gnueabi -mcpu=cortex-a9 -mfpu=neon" make
+```
+
+To build and include the NEON64 codec, specify `NEON64_CFLAGS`.
+The `mfpu=neon` flag apparently has no effect on AArch64, so request NEON support some other way, such as by specifying a CPU that supports it.
+Example:
+
+```sh
+CC=clang NEON64_CFLAGS="--target=aarch64-linux-gnu -mcpu=cortex-a57" make
 ```
 
 ## API reference
