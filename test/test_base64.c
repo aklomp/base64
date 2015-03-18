@@ -3,8 +3,13 @@
 #include "../include/libbase64.h"
 
 static int fail = 0;
-static char out[100];
+static char out[2000];
 static size_t outlen;
+
+extern char _binary_moby_dick_plain_txt_start[];
+extern char _binary_moby_dick_plain_txt_end[];
+extern char _binary_moby_dick_base64_txt_start[];
+extern char _binary_moby_dick_base64_txt_end[];
 
 static int
 codec_supported (int flags)
@@ -18,11 +23,8 @@ codec_supported (int flags)
 }
 
 static int
-assert_enc (int flags, char *src, char *dst)
+assert_enc_len (int flags, char *src, size_t srclen, char *dst, size_t dstlen)
 {
-	size_t srclen = strlen(src);
-	size_t dstlen = strlen(dst);
-
 	base64_encode(src, srclen, out, &outlen, flags);
 
 	if (outlen != dstlen) {
@@ -43,11 +45,17 @@ assert_enc (int flags, char *src, char *dst)
 }
 
 static int
-assert_dec (int flags, char *src, char *dst)
+assert_enc (int flags, char *src, char *dst)
 {
 	size_t srclen = strlen(src);
 	size_t dstlen = strlen(dst);
 
+	return assert_enc_len(flags, src, srclen, dst, dstlen);
+}
+
+static int
+assert_dec_len (int flags, char *src, size_t srclen, char *dst, size_t dstlen)
+{
 	if (!base64_decode(src, srclen, out, &outlen, flags)) {
 		printf("FAIL: decoding of '%s': decoding error\n", src);
 		fail = 1;
@@ -69,6 +77,15 @@ assert_dec (int flags, char *src, char *dst)
 		return 0;
 	}
 	return 1;
+}
+
+static int
+assert_dec (int flags, char *src, char *dst)
+{
+	size_t srclen = strlen(src);
+	size_t dstlen = strlen(dst);
+
+	return assert_dec_len(flags, src, srclen, dst, dstlen);
 }
 
 static int
@@ -269,6 +286,21 @@ main ()
 		assert_dec(flags, "Zm9vYg==", "foob");
 		assert_dec(flags, "Zm9vYmE=", "fooba");
 		assert_dec(flags, "Zm9vYmFy", "foobar");
+
+		/* The first paragraph from Moby Dick,
+		 * to test the SIMD codecs with larger blocksize: */
+		assert_enc_len(flags,
+			_binary_moby_dick_plain_txt_start,
+			_binary_moby_dick_plain_txt_end - _binary_moby_dick_plain_txt_start,
+			_binary_moby_dick_base64_txt_start,
+			_binary_moby_dick_base64_txt_end - _binary_moby_dick_base64_txt_start
+		);
+		assert_dec_len(flags,
+			_binary_moby_dick_base64_txt_start,
+			_binary_moby_dick_base64_txt_end - _binary_moby_dick_base64_txt_start,
+			_binary_moby_dick_plain_txt_start,
+			_binary_moby_dick_plain_txt_end - _binary_moby_dick_plain_txt_start
+		);
 
 		assert_roundtrip(flags, "");
 		assert_roundtrip(flags, "f");
