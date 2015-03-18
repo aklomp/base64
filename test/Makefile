@@ -2,11 +2,15 @@ CFLAGS += -O3 -Wall -Wextra -pedantic
 
 .PHONY: clean test
 
-test: clean test_base64
+test: clean test_base64 benchmark
 	./test_base64
+	./benchmark
 
-test_base64: test_base64.c ../lib/libbase64.a moby_dick_plain.o moby_dick_base64.o
+test_base64: test_base64.c codec_supported.o ../lib/libbase64.a moby_dick_plain.o moby_dick_base64.o
 	$(CC) $(CFLAGS) -o $@ $^
+
+benchmark: benchmark.c codec_supported.o ../lib/libbase64.a
+	$(CC) $(CFLAGS) -o $@ $^ -lrt
 
 ../%:
 	make -C .. $*
@@ -18,5 +22,8 @@ moby_dick_plain.o: moby_dick_plain.txt
 moby_dick_base64.o: moby_dick_base64.txt
 	$(LD) --relocatable --format=binary $^ -o $@
 
+%.o: %.c
+	$(CC) $(CFLAGS) -o $@ -c $<
+
 clean:
-	rm -f test_base64 *.o
+	rm -f benchmark test_base64 *.o

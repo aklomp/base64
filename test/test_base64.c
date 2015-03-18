@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "../include/libbase64.h"
+#include "codec_supported.h"
 
 static int fail = 0;
 static char out[2000];
@@ -10,17 +11,6 @@ extern char _binary_moby_dick_plain_txt_start[];
 extern char _binary_moby_dick_plain_txt_end[];
 extern char _binary_moby_dick_base64_txt_start[];
 extern char _binary_moby_dick_base64_txt_end[];
-
-static int
-codec_supported (int flags)
-{
-	/* Check if given codec is supported by trying to decode a test string: */
-	char *a = "aGVsbG8=";
-	char b[10];
-	size_t outlen;
-
-	return (base64_decode(a, strlen(a), b, &outlen, flags) != -1);
-}
 
 static int
 assert_enc_len (int flags, char *src, size_t srclen, char *dst, size_t dstlen)
@@ -246,18 +236,11 @@ test_streaming (int flags)
 int
 main ()
 {
-	static char *codecs[] =
-	{ "AVX2"
-	, "NEON32"
-	, "NEON64"
-	, "plain"
-	, "SSSE3"
-	} ;
 	unsigned int i, flags;
 	int ret = 0;
 
 	/* Loop over all codecs: */
-	for (i = 0; i < sizeof(codecs) / sizeof(codecs[0]); i++)
+	for (i = 0; codecs[i]; i++)
 	{
 		fail = 0;
 		flags = (1 << i);

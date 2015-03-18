@@ -3,5 +3,6 @@ lib/*.o
 bin/base64
 lib/config.h
 lib/libbase64.a
+test/benchmark
 test/test_base64
 test/*.o
