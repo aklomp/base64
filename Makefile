@@ -4,7 +4,7 @@ UNAME_S = $(shell uname -s)
 CFLAGS += -O3 -Wall -Wextra -pedantic
 
 OBJS = \
-  lib/libbase64.o \
+  lib/lib.o \
   lib/codec_avx2.o \
   lib/codec_choose.o \
   lib/codec_neon32.o \
@@ -34,17 +34,14 @@ endif
 
 .PHONY: all analyze clean
 
-all: bin/base64 lib/libbase64.a
+all: bin/base64 lib/libbase64.o
 
-bin/base64: bin/base64.o lib/libbase64.a
+bin/base64: bin/base64.o lib/libbase64.o
 	$(CC) $(CFLAGS) -o $@ $^
 
-lib/libbase64.a: $(OBJS)
-ifeq ($(UNAME_S), Darwin)
-	$(LIBTOOL) -static $(OBJS) -o $@
-else
-	$(AR) -r $@ $(OBJS)
-endif
+lib/libbase64.o: $(OBJS)
+	$(LD) --relocatable -o $@ $^
+	objcopy --keep-global-symbols=lib/exports.txt $@
 
 lib/config.h:
 	@echo "#define HAVE_AVX2   $(HAVE_AVX2)"    > $@
@@ -66,4 +63,4 @@ analyze: clean
 	scan-build --use-analyzer=`which clang` --status-bugs make
 
 clean:
-	rm -f bin/base64 lib/libbase64.a lib/config.h $(OBJS)
+	rm -f bin/base64 lib/libbase64.o lib/config.h $(OBJS)

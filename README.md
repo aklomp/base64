@@ -49,24 +49,24 @@ Notable features:
 
 ## Building
 
-The `lib` directory contains the code for the actual library. Typing `make` in
-the toplevel directory will build `lib/libbase64.a` and `bin/base64`. The first
-is a library archive that you can link against your own project. The second is
-a standalone test binary that works similarly to the `base64` system utility.
+The `lib` directory contains the code for the actual library.
+Typing `make` in the toplevel directory will build `lib/libbase64.o` and `bin/base64`.
+The first is a single, self-contained object file that you can link into your own project.
+The second is a standalone test binary that works similarly to the `base64` system utility.
 
 The matching header file needed to use this library is in `include/libbase64.h`.
 
 To compile just the "plain" library without SIMD codecs, type:
 
 ```sh
-make lib/libbase64.a
+make lib/libbase64.o
 ```
 
 Optional SIMD codecs can be included by specifying the `AVX2_CFLAGS`, `NEON32_CFLAGS`, `NEON64_CFLAGS` and/or `SSSE3_CFLAGS` environment variables.
 A typical build invocation on x86 looks like this:
 
 ```sh
-AVX2_CFLAGS=-mavx2 SSSE3_CFLAGS=-mssse3 make lib/libbase64.a
+AVX2_CFLAGS=-mavx2 SSSE3_CFLAGS=-mssse3 make lib/libbase64.o
 ```
 
 ### AVX2
