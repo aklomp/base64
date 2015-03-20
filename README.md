@@ -94,27 +94,53 @@ The codec will only be used if feature detection shows that the target machine s
 ### NEON
 
 This library includes two NEON codecs: one for regular 32-bit ARM and one for the 64-bit AArch64 with NEON, which has double the amount of SIMD registers and can do full 64-byte table lookups.
-That codec encodes in 48-byte chunks and decodes in massive 64-byte chunks, so it had to be augmented with an uint64 codec to stay fast on smaller inputs!
+These codecs encode in 48-byte chunks and decode in massive 64-byte chunks, so they had to be augmented with an uint32/64 codec to stay fast on smaller inputs!
 
-Use LLVM/Clang for compiling the NEON codec.
+Use LLVM/Clang for compiling the NEON codecs.
 The code generation of at least GCC 4.6 (the version shipped with Raspbian and used for testing) contains a bug when compiling `vstq4_u8()`, and the generated assembly code is of low quality.
 NEON intrinsics are a known weak area of GCC.
 Clang does a better job.
 
-NEON support can unfortunately not be portably detected at runtime from userland (the `mrc` instruction is privileged), so NEON support is enabled or disabled at compile time.
-To build and include the NEON32 codec, set the `NEON32_CFLAGS` environment variable to a value that will turn on NEON support in your compiler, typically `-mfpu=neon` or specify a CPU with NEON support.
-Example:
+NEON support can unfortunately not be portably detected at runtime from userland (the `mrc` instruction is privileged), so the default value for using the NEON codec is determined at compile-time.
+But you can do your own runtime detection.
+You can include the NEON codec and make it the default, then do a runtime check if the CPU has NEON support, and if not, force a downgrade to non-NEON with `BASE64_FORCE_PLAIN`.
+
+These are your options:
+
+1. Don't include NEON support;
+2. build NEON support and make it the default, but build all other code without NEON flags so that you can override the default at runtime with `BASE64_FORCE_PLAIN`;
+3. build everything with NEON support and make it the default;
+4. build everything with NEON support, but don't make it the default (which makes no sense).
+
+For option 1, simply don't specify any NEON-specific compiler flags at all, like so:
 
 ```sh
-CC=clang NEON32_CFLAGS="--target=arm-linux-gnueabi -mcpu=cortex-a9 -mfpu=neon" make
+CC=clang CFLAGS="-march=armv6" make
 ```
 
-To build and include the NEON64 codec, specify `NEON64_CFLAGS`.
-The `mfpu=neon` flag apparently has no effect on AArch64, so request NEON support some other way, such as by specifying a CPU that supports it.
+For option 2, keep your `CFLAGS` plain, but set the `NEON32_CFLAGS` environment variable to a value that will build NEON support.
+The line below, for instance, will build all the code at ARMv6 level, except for the NEON codec, which is built at ARMv7.
+It will also make the NEON codec the default.
+For ARMv6 platforms, override that default at runtime with the `BASE64_FORCE_PLAIN` flag.
+No ARMv7/NEON code will then be touched.
+
+```sh
+CC=clang CFLAGS="-march=armv6" NEON32_CFLAGS="-march=armv7 -mfpu=neon" make
+```
+
+For option 3, put everything in your `CFLAGS` and use a stub, but non-empty, `NEON32_CFLAGS`.
+This example works for the Raspberry Pi 2, which has NEON support:
+
+```sh
+CC=clang CFLAGS="-march=armv7 -mtune=cortex-a7" NEON32_CFLAGS=" " make
+```
+
+To build and include the NEON64 codec, use `CFLAGS` as usual to define the platform and set `NEON64_CFLAGS` to a nonempty stub.
+(The AArch64 target has mandatory NEON64 support.)
 Example:
 
 ```sh
-CC=clang NEON64_CFLAGS="--target=aarch64-linux-gnu -mcpu=cortex-a57" make
+CC=clang CFLAGS="--target=aarch64-linux-gnu -march=armv8-a" NEON64_CFLAGS=" " make
 ```
 
 ## API reference
