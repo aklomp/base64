@@ -43,7 +43,13 @@ static const char *base64_table_enc_transposed[2] =
  * uint32 codec to stay performant on smaller inputs. */
 
 void
-base64_stream_encode_neon32 (struct base64_state *state, const char *const src, size_t srclen, char *const out, size_t *const outlen)
+base64_stream_encode_neon32
+	( struct base64_state	*	state
+	, const char		*const	src
+	, size_t			srclen
+	, char			*const	out
+	, size_t		*const	outlen
+	)
 {
 #if (defined(__arm__) && defined(__ARM_NEON__))
 	uint8x8x4_t tbl_enc_lo = vld4_u8((uint8_t *)base64_table_enc_transposed[0]);
@@ -64,7 +70,13 @@ base64_stream_encode_neon32 (struct base64_state *state, const char *const src, 
 }
 
 int
-base64_stream_decode_neon32 (struct base64_state *state, const char *const src, size_t srclen, char *const out, size_t *const outlen)
+base64_stream_decode_neon32
+	( struct base64_state	*	state
+	, const char		*const	src
+	, size_t			srclen
+	, char			*const	out
+	, size_t		*const	outlen
+	)
 {
 #if (defined(__arm__) && defined(__ARM_NEON__))
 	#include "dec/head.c"

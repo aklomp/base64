@@ -9,7 +9,13 @@ extern const char base64_table_enc[];
 extern const unsigned char base64_table_dec[];
 
 void
-base64_stream_encode_avx2 (struct base64_state *state, const char *const src, size_t srclen, char *const out, size_t *const outlen)
+base64_stream_encode_avx2
+	( struct base64_state	*	state
+	, const char		*const	src
+	, size_t			srclen
+	, char			*const	out
+	, size_t		*const	outlen
+	)
 {
 #ifdef __AVX2__
 	#include "enc/head.c"
@@ -26,7 +32,13 @@ base64_stream_encode_avx2 (struct base64_state *state, const char *const src, si
 }
 
 int
-base64_stream_decode_avx2 (struct base64_state *state, const char *const src, size_t srclen, char *const out, size_t *const outlen)
+base64_stream_decode_avx2
+	( struct base64_state	*	state
+	, const char		*const	src
+	, size_t			srclen
+	, char			*const	out
+	, size_t		*const	outlen
+	)
 {
 #ifdef __AVX2__
 	#include "dec/head.c"
