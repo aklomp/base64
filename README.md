@@ -172,7 +172,13 @@ Set `flags` to `0` for the default behavior, which is runtime feature detection 
 #### base64_encode
 
 ```c
-void base64_encode (const char *const src, size_t srclen, char *const out, size_t *const outlen, int flags);
+void base64_encode
+    ( const char *const  src
+    , size_t             srclen
+    , char       *const  out
+    , size_t     *const  outlen
+    , int                flags
+    ) ;
 ```
 
 Wrapper function to encode a plain string of given length.
@@ -183,7 +189,10 @@ The buffer in `out` has been allocated by the caller and is at least 4/3 the siz
 #### base64_stream_encode_init
 
 ```c
-void base64_stream_encode_init (struct base64_state *, int flags);
+void base64_stream_encode_init
+    ( struct base64_state *  state
+    , int                    flags
+    ) ;
 ```
 
 Call this before calling `base64_stream_encode()` to init the state.
@@ -191,7 +200,13 @@ Call this before calling `base64_stream_encode()` to init the state.
 #### base64_stream_encode
 
 ```c
-void base64_stream_encode (struct base64_state *, const char *const src, size_t srclen, char *const out, size_t *const outlen);
+void base64_stream_encode
+    ( struct base64_state *       state
+    , const char          *const  src
+    , size_t                      srclen
+    , char                *const  out
+    , size_t              *const  outlen
+    ) ;
 ```
 
 Encodes the block of data of given length at `src`, into the buffer at `out`.
@@ -202,7 +217,11 @@ Does not zero-terminate or finalize the output.
 #### base64_stream_encode_final
 
 ```c
-void base64_stream_encode_final (struct base64_state *, char *const out, size_t *outlen);
+void base64_stream_encode_final
+    ( struct base64_state *       state
+    , char                *const  out
+    , size_t              *       outlen
+    ) ;
 ```
 
 Finalizes the output begun by previous calls to `base64_stream_encode()`.
@@ -214,7 +233,13 @@ Adds the required end-of-stream markers if appropriate.
 #### base64_decode
 
 ```c
-int base64_decode (const char *const src, size_t srclen, char *const out, size_t *const outlen, int flags);
+int base64_decode
+    ( const char *const  src
+    , size_t             srclen
+    , char       *const  out
+    , size_t     *const  outlen
+    , int                flags
+    ) ;
 ```
 
 Wrapper function to decode a plain string of given length.
@@ -224,7 +249,10 @@ The buffer in `out` has been allocated by the caller and is at least 3/4 the siz
 #### base64_stream_decode_init
 
 ```c
-void base64_stream_decode_init (struct base64_state *, int flags);
+void base64_stream_decode_init
+    ( struct base64_state *  state
+    , int                    flags
+    ) ;
 ```
 
 Call this before calling `base64_stream_decode()` to init the state.
@@ -232,7 +260,13 @@ Call this before calling `base64_stream_decode()` to init the state.
 #### base64_stream_decode
 
 ```c
-int base64_stream_decode (struct base64_state *, const char *const src, size_t srclen, char *const out, size_t *const outlen);
+int base64_stream_decode
+    ( struct base64_state *       state
+    , const char          *const  src
+    , size_t                      srclen
+    , char                *const  out
+    , size_t              *const  outlen
+    ) ;
 ```
 
 Decodes the block of data of given length at `src`, into the buffer at `out`.
