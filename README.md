@@ -349,14 +349,15 @@ It will run an encoding and decoding benchmark for all of the compiled-in codecs
 
 The table below contains some results on machines of mine. All numbers are in MB/sec.
 
-| Processor          | Plain enc | Plain dec | SSSE3 enc | SSSE3 dec | AVX2 enc | AVX2 dec | NEON enc | NEON dec |
-|--------------------|----------:|----------:|----------:|----------:|---------:|---------:|---------:|---------:|
-| i5-4590S @ 3.0 GHz | 1719.32   | 1643.49   | 2421.73   | 3033.48   | 3646.79  | 4878.70  | -        | -        |
-| Pentium4 @ 3.4 GHz | 528.03    | 447.59    | -         | -         | -        | -        | -        | -        |
-| Atom N270          | 124.17    | 122.37    | 287.64    | 350.33    | -        | -        | -        | -        |
-| AMD E-450          | 360.16    | 332.77    | 294.05    | 332.00    | -        | -        | -        | -        |
-| Raspberry PI B+    | 45.83     | 39.59     | -         | -         | -        | -        | -        | -        |
-| Raspberry PI 2 B   | 38.60     | 35.16     | -         | -         | -        | -        | 7.18     | 27.03    |
+| Processor             | Plain enc | Plain dec | SSSE3 enc | SSSE3 dec | AVX2 enc | AVX2 dec | NEON enc | NEON dec |
+|-----------------------|----------:|----------:|----------:|----------:|---------:|---------:|---------:|---------:|
+| i5-4590S @ 3.0 GHz    | 1719.32   | 1643.49   | 2421.73   | 3033.48   | 3646.79  | 4878.70  | -        | -        |
+| Xeon X5570 @ 2.93 GHz | 1037.45   | 1047.18   | 1557.88   | 2172.63   | -        | -        | -        | -        |
+| Pentium4 @ 3.4 GHz    | 528.03    | 447.59    | -         | -         | -        | -        | -        | -        |
+| Atom N270             | 124.17    | 122.37    | 287.64    | 350.33    | -        | -        | -        | -        |
+| AMD E-450             | 360.16    | 332.77    | 294.05    | 332.00    | -        | -        | -        | -        |
+| Raspberry PI B+       | 45.83     | 39.59     | -         | -         | -        | -        | -        | -        |
+| Raspberry PI 2 B      | 38.60     | 35.16     | -         | -         | -        | -        | 7.18     | 27.03    |
 
 ## License
 
