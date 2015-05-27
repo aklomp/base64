@@ -8,6 +8,7 @@
 #endif
 
 #include "../include/libbase64.h"
+#include "codec_choose.h"
 
 extern const char base64_table_enc[];
 extern const unsigned char base64_table_dec[];
@@ -42,13 +43,7 @@ static const char *base64_table_enc_transposed =
  * uint64 codec to stay performant on smaller inputs. */
 
 void
-base64_stream_encode_neon64
-	( struct base64_state	*	state
-	, const char		*const	src
-	, size_t			srclen
-	, char			*const	out
-	, size_t		*const	outlen
-	)
+base64_stream_encode_neon64 BASE64_ENC_PARAMS
 {
 #if (defined(__aarch64__) && defined(__ARM_NEON__))
 	uint8x16x4_t tbl_enc = vld4q_u8((uint8_t *)base64_table_enc_transposed);
@@ -68,13 +63,7 @@ base64_stream_encode_neon64
 }
 
 int
-base64_stream_decode_neon64
-	( struct base64_state	*	state
-	, const char		*const	src
-	, size_t			srclen
-	, char			*const	out
-	, size_t		*const	outlen
-	)
+base64_stream_decode_neon64 BASE64_DEC_PARAMS
 {
 #if (defined(__aarch64__) && defined(__ARM_NEON__))
 
