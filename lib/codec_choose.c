@@ -11,7 +11,7 @@
 #endif
 
 #include "../include/libbase64.h"
-#include "codec_choose.h"
+#include "codecs.h"
 #include "config.h"
 
 /* Function declarations: */

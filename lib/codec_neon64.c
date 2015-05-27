@@ -8,10 +8,7 @@
 #endif
 
 #include "../include/libbase64.h"
-#include "codec_choose.h"
-
-extern const char base64_table_enc[];
-extern const unsigned char base64_table_dec[];
+#include "codecs.h"
 
 #if (defined(__aarch64__) && defined(__ARM_NEON__))
 /* With this transposed encoding table, we can use

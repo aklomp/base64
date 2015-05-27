@@ -2,10 +2,7 @@
 #include <stdint.h>
 
 #include "../include/libbase64.h"
-#include "codec_choose.h"
-
-extern const char base64_table_enc[];
-extern const unsigned char base64_table_dec[];
+#include "codecs.h"
 
 void
 base64_stream_encode_plain BASE64_ENC_PARAMS

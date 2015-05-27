@@ -1,14 +1,14 @@
 #include <stddef.h>	/* size_t */
 
 #include "../include/libbase64.h"
-#include "codec_choose.h"
+#include "codecs.h"
 
 /* These static function pointers are initialized once when the library is
  * first used, and remain in use for the remaining lifetime of the program.
  * The idea being that CPU features don't change at runtime. */
 static struct codec codec = { NULL, NULL };
 
-const char
+const unsigned char
 base64_table_enc[] =
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	"abcdefghijklmnopqrstuvwxyz"
