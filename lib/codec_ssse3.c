@@ -17,12 +17,7 @@ base64_stream_encode_ssse3 BASE64_ENC_PARAMS
 	#include "enc/ssse3.c"
 	#include "enc/tail.c"
 #else
-	(void)state;
-	(void)src;
-	(void)srclen;
-	(void)out;
-
-	*outlen = 0;
+	BASE64_ENC_STUB
 #endif
 }
 
@@ -34,12 +29,6 @@ base64_stream_decode_ssse3 BASE64_DEC_PARAMS
 	#include "dec/ssse3.c"
 	#include "dec/tail.c"
 #else
-	(void)state;
-	(void)src;
-	(void)srclen;
-	(void)out;
-	(void)outlen;
-
-	return -1;
+	BASE64_DEC_STUB
 #endif
 }

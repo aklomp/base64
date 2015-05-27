@@ -14,6 +14,25 @@
 	, size_t		*const	outlen	\
 	)
 
+#define UNUSED(x)		((void)(x))
+
+#define BASE64_ENC_STUB				\
+	UNUSED(state);				\
+	UNUSED(src);				\
+	UNUSED(srclen);				\
+	UNUSED(out);				\
+						\
+	*outlen = 0;
+
+#define BASE64_DEC_STUB				\
+	UNUSED(state);				\
+	UNUSED(src);				\
+	UNUSED(srclen);				\
+	UNUSED(out);				\
+	UNUSED(outlen);				\
+						\
+	return -1;
+
 /* Typedefs for encoder/decoder functions,
  * to be used in runtime feature detection: */
 typedef void (* func_enc_t) BASE64_ENC_PARAMS;
