@@ -4,8 +4,7 @@
 #include "../include/libbase64.h"
 #include "codecs.h"
 
-void
-base64_stream_encode_plain BASE64_ENC_PARAMS
+BASE64_ENC_FUNCTION(plain)
 {
 	#include "enc/head.c"
 #if __WORDSIZE == 32
@@ -16,8 +15,7 @@ base64_stream_encode_plain BASE64_ENC_PARAMS
 	#include "enc/tail.c"
 }
 
-int
-base64_stream_decode_plain BASE64_DEC_PARAMS
+BASE64_DEC_FUNCTION(plain)
 {
 	#include "dec/head.c"
 #if __WORDSIZE == 32

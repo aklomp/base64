@@ -6,8 +6,7 @@
 #include "../include/libbase64.h"
 #include "codecs.h"
 
-void
-base64_stream_encode_avx2 BASE64_ENC_PARAMS
+BASE64_ENC_FUNCTION(avx2)
 {
 #ifdef __AVX2__
 	#include "enc/head.c"
@@ -18,8 +17,7 @@ base64_stream_encode_avx2 BASE64_ENC_PARAMS
 #endif
 }
 
-int
-base64_stream_decode_avx2 BASE64_DEC_PARAMS
+BASE64_DEC_FUNCTION(avx2)
 {
 #ifdef __AVX2__
 	#include "dec/head.c"

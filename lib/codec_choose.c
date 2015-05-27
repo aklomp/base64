@@ -15,9 +15,9 @@
 #include "config.h"
 
 /* Function declarations: */
-#define BASE64_CODEC_FUNCS(x)	\
-	void base64_stream_encode_##x BASE64_ENC_PARAMS; \
-	int  base64_stream_decode_##x BASE64_DEC_PARAMS;
+#define BASE64_CODEC_FUNCS(arch)	\
+	BASE64_ENC_FUNCTION(arch);	\
+	BASE64_DEC_FUNCTION(arch);	\
 
 BASE64_CODEC_FUNCS(avx2)
 BASE64_CODEC_FUNCS(neon32)

@@ -39,8 +39,7 @@ static const char *base64_table_enc_transposed =
  * (48 bytes encode, 64 bytes decode) that we inline the
  * uint64 codec to stay performant on smaller inputs. */
 
-void
-base64_stream_encode_neon64 BASE64_ENC_PARAMS
+BASE64_ENC_FUNCTION(neon64)
 {
 #if (defined(__aarch64__) && defined(__ARM_NEON__))
 	uint8x16x4_t tbl_enc = vld4q_u8((uint8_t *)base64_table_enc_transposed);
@@ -54,8 +53,7 @@ base64_stream_encode_neon64 BASE64_ENC_PARAMS
 #endif
 }
 
-int
-base64_stream_decode_neon64 BASE64_DEC_PARAMS
+BASE64_DEC_FUNCTION(neon64)
 {
 #if (defined(__aarch64__) && defined(__ARM_NEON__))
 
