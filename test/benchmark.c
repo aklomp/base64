@@ -50,7 +50,7 @@ get_random_data (struct buffers *b, char **errmsg)
 static float
 timediff_sec (struct timespec *start, struct timespec *end)
 {
-	return (end->tv_sec - start->tv_sec) + ((float)(end->tv_nsec - start->tv_nsec)) / 1000000000.0f;
+	return (end->tv_sec - start->tv_sec) + ((float)(end->tv_nsec - start->tv_nsec)) / 1e9f;
 }
 
 static void
