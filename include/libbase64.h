@@ -1,6 +1,10 @@
 #ifndef _LIBBASE64_H
 #define _LIBBASE64_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* These are the flags that can be passed in the `flags` argument. The values
  * below force the use of a given codec, even if that codec is a no-op in the
  * current build. Used in testing. Set to 0 for the default behavior, which is
@@ -95,5 +99,9 @@ int base64_stream_decode
 	, char			*const	out
 	, size_t		*const	outlen
 	) ;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _LIBBASE64_H */
