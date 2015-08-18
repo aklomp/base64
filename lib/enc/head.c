@@ -1,7 +1,7 @@
 /* Assume that *out is large enough to contain the output.
  * Theoretically it should be 4/3 the length of src. */
-const unsigned char *c = (unsigned char *)src;
-char *o = out;
+const unsigned char *c = (const unsigned char *)src;
+unsigned char *o = (unsigned char *)out;
 
 /* Use local temporaries to avoid cache thrashing: */
 size_t outl = 0;

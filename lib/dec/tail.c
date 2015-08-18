@@ -2,7 +2,7 @@
 			ret = 1;
 			break;
 		}
-		if ((q = base64_table_dec[(unsigned char)*c++]) >= 254) {
+		if ((q = base64_table_dec[*c++]) >= 254) {
 			st.eof = 1;
 			/* Treat character '=' as invalid for byte 0: */
 			break;
@@ -14,7 +14,7 @@
 			ret = 1;
 			break;
 		}
-		if ((q = base64_table_dec[(unsigned char)*c++]) >= 254) {
+		if ((q = base64_table_dec[*c++]) >= 254) {
 			st.eof = 1;
 			/* Treat character '=' as invalid for byte 1: */
 			break;
@@ -28,7 +28,7 @@
 			ret = 1;
 			break;
 		}
-		if ((q = base64_table_dec[(unsigned char)*c++]) >= 254) {
+		if ((q = base64_table_dec[*c++]) >= 254) {
 			st.eof = 1;
 			/* When q == 254, the input char is '='. Return 1 and EOF.
 			 * Technically, should check if next byte is also '=', but never mind.
@@ -45,7 +45,7 @@
 			ret = 1;
 			break;
 		}
-		if ((q = base64_table_dec[(unsigned char)*c++]) >= 254) {
+		if ((q = base64_table_dec[*c++]) >= 254) {
 			st.eof = 1;
 			/* When q == 254, the input char is '='. Return 1 and EOF.
 			 * When q == 255, the input char is invalid. Return 0 and EOF. */

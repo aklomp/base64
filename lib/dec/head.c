@@ -1,6 +1,6 @@
 int ret = 0;
-const char *c = src;
-char *o = out;
+const unsigned char *c = (const unsigned char *)src;
+unsigned char *o = (unsigned char *)out;
 unsigned char q;
 
 /* Use local temporaries to avoid cache thrashing: */
