@@ -54,7 +54,7 @@ timediff_sec (struct timespec *start, struct timespec *end)
 }
 
 static void
-codec_bench_enc (struct buffers *b, char *const name, unsigned int flags)
+codec_bench_enc (struct buffers *b, const char *name, unsigned int flags)
 {
 	int i;
 	float timediff, fastest = -1.0f;
@@ -74,7 +74,7 @@ codec_bench_enc (struct buffers *b, char *const name, unsigned int flags)
 }
 
 static void
-codec_bench_dec (struct buffers *b, char *const name, unsigned int flags)
+codec_bench_dec (struct buffers *b, const char *name, unsigned int flags)
 {
 	int i;
 	float timediff, fastest = -1.0f;
@@ -94,7 +94,7 @@ codec_bench_dec (struct buffers *b, char *const name, unsigned int flags)
 }
 
 static void
-codec_bench (struct buffers *b, char *const name, unsigned int flags)
+codec_bench (struct buffers *b, const char *name, unsigned int flags)
 {
 	codec_bench_enc(b, name, flags);
 	codec_bench_dec(b, name, flags);

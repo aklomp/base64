@@ -173,11 +173,11 @@ Set `flags` to `0` for the default behavior, which is runtime feature detection 
 
 ```c
 void base64_encode
-    ( const char *const  src
-    , size_t             srclen
-    , char       *const  out
-    , size_t     *const  outlen
-    , int                flags
+    ( const char  *src
+    , size_t       srclen
+    , char        *out
+    , size_t      *outlen
+    , int          flags
     ) ;
 ```
 
@@ -190,8 +190,8 @@ The buffer in `out` has been allocated by the caller and is at least 4/3 the siz
 
 ```c
 void base64_stream_encode_init
-    ( struct base64_state *  state
-    , int                    flags
+    ( struct base64_state  *state
+    , int                   flags
     ) ;
 ```
 
@@ -201,11 +201,11 @@ Call this before calling `base64_stream_encode()` to init the state.
 
 ```c
 void base64_stream_encode
-    ( struct base64_state *       state
-    , const char          *const  src
-    , size_t                      srclen
-    , char                *const  out
-    , size_t              *const  outlen
+    ( struct base64_state  *state
+    , const char           *src
+    , size_t                srclen
+    , char                 *out
+    , size_t               *outlen
     ) ;
 ```
 
@@ -218,9 +218,9 @@ Does not zero-terminate or finalize the output.
 
 ```c
 void base64_stream_encode_final
-    ( struct base64_state *       state
-    , char                *const  out
-    , size_t              *       outlen
+    ( struct base64_state  *state
+    , char                 *out
+    , size_t               *outlen
     ) ;
 ```
 
@@ -234,11 +234,11 @@ Adds the required end-of-stream markers if appropriate.
 
 ```c
 int base64_decode
-    ( const char *const  src
-    , size_t             srclen
-    , char       *const  out
-    , size_t     *const  outlen
-    , int                flags
+    ( const char  *src
+    , size_t       srclen
+    , char        *out
+    , size_t      *outlen
+    , int          flags
     ) ;
 ```
 
@@ -250,8 +250,8 @@ The buffer in `out` has been allocated by the caller and is at least 3/4 the siz
 
 ```c
 void base64_stream_decode_init
-    ( struct base64_state *  state
-    , int                    flags
+    ( struct base64_state  *state
+    , int                   flags
     ) ;
 ```
 
@@ -261,11 +261,11 @@ Call this before calling `base64_stream_decode()` to init the state.
 
 ```c
 int base64_stream_decode
-    ( struct base64_state *       state
-    , const char          *const  src
-    , size_t                      srclen
-    , char                *const  out
-    , size_t              *const  outlen
+    ( struct base64_state  *state
+    , const char           *src
+    , size_t                srclen
+    , char                 *out
+    , size_t               *outlen
     ) ;
 ```
 

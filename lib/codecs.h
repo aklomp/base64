@@ -1,19 +1,19 @@
 /* Function parameters for encoding functions */
 #define BASE64_ENC_PARAMS			\
-	( struct base64_state	*	state	\
-	, const char		*const	src	\
-	, size_t			srclen	\
-	, char			*const	out	\
-	, size_t		*const	outlen	\
+	( struct base64_state	*state		\
+	, const char		*src		\
+	, size_t		 srclen		\
+	, char			*out		\
+	, size_t		*outlen		\
 	)
 
 /* Function parameters for decoding functions */
 #define BASE64_DEC_PARAMS			\
-	( struct base64_state	*	state	\
-	, const char		*const	src	\
-	, size_t			srclen	\
-	, char			*const	out	\
-	, size_t		*const	outlen	\
+	( struct base64_state	*state		\
+	, const char		*src		\
+	, size_t		 srclen		\
+	, char			*out		\
+	, size_t		*outlen		\
 	)
 
 /* Function signature for encoding functions */

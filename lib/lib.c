@@ -56,11 +56,11 @@ base64_stream_encode_init (struct base64_state *state, int flags)
 
 void
 base64_stream_encode
-	( struct base64_state	*	state
-	, const char		*const	src
-	, size_t			srclen
-	, char			*const	out
-	, size_t		*const	outlen
+	( struct base64_state	*state
+	, const char		*src
+	, size_t		 srclen
+	, char			*out
+	, size_t		*outlen
 	)
 {
 	codec.enc(state, src, srclen, out, outlen);
@@ -68,9 +68,9 @@ base64_stream_encode
 
 void
 base64_stream_encode_final
-	( struct base64_state	*	state
-	, char			*const	out
-	, size_t		*const	outlen
+	( struct base64_state	*state
+	, char			*out
+	, size_t		*outlen
 	)
 {
 	char *o = out;
@@ -106,11 +106,11 @@ base64_stream_decode_init (struct base64_state *state, int flags)
 
 int
 base64_stream_decode
-	( struct base64_state	*	state
-	, const char		*const	src
-	, size_t			srclen
-	, char			*const	out
-	, size_t		*const	outlen
+	( struct base64_state	*state
+	, const char		*src
+	, size_t		 srclen
+	, char			*out
+	, size_t		*outlen
 	)
 {
 	return codec.dec(state, src, srclen, out, outlen);
@@ -118,11 +118,11 @@ base64_stream_decode
 
 void
 base64_encode
-	( const char	*const	src
-	, size_t		srclen
-	, char		*const	out
-	, size_t	*const	outlen
-	, int			flags
+	( const char	*src
+	, size_t	 srclen
+	, char		*out
+	, size_t	*outlen
+	, int		 flags
 	)
 {
 	size_t s;
@@ -144,11 +144,11 @@ base64_encode
 
 int
 base64_decode
-	( const char	*const	src
-	, size_t		srclen
-	, char		*const	out
-	, size_t	*	outlen
-	, int			flags
+	( const char	*src
+	, size_t	 srclen
+	, char		*out
+	, size_t	*outlen
+	, int		 flags
 	)
 {
 	struct base64_state state;
