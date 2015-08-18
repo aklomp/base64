@@ -1,6 +1,3 @@
-LIBTOOL = libtool
-UNAME_S = $(shell uname -s)
-
 CFLAGS += -O3 -Wall -Wextra -pedantic
 
 OBJS = \
