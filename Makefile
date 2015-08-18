@@ -60,4 +60,4 @@ analyze: clean
 	scan-build --use-analyzer=`which clang` --status-bugs make
 
 clean:
-	rm -f bin/base64 lib/libbase64.o lib/config.h $(OBJS)
+	rm -f bin/base64 bin/base64.o lib/libbase64.o lib/config.h $(OBJS)
