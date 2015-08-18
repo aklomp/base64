@@ -78,7 +78,7 @@ Example:
 AVX2_CFLAGS=-mavx2 make
 ```
 
-The codec will only be used if feature detection shows that the target machine supports AVX2.
+The codec will only be used if runtime feature detection shows that the target machine supports AVX2.
 
 ### SSSE3
 
@@ -89,7 +89,7 @@ Example:
 SSSE3_CFLAGS=-mssse3 make
 ```
 
-The codec will only be used if feature detection shows that the target machine supports SSSE3.
+The codec will only be used if runtime feature detection shows that the target machine supports SSSE3.
 
 ### NEON
 
