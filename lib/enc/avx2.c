@@ -25,20 +25,20 @@ while (srclen >= 32)
 	mask = _mm256_set1_epi32(0x3F000000);
 
 	/* Shift bits by 2, mask in only the first byte: */
-	res = _mm256_srli_epi32(str, 2) & mask;
+	res = _mm256_and_si256(_mm256_srli_epi32(str, 2), mask);
 	mask = _mm256_srli_epi32(mask, 8);
 
 	/* Shift bits by 4, mask in only the second byte: */
-	res |= _mm256_srli_epi32(str, 4) & mask;
+	res = _mm256_or_si256(res, _mm256_and_si256(_mm256_srli_epi32(str, 4), mask));
 	mask = _mm256_srli_epi32(mask, 8);
 
 	/* Shift bits by 6, mask in only the third byte: */
-	res |= _mm256_srli_epi32(str, 6) & mask;
+	res = _mm256_or_si256(res, _mm256_and_si256(_mm256_srli_epi32(str, 6) , mask));
 	mask = _mm256_srli_epi32(mask, 8);
 
 	/* No shift necessary for the fourth byte because we duplicated
 	 * the third byte to this position; just mask: */
-	res |= str & mask;
+	res = _mm256_or_si256(res, _mm256_and_si256(str, mask));
 
 	/* Reorder to 32-bit little-endian: */
 	res = _mm256_shuffle_epi8(res,
@@ -62,21 +62,21 @@ while (srclen >= 32)
 
 	/* set 4: 62, "+" */
 	s4mask = _mm256_cmpeq_epi8(res, _mm256_set1_epi8(62));
-	blockmask |= s4mask;
+	blockmask = _mm256_or_si256(blockmask, s4mask);
 
 	/* set 3: 52..61, "0123456789" */
 	s3mask = _mm256_andnot_si256(blockmask, _mm256_cmpgt_epi8(res, _mm256_set1_epi8(51)));
-	blockmask |= s3mask;
+	blockmask = _mm256_or_si256(blockmask, s3mask);
 
 	/* set 2: 26..51, "abcdefghijklmnopqrstuvwxyz" */
 	s2mask = _mm256_andnot_si256(blockmask, _mm256_cmpgt_epi8(res, _mm256_set1_epi8(25)));
-	blockmask |= s2mask;
+	blockmask = _mm256_or_si256(blockmask, s2mask);
 
 	/* set 1: 0..25, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	 * Everything that is not blockmasked */
 
 	/* Create the masked character sets: */
-	str = _mm256_set1_epi8('/') & s5mask;
+	str = _mm256_and_si256(_mm256_set1_epi8('/'), s5mask);
 	str = _mm256_blendv_epi8(str, _mm256_set1_epi8('+'), s4mask);
 	str = _mm256_blendv_epi8(str, _mm256_add_epi8(res, _mm256_set1_epi8('0' - 52)), s3mask);
 	str = _mm256_blendv_epi8(str, _mm256_add_epi8(res, _mm256_set1_epi8('a' - 26)), s2mask);
