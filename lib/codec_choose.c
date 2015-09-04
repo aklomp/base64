@@ -1,7 +1,40 @@
 #include <stddef.h>
 
-#if __x86_64__ || __i386__
-#include <cpuid.h>
+#if __x86_64__ || __i386__ || _M_X86 || _M_X64
+	#ifdef _MSC_VER
+		#include <intrin.h>
+		#define __cpuid_count(__level, __count, __eax, __ebx, __ecx, __edx) \
+		{\
+			int info[4];\
+			__cpuidex(info, __level, __count);\
+			__eax = info[0];\
+			__ebx = info[1];\
+			__ecx = info[2];\
+			__edx = info[3];\
+		}
+		#define __cpuid(__level, __eax, __ebx, __ecx, __edx)\
+		{\
+			int info[4];\
+			__cpuidex(info, __level, 0);\
+			__eax = info[0];\
+			__ebx = info[1];\
+			__ecx = info[2];\
+			__edx = info[3];\
+		}
+	#else
+		#include <cpuid.h>
+		#if __GNUC__ > 4 || __GNUC__ == 4 && __GNUC_MINOR__ >= 4
+		inline unsigned long  _xgetbv_32(unsigned int index){
+			unsigned int eax, edx;
+			__asm__ __volatile__("xgetbv" : "=a"(eax), "=d"(edx) : "c"(index));
+			return eax;
+
+		}
+		#else
+			#define _xgetbv_32() 0
+		#endif
+	#endif
+
 #ifndef bit_AVX2
 #define bit_AVX2 (1 << 5)
 #endif
@@ -9,6 +42,10 @@
 #define bit_SSSE3 (1 << 9)
 #endif
 #endif
+
+#define bit_XSAVE_XRSTORE (1 << 27)
+
+
 
 #include "../include/libbase64.h"
 #include "codecs.h"
@@ -90,18 +127,41 @@ codec_choose_arm (struct codec *codec)
 static int
 codec_choose_x86 (struct codec *codec)
 {
-#if (__x86_64__ || __i386__) && (HAVE_AVX2 || HAVE_SSSE3)
+#if (__x86_64__ || __i386__ || _M_X86 || _M_X64 ) && (HAVE_AVX2 || HAVE_SSSE3)
 
 	unsigned int eax, ebx = 0, ecx = 0, edx;
-	unsigned int max_level = __get_cpuid_max(0, NULL);
+	unsigned int max_level;
+
+	#ifdef _MSC_VER 
+	int info[4];
+	__cpuidex(info, 0, 0);
+	max_level = info[0];
+	#else
+	max_level = __get_cpuid_max(0, NULL);
+	#endif
 
 	#if HAVE_AVX2
-	/* Check for AVX2 support: */
+	/* Check for AVX2 support: 
+	 Checking for AVX requires 3 things:
+	 1) CPUID indicates that the OS uses XSAVE and XRSTORE
+	     instructions (allowing saving YMM registers on context
+	     switch)
+	 2) CPUID indicates support for AVX
+	 3) XGETBV indicates the AVX registers will be saved and
+	     restored on context switch
+	
+	 Note that XGETBV is only available on 686 or later CPUs, so
+	 the instruction needs to be conditionally run.*/
 	if (max_level >= 7) {
 		__cpuid_count(7, 0, eax, ebx, ecx, edx);
-		if (ebx & bit_AVX2) {
-			codec->enc = base64_stream_encode_avx2;
-			codec->dec = base64_stream_decode_avx2;
+
+		if ( (ebx & bit_AVX2) && (ecx & bit_XSAVE_XRSTORE)) {
+			unsigned long long xcrFeatureMask;
+			xcrFeatureMask = _xgetbv_32(0);
+			if ( xcrFeatureMask & 0x6 ) {
+				codec->enc = base64_stream_encode_avx2;
+				codec->dec = base64_stream_decode_avx2;
+			}
 			return 1;
 		}
 	}

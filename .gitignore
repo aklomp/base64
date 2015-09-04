@@ -6,3 +6,12 @@ lib/libbase64.o
 test/benchmark
 test/test_base64
 test/*.o
+*.vcxproj*.user
+*.suo
+*.sdf
+*.opensdf
+*.pdb
+*.ncb
+msvc/base64
+msvc/benchmark_base64
+msvc/test_base64

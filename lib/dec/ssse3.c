@@ -35,15 +35,15 @@ while (srclen >= 24)
 
 	/* Check if all bytes have been classified; else fall back on bytewise code
 	 * to do error checking and reporting: */
-	if (_mm_movemask_epi8(s1mask | s2mask | s3mask | s4mask | s5mask) != 0xFFFF) {
+	if (_mm_movemask_epi8(_mm_or_si128(_mm_or_si128(_mm_or_si128(_mm_or_si128(s1mask, s2mask), s3mask), s4mask), s5mask)) != 0xFFFF) {
 		break;
 	}
 	/* Subtract sets from byte values: */
-	res  = s1mask & _mm_sub_epi8(str, _mm_set1_epi8('A'));
-	res |= s2mask & _mm_sub_epi8(str, _mm_set1_epi8('a' - 26));
-	res |= s3mask & _mm_sub_epi8(str, _mm_set1_epi8('0' - 52));
-	res |= s4mask & _mm_set1_epi8(62);
-	res |= s5mask & _mm_set1_epi8(63);
+	res = _mm_and_si128(s1mask , _mm_sub_epi8(str, _mm_set1_epi8('A')));
+	res = _mm_or_si128(res,_mm_and_si128(s2mask, _mm_sub_epi8(str, _mm_set1_epi8('a' - 26))));
+	res = _mm_or_si128(res,_mm_and_si128(s3mask, _mm_sub_epi8(str, _mm_set1_epi8('0' - 52))));
+	res = _mm_or_si128(res,_mm_and_si128(s4mask, _mm_set1_epi8(62)));
+	res = _mm_or_si128(res, _mm_and_si128(s5mask, _mm_set1_epi8(63)));
 
 	/* Shuffle bytes to 32-bit bigendian: */
 	res = _mm_shuffle_epi8(res,
@@ -53,16 +53,16 @@ while (srclen >= 24)
 	mask = _mm_set1_epi32(0x3F000000);
 
 	/* Pack bytes together: */
-	str = _mm_slli_epi32(res & mask, 2);
+	str = _mm_slli_epi32(_mm_and_si128(res , mask), 2);
 	mask = _mm_srli_epi32(mask, 8);
 
-	str |= _mm_slli_epi32(res & mask, 4);
+	str = _mm_or_si128(str,_mm_slli_epi32(_mm_and_si128(res, mask), 4));
 	mask = _mm_srli_epi32(mask, 8);
 
-	str |= _mm_slli_epi32(res & mask, 6);
+	str = _mm_or_si128(str, _mm_slli_epi32(_mm_and_si128(res, mask), 6));
 	mask = _mm_srli_epi32(mask, 8);
 
-	str |= _mm_slli_epi32(res & mask, 8);
+	str = _mm_or_si128(str, _mm_slli_epi32(_mm_and_si128(res, mask), 8));
 
 	/* Reshuffle and repack into 12-byte output format: */
 	str = _mm_shuffle_epi8(str,

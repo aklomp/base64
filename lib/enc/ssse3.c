@@ -22,20 +22,20 @@ while (srclen >= 16)
 	mask = _mm_set1_epi32(0x3F000000);
 
 	/* Shift bits by 2, mask in only the first byte: */
-	res = _mm_srli_epi32(str, 2) & mask;
+	res = _mm_and_si128 (_mm_srli_epi32(str, 2), mask);
 	mask = _mm_srli_epi32(mask, 8);
 
 	/* Shift bits by 4, mask in only the second byte: */
-	res |= _mm_srli_epi32(str, 4) & mask;
+	res = _mm_or_si128 (res,_mm_and_si128(_mm_srli_epi32(str, 4), mask));
 	mask = _mm_srli_epi32(mask, 8);
 
 	/* Shift bits by 6, mask in only the third byte: */
-	res |= _mm_srli_epi32(str, 6) & mask;
+	res = _mm_or_si128(res, _mm_and_si128(_mm_srli_epi32(str, 6) , mask));
 	mask = _mm_srli_epi32(mask, 8);
 
 	/* No shift necessary for the fourth byte because we duplicated
 	 * the third byte to this position; just mask: */
-	res |= str & mask;
+	res = _mm_or_si128(res,_mm_and_si128(str, mask));
 
 	/* Reorder to 32-bit little-endian: */
 	res = _mm_shuffle_epi8(res,
@@ -50,28 +50,28 @@ while (srclen >= 16)
 
 	/* set 2: 26..51, "abcdefghijklmnopqrstuvwxyz" */
 	s2mask = _mm_andnot_si128(blockmask, _mm_cmplt_epi8(res, _mm_set1_epi8(52)));
-	blockmask |= s2mask;
+	blockmask = _mm_or_si128(blockmask, s2mask);
 
 	/* set 3: 52..61, "0123456789" */
 	s3mask = _mm_andnot_si128(blockmask, _mm_cmplt_epi8(res, _mm_set1_epi8(62)));
-	blockmask |= s3mask;
+	blockmask = _mm_or_si128(blockmask,s3mask);
 
 	/* set 4: 62, "+" */
 	s4mask = _mm_andnot_si128(blockmask, _mm_cmplt_epi8(res, _mm_set1_epi8(63)));
-	blockmask |= s4mask;
+	blockmask = _mm_or_si128(blockmask,s4mask);
 
 	/* set 5: 63, "/"
 	 * Everything that is not blockmasked */
 
 	/* Create the masked character sets: */
-	s1 = s1mask & _mm_add_epi8(res, _mm_set1_epi8('A'));
-	s2 = s2mask & _mm_add_epi8(res, _mm_set1_epi8('a' - 26));
-	s3 = s3mask & _mm_add_epi8(res, _mm_set1_epi8('0' - 52));
-	s4 = s4mask & _mm_set1_epi8('+');
+	s1 = _mm_and_si128(s1mask , _mm_add_epi8(res, _mm_set1_epi8('A')));
+	s2 = _mm_and_si128(s2mask , _mm_add_epi8(res, _mm_set1_epi8('a' - 26)));
+	s3 = _mm_and_si128(s3mask , _mm_add_epi8(res, _mm_set1_epi8('0' - 52)));
+	s4 = _mm_and_si128(s4mask , _mm_set1_epi8('+'));
 	s5 = _mm_andnot_si128(blockmask, _mm_set1_epi8('/'));
 
 	/* Blend all the sets together and store: */
-	_mm_storeu_si128((__m128i *)o, s1 | s2 | s3 | s4 | s5);
+	_mm_storeu_si128((__m128i *)o, _mm_or_si128(_mm_or_si128(_mm_or_si128(_mm_or_si128(s1, s2), s3), s4) , s5));
 
 	c += 12;	/* 3 * 4 bytes of input  */
 	o += 16;	/* 4 * 4 bytes of output */

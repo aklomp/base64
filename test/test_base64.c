@@ -2,15 +2,79 @@
 #include <stdio.h>
 #include "../include/libbase64.h"
 #include "codec_supported.h"
+#include <malloc.h>
 
 static int fail = 0;
 static char out[2000];
 static size_t outlen;
 
-extern char _binary_moby_dick_plain_txt_start[];
-extern char _binary_moby_dick_plain_txt_end[];
-extern char _binary_moby_dick_base64_txt_start[];
-extern char _binary_moby_dick_base64_txt_end[];
+#ifdef _MSC_VER
+	char* read_all(const char* file, long* length) {
+		FILE    *infile;
+		char    *buffer;
+		long    numbytes;
+
+		/* open an existing file for reading */
+		infile = fopen(file, "rb");
+
+		/* quit if the file does not exist */
+		if (infile == NULL)
+			return 0;
+
+		/* Get the number of bytes */
+		fseek(infile, 0L, SEEK_END);
+		numbytes = ftell(infile);
+		*length = numbytes;
+
+		/* reset the file position indicator to
+		the beginning of the file */
+		fseek(infile, 0L, SEEK_SET);
+
+		/* grab sufficient memory for the
+		buffer to hold the text */
+		buffer = (char*)malloc(numbytes+1);
+
+		/* memory error */
+		if (buffer == NULL)
+			return 0;
+
+		/* copy all the text into the buffer */
+		fread(buffer, sizeof(char), numbytes, infile);
+		fclose(infile);
+		buffer[numbytes] = 0;
+		
+		/* free the memory we used for the buffer */
+		return buffer;
+	}
+
+#define READ_INPUT_FILE(filename, name) \
+			{\
+		long length; \
+		char* data ;\
+		data = read_all(filename, &length); \
+		if ( !data ) {\
+			printf("FAIL: could not read input file %s", filename);\
+			return 1;\
+		}\
+		if (strstr(data, "\r\n") != NULL) {\
+			printf("FAIL: Input file %s must have UNIX-style line endings", filename);\
+			return 1;\
+		}\
+		_binary_##name##_start = data;\
+		_binary_##name##_end = data+length;\
+	}
+	char* _binary_moby_dick_plain_txt_start;
+	char* _binary_moby_dick_plain_txt_end;
+	char* _binary_moby_dick_base64_txt_start;
+	char* _binary_moby_dick_base64_txt_end;
+	
+#else
+	extern char _binary_moby_dick_plain_txt_start[];
+	extern char _binary_moby_dick_plain_txt_end[];
+	extern char _binary_moby_dick_base64_txt_start[];
+	extern char _binary_moby_dick_base64_txt_end[];
+#endif
+
 
 static int
 assert_enc_len (int flags, char *src, size_t srclen, char *dst, size_t dstlen)
@@ -238,7 +302,10 @@ main ()
 {
 	unsigned int i, flags;
 	int ret = 0;
-
+	#ifdef _MSC_VER
+		READ_INPUT_FILE("moby_dick_base64.txt", moby_dick_base64_txt);
+		READ_INPUT_FILE("moby_dick_plain.txt", moby_dick_plain_txt);
+	#endif
 	/* Loop over all codecs: */
 	for (i = 0; codecs[i]; i++)
 	{
@@ -310,5 +377,9 @@ main ()
 		}
 		ret |= fail;
 	}
+	#ifdef _MSC_VER
+	free(_binary_moby_dick_base64_txt_start);
+	free(_binary_moby_dick_plain_txt_start);
+	#endif
 	return ret;
 }
