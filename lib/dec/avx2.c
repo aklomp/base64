@@ -36,11 +36,11 @@ while (srclen >= 45)
 
 	/* Check if all bytes have been classified; else fall back on bytewise code
 	 * to do error checking and reporting: */
-	if ((unsigned int)_mm256_movemask_epi8(s1mask | s2mask | s3mask | s4mask | s5mask) != 0xFFFFFFFF) {
+	if ((unsigned int)_mm256_movemask_epi8(_mm256_or_si256(_mm256_or_si256(_mm256_or_si256(_mm256_or_si256(s1mask, s2mask), s3mask), s4mask), s5mask)) != 0xFFFFFFFF) {
 		break;
 	}
 	/* Subtract sets from byte values: */
-	res = _mm256_sub_epi8(str, _mm256_set1_epi8('A')) & s1mask;
+	res = _mm256_and_si256(_mm256_sub_epi8(str, _mm256_set1_epi8('A')) , s1mask);
 	res = _mm256_blendv_epi8(res, _mm256_sub_epi8(str, _mm256_set1_epi8('a' - 26)), s2mask);
 	res = _mm256_blendv_epi8(res, _mm256_sub_epi8(str, _mm256_set1_epi8('0' - 52)), s3mask);
 	res = _mm256_blendv_epi8(res, _mm256_set1_epi8(62), s4mask);
@@ -62,16 +62,16 @@ while (srclen >= 45)
 	mask = _mm256_set1_epi32(0x3F000000);
 
 	/* Pack bytes together: */
-	str = _mm256_slli_epi32(res & mask, 2);
+	str = _mm256_slli_epi32(_mm256_and_si256(res , mask), 2);
 	mask = _mm256_srli_epi32(mask, 8);
 
-	str |= _mm256_slli_epi32(res & mask, 4);
+	str = _mm256_or_si256(str, _mm256_slli_epi32(_mm256_and_si256(res, mask), 4));
 	mask = _mm256_srli_epi32(mask, 8);
 
-	str |= _mm256_slli_epi32(res & mask, 6);
+	str = _mm256_or_si256(str, _mm256_slli_epi32(_mm256_and_si256(res , mask), 6));
 	mask = _mm256_srli_epi32(mask, 8);
 
-	str |= _mm256_slli_epi32(res & mask, 8);
+	str = _mm256_or_si256(str,_mm256_slli_epi32(_mm256_and_si256(res, mask), 8));
 
 	/* As in AVX2 encoding, we have to shuffle and repack each 128-bit lane
 	 * separately due to the way _mm256_shuffle_epi8 works: */
