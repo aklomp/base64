@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stddef.h>	/* size_t */
 
 #include "../include/libbase64.h"
@@ -8,7 +9,7 @@
  * The idea being that CPU features don't change at runtime. */
 static struct codec codec = { NULL, NULL };
 
-const unsigned char
+const uint8_t
 base64_table_enc[] =
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	"abcdefghijklmnopqrstuvwxyz"
@@ -20,7 +21,7 @@ base64_table_enc[] =
  * and + / are mapped to their "decoded" values. The other bytes all map to
  * the value 255, which flags them as "invalid input". */
 
-const unsigned char
+const uint8_t
 base64_table_dec[] =
 {
 	255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,		/*   0..15 */
@@ -73,7 +74,7 @@ base64_stream_encode_final
 	, size_t		*outlen
 	)
 {
-	char *o = out;
+	uint8_t *o = (uint8_t *)out;
 
 	if (state->bytes == 1) {
 		*o++ = base64_table_enc[state->carry];

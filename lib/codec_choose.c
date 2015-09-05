@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stdint.h>
 #include <stddef.h>
 
 #if __x86_64__ || __i386__

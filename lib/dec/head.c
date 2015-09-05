@@ -1,7 +1,7 @@
 int ret = 0;
-const unsigned char *c = (const unsigned char *)src;
-unsigned char *o = (unsigned char *)out;
-unsigned char q;
+const uint8_t *c = (const uint8_t *)src;
+uint8_t *o = (uint8_t *)out;
+uint8_t q;
 
 /* Use local temporaries to avoid cache thrashing: */
 size_t outl = 0;

@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stddef.h>
 #ifdef __SSSE3__
 #include <tmmintrin.h>

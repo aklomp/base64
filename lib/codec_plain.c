@@ -1,5 +1,5 @@
-#include <stddef.h>
 #include <stdint.h>
+#include <stddef.h>
 
 #include "../include/libbase64.h"
 #include "codecs.h"

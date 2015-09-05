@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stddef.h>
 #ifdef __AVX2__
 #include <immintrin.h>
