@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stddef.h>
 
 #if __x86_64__ || __i386__
@@ -25,44 +26,44 @@ BASE64_CODEC_FUNCS(neon64)
 BASE64_CODEC_FUNCS(plain)
 BASE64_CODEC_FUNCS(ssse3)
 
-static int
+static bool
 codec_choose_forced (struct codec *codec, int flags)
 {
 	/* If the user wants to use a certain codec,
 	 * always allow it, even if the codec is a no-op.
 	 * For testing purposes. */
 	if (!(flags & 0x1F)) {
-		return 0;
+		return false;
 	}
 	if (flags & BASE64_FORCE_AVX2) {
 		codec->enc = base64_stream_encode_avx2;
 		codec->dec = base64_stream_decode_avx2;
-		return 1;
+		return true;
 	}
 	if (flags & BASE64_FORCE_NEON32) {
 		codec->enc = base64_stream_encode_neon32;
 		codec->dec = base64_stream_decode_neon32;
-		return 1;
+		return true;
 	}
 	if (flags & BASE64_FORCE_NEON64) {
 		codec->enc = base64_stream_encode_neon64;
 		codec->dec = base64_stream_decode_neon64;
-		return 1;
+		return true;
 	}
 	if (flags & BASE64_FORCE_PLAIN) {
 		codec->enc = base64_stream_encode_plain;
 		codec->dec = base64_stream_decode_plain;
-		return 1;
+		return true;
 	}
 	if (flags & BASE64_FORCE_SSSE3) {
 		codec->enc = base64_stream_encode_ssse3;
 		codec->dec = base64_stream_decode_ssse3;
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
-static int
+static bool
 codec_choose_arm (struct codec *codec)
 {
 #if (defined(__ARM_NEON__) || defined(__ARM_NEON)) && ((defined(__aarch64__) && HAVE_NEON64) || HAVE_NEON32)
@@ -79,15 +80,15 @@ codec_choose_arm (struct codec *codec)
 	codec->dec = base64_stream_decode_neon32;
 	#endif
 
-	return 1;
+	return true;
 
 #else
 	(void)codec;
-	return 0;
+	return false;
 #endif
 }
 
-static int
+static bool
 codec_choose_x86 (struct codec *codec)
 {
 #if (__x86_64__ || __i386__) && (HAVE_AVX2 || HAVE_SSSE3)
@@ -102,7 +103,7 @@ codec_choose_x86 (struct codec *codec)
 		if (ebx & bit_AVX2) {
 			codec->enc = base64_stream_encode_avx2;
 			codec->dec = base64_stream_decode_avx2;
-			return 1;
+			return true;
 		}
 	}
 	#endif
@@ -114,7 +115,7 @@ codec_choose_x86 (struct codec *codec)
 		if (ecx & bit_SSSE3) {
 			codec->enc = base64_stream_encode_ssse3;
 			codec->dec = base64_stream_decode_ssse3;
-			return 1;
+			return true;
 		}
 	}
 	#endif
@@ -123,7 +124,7 @@ codec_choose_x86 (struct codec *codec)
 	(void)codec;
 #endif
 
-	return 0;
+	return false;
 }
 
 void
