@@ -2,15 +2,11 @@
 #include <stdio.h>
 #include "../include/libbase64.h"
 #include "codec_supported.h"
+#include "moby_dick.h"
 
 static int fail = 0;
 static char out[2000];
 static size_t outlen;
-
-extern char _binary_moby_dick_plain_txt_start[];
-extern char _binary_moby_dick_plain_txt_end[];
-extern char _binary_moby_dick_base64_txt_start[];
-extern char _binary_moby_dick_base64_txt_end[];
 
 static int
 assert_enc_len (int flags, char *src, size_t srclen, char *dst, size_t dstlen)
@@ -273,17 +269,12 @@ main ()
 		/* The first paragraph from Moby Dick,
 		 * to test the SIMD codecs with larger blocksize: */
 		assert_enc_len(flags,
-			_binary_moby_dick_plain_txt_start,
-			_binary_moby_dick_plain_txt_end - _binary_moby_dick_plain_txt_start,
-			_binary_moby_dick_base64_txt_start,
-			_binary_moby_dick_base64_txt_end - _binary_moby_dick_base64_txt_start
-		);
+			moby_dick_plain, strlen(moby_dick_plain),
+			moby_dick_base64, strlen(moby_dick_base64));
+
 		assert_dec_len(flags,
-			_binary_moby_dick_base64_txt_start,
-			_binary_moby_dick_base64_txt_end - _binary_moby_dick_base64_txt_start,
-			_binary_moby_dick_plain_txt_start,
-			_binary_moby_dick_plain_txt_end - _binary_moby_dick_plain_txt_start
-		);
+			moby_dick_base64, strlen(moby_dick_base64),
+			moby_dick_plain, strlen(moby_dick_plain));
 
 		assert_roundtrip(flags, "");
 		assert_roundtrip(flags, "f");
