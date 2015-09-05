@@ -3,29 +3,37 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "../include/libbase64.h"
+#include "codecs.h"
+#include "config.h"
+
 #if __x86_64__ || __i386__ || _M_X86 || _M_X64
 #ifdef _MSC_VER
 	#include <intrin.h>
 	#define __cpuid_count(__level, __count, __eax, __ebx, __ecx, __edx) \
-	{\
-		int info[4];\
-		__cpuidex(info, __level, __count);\
-		__eax = info[0];\
-		__ebx = info[1];\
-		__ecx = info[2];\
-		__edx = info[3];\
+	{						\
+		int info[4];				\
+		__cpuidex(info, __level, __count);	\
+		__eax = info[0];			\
+		__ebx = info[1];			\
+		__ecx = info[2];			\
+		__edx = info[3];			\
 	}
-	#define __cpuid(__level, __eax, __ebx, __ecx, __edx) __cpuid_count(__level, 0, __eax, __ebx, __ecx, __edx)
+	#define __cpuid(__level, __eax, __ebx, __ecx, __edx) \
+		__cpuid_count(__level, 0, __eax, __ebx, __ecx, __edx)
 #else
 	#include <cpuid.h>
-	#if ((__GNUC__ > 4 || __GNUC__ == 4 && __GNUC_MINOR__ >= 2) || (__clang_major__ >= 3))
-		static inline uint64_t _xgetbv(unsigned int index){
-			unsigned int eax, edx;
-			__asm__ __volatile__("xgetbv" : "=a"(eax), "=d"(edx) : "c"(index));
-			return ((uint64_t)edx << 32) | eax;
-		}
-	#else
-		#error "Platform not supported"
+	#if HAVE_AVX2
+		#if ((__GNUC__ > 4 || __GNUC__ == 4 && __GNUC_MINOR__ >= 2) || (__clang_major__ >= 3))
+			static inline uint64_t _xgetbv (uint32_t index)
+			{
+				uint32_t eax, edx;
+				__asm__ __volatile__("xgetbv" : "=a"(eax), "=d"(edx) : "c"(index));
+				return ((uint64_t)edx << 32) | eax;
+			}
+		#else
+			#error "Platform not supported"
+		#endif
 	#endif
 #endif
 
@@ -44,10 +52,6 @@
 
 #define _XCR_XMM_AND_YMM_STATE_ENABLED_BY_OS 0x6
 #endif
-
-#include "../include/libbase64.h"
-#include "codecs.h"
-#include "config.h"
 
 /* Function declarations: */
 #define BASE64_CODEC_FUNCS(arch)	\
