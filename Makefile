@@ -1,4 +1,4 @@
-CFLAGS += -O3 -Wall -Wextra -pedantic
+CFLAGS += -std=c99 -O3 -Wall -Wextra -pedantic
 
 OBJS = \
   lib/lib.o \

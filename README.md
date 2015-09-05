@@ -1,6 +1,6 @@
 # Fast Base64 stream encoder/decoder
 
-This is an implementation of a base64 stream encoding/decoding library in C89
+This is an implementation of a base64 stream encoding/decoding library in C99
 with SIMD (AVX2, NEON, AArch64/NEON, SSSE3) acceleration. It also contains
 wrapper functions to encode/decode simple length-delimited strings. This
 library aims to be:
@@ -42,7 +42,7 @@ Notable features:
 - Really fast on other 32 or 64-bit platforms through optimized routines;
 - Reads/writes blocks of streaming data;
 - Does not dynamically allocate memory;
-- Valid C89 that compiles with pedantic options on;
+- Valid C99 that compiles with pedantic options on;
 - Re-entrant and threadsafe;
 - Unit tested;
 - Uses Duff's Device.
