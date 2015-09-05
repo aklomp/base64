@@ -3,7 +3,7 @@
  * full 16-byte read without segfaulting: */
 while (srclen >= 16)
 {
-	__m128i str, mask, res, blockmask;
+	__m128i str, mask, ormask, res, blockmask;
 	__m128i s1, s2, s3, s4, s5;
 	__m128i s1mask, s2mask, s3mask, s4mask;
 
@@ -71,7 +71,12 @@ while (srclen >= 16)
 	s5 = _mm_andnot_si128(blockmask, _mm_set1_epi8('/'));
 
 	/* Blend all the sets together and store: */
-	_mm_storeu_si128((__m128i *)o, _mm_or_si128(_mm_or_si128(_mm_or_si128(_mm_or_si128(s1, s2), s3), s4), s5));
+	ormask = _mm_or_si128(s1, s2);
+	ormask = _mm_or_si128(ormask, s3);
+	ormask = _mm_or_si128(ormask, s4);
+	ormask = _mm_or_si128(ormask, s5);
+
+	_mm_storeu_si128((__m128i *)o, ormask);
 
 	c += 12;	/* 3 * 4 bytes of input  */
 	o += 16;	/* 4 * 4 bytes of output */

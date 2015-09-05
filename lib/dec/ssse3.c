@@ -5,7 +5,7 @@
  * of input data remaining to close the gap. 16 + 2 + 6 = 24 bytes: */
 while (srclen >= 24)
 {
-	__m128i str, mask, res;
+	__m128i str, mask, ormask, res;
 	__m128i s1mask, s2mask, s3mask, s4mask, s5mask;
 
 	/* Load string: */
@@ -35,9 +35,15 @@ while (srclen >= 24)
 
 	/* Check if all bytes have been classified; else fall back on bytewise code
 	 * to do error checking and reporting: */
-	if (_mm_movemask_epi8(_mm_or_si128(_mm_or_si128(_mm_or_si128(_mm_or_si128(s1mask, s2mask), s3mask), s4mask), s5mask)) != 0xFFFF) {
+	ormask = _mm_or_si128(s1mask, s2mask);
+	ormask = _mm_or_si128(ormask, s3mask);
+	ormask = _mm_or_si128(ormask, s4mask);
+	ormask = _mm_or_si128(ormask, s5mask);
+
+	if ((uint16_t)_mm_movemask_epi8(ormask) != (uint16_t)0xFFFF) {
 		break;
 	}
+
 	/* Subtract sets from byte values: */
 	res = _mm_and_si128(s1mask, _mm_sub_epi8(str, _mm_set1_epi8('A')));
 	res = _mm_or_si128(res, _mm_and_si128(s2mask, _mm_sub_epi8(str, _mm_set1_epi8('a' - 26))));

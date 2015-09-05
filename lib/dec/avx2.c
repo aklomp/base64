@@ -6,7 +6,7 @@
 while (srclen >= 45)
 {
 	__m128i l0, l1;
-	__m256i str, mask, res, ormask;
+	__m256i str, mask, ormask, res;
 	__m256i s1mask, s2mask, s3mask, s4mask, s5mask;
 
 	/* Load string: */
@@ -41,7 +41,7 @@ while (srclen >= 45)
 	ormask = _mm256_or_si256(ormask, s4mask);
 	ormask = _mm256_or_si256(ormask, s5mask);
 
-	if ((unsigned int)_mm256_movemask_epi8(ormask) != 0xFFFFFFFF) {
+	if ((uint32_t)_mm256_movemask_epi8(ormask) != (uint32_t)0xFFFFFFFF) {
 		break;
 	}
 
