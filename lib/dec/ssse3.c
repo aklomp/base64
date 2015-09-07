@@ -40,7 +40,7 @@ while (srclen >= 24)
 	ormask = _mm_or_si128(ormask, s4mask);
 	ormask = _mm_or_si128(ormask, s5mask);
 
-	if ((uint16_t)_mm_movemask_epi8(ormask) != (uint16_t)0xFFFF) {
+	if ((uint32_t)_mm_movemask_epi8(ormask) != (uint32_t)0xFFFF) {
 		break;
 	}
 
