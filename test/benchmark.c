@@ -3,16 +3,21 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+
+#if defined(_WIN32) && !defined(_POSIX_CPUTIME)
+#include "gettime_win.c"
+#endif
 
 #include "../include/libbase64.h"
 #include "codec_supported.h"
 
 #define INSIZE_MB  10
-#define RANDOMDEV  "/dev/urandom"
 
 struct buffers {
 	char *reg;
@@ -20,32 +25,11 @@ struct buffers {
 	size_t regsz;
 	size_t encsz;
 };
-
-static int
-get_random_data (struct buffers *b, char **errmsg)
-{
-	int fd;
-	ssize_t nread;
-	size_t total_read = 0;
-
-	/* Open random device for semi-random data: */
-	if ((fd = open(RANDOMDEV, O_RDONLY)) < 0) {
-		*errmsg = "Cannot open " RANDOMDEV "\n";
-		return 0;
-	}
-	printf("Filling buffer with random data...\n");
-
-	while (total_read < b->regsz) {
-		if ((nread = read(fd, b->reg + total_read, b->regsz - total_read)) < 0) {
-			*errmsg = "Read error\n";
-			close(fd);
-			return 0;
-		}
-		total_read += nread;
-	}
-	close(fd);
-	return 1;
-}
+#ifndef _WIN32
+#include "rand_unix.c"
+#else
+#include "rand_win.c"
+#endif
 
 static float
 timediff_sec (struct timespec *start, struct timespec *end)
