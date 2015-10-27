@@ -1,6 +1,7 @@
-/* If we have 64-bit ints, pick off 6 bytes at a
- * time for as long as we can: */
-while (srclen >= 6)
+/* If we have 64-bit ints, pick off 6 bytes at a time for as long as we can,
+ * but ensure that there are at least 8 bytes available to avoid segfaulting:
+ */
+while (srclen >= 8)
 {
 	/* Load string: */
 	uint64_t str = *(uint64_t *)c;

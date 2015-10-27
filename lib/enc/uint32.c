@@ -1,6 +1,7 @@
-/* If we have 32-bit ints, pick off 3 bytes at a
- * time for as long as we can: */
-while (srclen >= 3)
+/* If we have 32-bit ints, pick off 3 bytes at a time for as long as we can,
+ * but ensure that there are at least 4 bytes available to avoid segfaulting:
+ */
+while (srclen >= 4)
 {
 	/* Load string: */
 	uint32_t str = *(uint32_t *)c;
