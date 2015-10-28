@@ -10,12 +10,8 @@ while (srclen >= 8)
 	/* Load string: */
 	str = *(uint32_t *)c;
 
-#if LITTLE_ENDIAN
-
 	/* Shuffle bytes to 32-bit bigendian: */
-	str = __builtin_bswap32(str);
-
-#endif
+	str = cpu_to_be32(str);
 
 	/* Lookup each byte in the decoding table; if we encounter any
 	 * "invalid" values, fall back on the bytewise code: */
@@ -39,12 +35,8 @@ while (srclen >= 8)
 	}
 	res |= dec << 8;
 
-#if LITTLE_ENDIAN
-
 	/* Reshuffle and repack into 3-byte output format: */
-	res = __builtin_bswap32(res);
-
-#endif
+	res = be32_to_cpu(res);
 
 	/* Store back: */
 	*(uint32_t *)o = res;
