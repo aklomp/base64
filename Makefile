@@ -1,5 +1,8 @@
 CFLAGS += -std=c99 -O3 -Wall -Wextra -pedantic
 
+# Set OBJCOPY if not defined by environment:
+OBJCOPY ?= objcopy
+
 OBJS = \
   lib/lib.o \
   lib/codec_avx2.o \
@@ -38,7 +41,7 @@ bin/base64: bin/base64.o lib/libbase64.o
 
 lib/libbase64.o: $(OBJS)
 	$(LD) --relocatable -o $@ $^
-	objcopy --keep-global-symbols=lib/exports.txt $@
+	$(OBJCOPY) --keep-global-symbols=lib/exports.txt $@
 
 lib/config.h:
 	@echo "#define HAVE_AVX2   $(HAVE_AVX2)"    > $@
