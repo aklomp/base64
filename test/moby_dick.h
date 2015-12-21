@@ -1,4 +1,4 @@
-static char *moby_dick_plain =
+static const char *moby_dick_plain =
 	"Call me Ishmael. Some years ago--never mind how long precisely--having\n"
 	"little or no money in my purse, and nothing particular to interest me on\n"
 	"shore, I thought I would sail about a little and see the watery part of\n"
@@ -16,7 +16,7 @@ static char *moby_dick_plain =
 	"it, almost all men in their degree, some time or other, cherish very\n"
 	"nearly the same feelings towards the ocean with me.\n";
 
-static char *moby_dick_base64 =
+static const char *moby_dick_base64 =
 	"Q2FsbCBtZSBJc2htYWVsLiBTb21lIHllYXJzIGFnby0tbmV2ZXIgbWluZCBob3cgbG9uZ"
 	"yBwcmVjaXNlbHktLWhhdmluZwpsaXR0bGUgb3Igbm8gbW9uZXkgaW4gbXkgcHVyc2UsIG"
 	"FuZCBub3RoaW5nIHBhcnRpY3VsYXIgdG8gaW50ZXJlc3QgbWUgb24Kc2hvcmUsIEkgdGh"

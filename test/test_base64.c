@@ -9,8 +9,11 @@ static char out[2000];
 static size_t outlen;
 
 static int
-assert_enc_len (int flags, char *src, size_t srclen, char *dst, size_t dstlen)
+assert_enc (int flags, const char *src, const char *dst)
 {
+	size_t srclen = strlen(src);
+	size_t dstlen = strlen(dst);
+
 	base64_encode(src, srclen, out, &outlen, flags);
 
 	if (outlen != dstlen) {
@@ -31,17 +34,11 @@ assert_enc_len (int flags, char *src, size_t srclen, char *dst, size_t dstlen)
 }
 
 static int
-assert_enc (int flags, char *src, char *dst)
+assert_dec (int flags, const char *src, const char *dst)
 {
 	size_t srclen = strlen(src);
 	size_t dstlen = strlen(dst);
 
-	return assert_enc_len(flags, src, srclen, dst, dstlen);
-}
-
-static int
-assert_dec_len (int flags, char *src, size_t srclen, char *dst, size_t dstlen)
-{
 	if (!base64_decode(src, srclen, out, &outlen, flags)) {
 		printf("FAIL: decoding of '%s': decoding error\n", src);
 		fail = 1;
@@ -66,45 +63,38 @@ assert_dec_len (int flags, char *src, size_t srclen, char *dst, size_t dstlen)
 }
 
 static int
-assert_dec (int flags, char *src, char *dst)
+assert_roundtrip (int flags, const char *src)
 {
-	size_t srclen = strlen(src);
-	size_t dstlen = strlen(dst);
-
-	return assert_dec_len(flags, src, srclen, dst, dstlen);
-}
-
-static int
-assert_roundtrip (int flags, char *src)
-{
-	char tmp[100];
+	char tmp[1500];
 	size_t tmplen;
 	size_t srclen = strlen(src);
 
+	// Encode the input into global buffer:
 	base64_encode(src, srclen, out, &outlen, flags);
 
+	// Decode the global buffer into local temp buffer:
 	if (!base64_decode(out, outlen, tmp, &tmplen, flags)) {
 		printf("FAIL: decoding of '%s': decoding error\n", out);
-		fail = 1;
-		return 0;
+		return 1;
 	}
-	/* Check that 'src' is identical to 'tmp': */
+
+	// Check that 'src' is identical to 'tmp':
 	if (srclen != tmplen) {
 		printf("FAIL: roundtrip of '%s': "
 			"length expected %lu, got %lu\n", src,
 			(unsigned long)srclen,
 			(unsigned long)tmplen
 		);
-		fail = 1;
-		return 0;
+		return 1;
 	}
+
 	if (strncmp(src, tmp, tmplen) != 0) {
 		tmp[tmplen] = '\0';
 		printf("FAIL: roundtrip of '%s': got '%s'\n", src, tmp);
-		fail = 1;
-		return 0;
+		return 1;
 	}
-	return 1;
+
+	return 0;
 }
 
 static void
@@ -229,77 +219,77 @@ test_streaming (int flags)
 	}
 }
 
+static int
+test_one_codec (const char *codec, int flags)
+{
+	printf("Codec %s:\n", codec);
+
+	// Skip if this codec is not supported:
+	if (!codec_supported(flags)) {
+		puts("  skipping");
+		return 0;
+	}
+
+	// Reset failure flag:
+	fail = 0;
+
+	// Test vectors:
+	struct {
+		const char *in;
+		const char *out;
+	} vec[] = {
+
+		// These are the test vectors from RFC4648:
+		{ "",		""         },
+		{ "f",		"Zg=="     },
+		{ "fo",		"Zm8="     },
+		{ "foo",	"Zm9v"     },
+		{ "foob",	"Zm9vYg==" },
+		{ "fooba",	"Zm9vYmE=" },
+		{ "foobar",	"Zm9vYmFy" },
+
+		// The first paragraph from Moby Dick,
+		// to test the SIMD codecs with larger blocksize:
+		{ moby_dick_plain, moby_dick_base64 },
+	};
+
+	for (size_t i = 0; i < sizeof(vec) / sizeof(vec[0]); i++) {
+
+		// Encode plain string, check against output:
+		assert_enc(flags, vec[i].in, vec[i].out);
+
+		// Decode the output string, check if we get the input:
+		assert_dec(flags, vec[i].out, vec[i].in);
+
+		// Do a roundtrip on the inputs and the outputs:
+		fail |= assert_roundtrip(flags, vec[i].in);
+		fail |= assert_roundtrip(flags, vec[i].out);
+	}
+
+	test_char_table(flags);
+
+	test_streaming(flags);
+
+	if (!fail)
+		puts("  all tests passed.");
+
+	return fail;
+}
+
 int
 main ()
 {
-	unsigned int i, flags;
 	int ret = 0;
 
-	/* Loop over all codecs: */
-	for (i = 0; codecs[i]; i++)
-	{
-		fail = 0;
-		flags = (1 << i);
+	// Loop over all codecs:
+	for (size_t i = 0; codecs[i]; i++) {
 
-		/* Is this codec supported? */
-		if (!codec_supported(flags)) {
-			printf("Codec %s:\n  skipping\n", codecs[i]);
-			continue;
-		}
-		printf("Codec %s:\n", codecs[i]);
+		// Flags to invoke this codec:
+		int codec_flags = (1 << i);
 
-		/* These are the test vectors from RFC4648: */
-		assert_enc(flags, "", "");
-		assert_enc(flags, "f", "Zg==");
-		assert_enc(flags, "fo", "Zm8=");
-		assert_enc(flags, "foo", "Zm9v");
-		assert_enc(flags, "foob", "Zm9vYg==");
-		assert_enc(flags, "fooba", "Zm9vYmE=");
-		assert_enc(flags, "foobar", "Zm9vYmFy");
-
-		/* And their inverse: */
-		assert_dec(flags, "", "");
-		assert_dec(flags, "Zg==", "f");
-		assert_dec(flags, "Zm8=", "fo");
-		assert_dec(flags, "Zm9v", "foo");
-		assert_dec(flags, "Zm9vYg==", "foob");
-		assert_dec(flags, "Zm9vYmE=", "fooba");
-		assert_dec(flags, "Zm9vYmFy", "foobar");
-
-		/* The first paragraph from Moby Dick,
-		 * to test the SIMD codecs with larger blocksize: */
-		assert_enc_len(flags,
-			moby_dick_plain, strlen(moby_dick_plain),
-			moby_dick_base64, strlen(moby_dick_base64));
-
-		assert_dec_len(flags,
-			moby_dick_base64, strlen(moby_dick_base64),
-			moby_dick_plain, strlen(moby_dick_plain));
-
-		assert_roundtrip(flags, "");
-		assert_roundtrip(flags, "f");
-		assert_roundtrip(flags, "fo");
-		assert_roundtrip(flags, "foo");
-		assert_roundtrip(flags, "foob");
-		assert_roundtrip(flags, "fooba");
-		assert_roundtrip(flags, "foobar");
-
-		assert_roundtrip(flags, "");
-		assert_roundtrip(flags, "Zg==");
-		assert_roundtrip(flags, "Zm8=");
-		assert_roundtrip(flags, "Zm9v");
-		assert_roundtrip(flags, "Zm9vYg==");
-		assert_roundtrip(flags, "Zm9vYmE=");
-		assert_roundtrip(flags, "Zm9vYmFy");
-
-		test_char_table(flags);
-
-		test_streaming(flags);
-
-		if (fail == 0) {
-			printf("  all tests passed.\n");
-		}
-		ret |= fail;
+		// Test this codec, merge the results:
+		ret |= test_one_codec(codecs[i], codec_flags);
 	}
+
 	return ret;
 }
