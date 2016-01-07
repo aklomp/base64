@@ -1,14 +1,14 @@
+#include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
 #include "../include/libbase64.h"
 #include "codec_supported.h"
 #include "moby_dick.h"
 
-static int fail = 0;
 static char out[2000];
 static size_t outlen;
 
-static int
+static bool
 assert_enc (int flags, const char *src, const char *dst)
 {
 	size_t srclen = strlen(src);
@@ -21,19 +21,17 @@ assert_enc (int flags, const char *src, const char *dst)
 			(unsigned long)dstlen,
 			(unsigned long)outlen
 		);
-		fail = 1;
-		return 0;
+		return true;
 	}
 	if (strncmp(dst, out, outlen) != 0) {
 		out[outlen] = '\0';
 		printf("FAIL: encoding of '%s': expected output '%s', got '%s'\n", src, dst, out);
-		fail = 1;
-		return 0;
+		return true;
 	}
-	return 1;
+	return false;
 }
 
-static int
+static bool
 assert_dec (int flags, const char *src, const char *dst)
 {
 	size_t srclen = strlen(src);
@@ -41,8 +39,7 @@ assert_dec (int flags, const char *src, const char *dst)
 
 	if (!base64_decode(src, srclen, out, &outlen, flags)) {
 		printf("FAIL: decoding of '%s': decoding error\n", src);
-		fail = 1;
-		return 0;
+		return true;
 	}
 	if (outlen != dstlen) {
 		printf("FAIL: encoding of '%s': "
@@ -50,16 +47,14 @@ assert_dec (int flags, const char *src, const char *dst)
 			(unsigned long)dstlen,
 			(unsigned long)outlen
 		);
-		fail = 1;
-		return 0;
+		return true;
 	}
 	if (strncmp(dst, out, outlen) != 0) {
 		out[outlen] = '\0';
 		printf("FAIL: decoding of '%s': expected output '%s', got '%s'\n", src, dst, out);
-		fail = 1;
-		return 0;
+		return true;
 	}
-	return 1;
+	return false;
 }
 
 static int
@@ -75,7 +70,7 @@ assert_roundtrip (int flags, const char *src)
 	// Decode the global buffer into local temp buffer:
 	if (!base64_decode(out, outlen, tmp, &tmplen, flags)) {
 		printf("FAIL: decoding of '%s': decoding error\n", out);
-		return 1;
+		return true;
 	}
 
 	// Check that 'src' is identical to 'tmp':
@@ -85,40 +80,39 @@ assert_roundtrip (int flags, const char *src)
 			(unsigned long)srclen,
 			(unsigned long)tmplen
 		);
-		return 1;
+		return true;
 	}
-
 	if (strncmp(src, tmp, tmplen) != 0) {
 		tmp[tmplen] = '\0';
 		printf("FAIL: roundtrip of '%s': got '%s'\n", src, tmp);
-		return 1;
+		return true;
 	}
 
-	return 0;
+	return false;
 }
 
-static void
+static int
 test_char_table (int flags)
 {
-	int i;
+	bool fail = false;
 	char chr[256];
 	char enc[400], dec[400];
 	size_t enclen, declen;
 
-	/* Fill array with all characters 0..255: */
-	for (i = 0; i < 256; i++) {
+	// Fill array with all characters 0..255:
+	for (int i = 0; i < 256; i++)
 		chr[i] = (unsigned char)i;
-	}
-	/* Loop, using each char as a starting position to increase test coverage: */
-	for (i = 0; i < 256; i++)
-	{
+
+	// Loop, using each char as a starting position to increase test coverage:
+	for (int i = 0; i < 256; i++) {
+
 		size_t chrlen = 256 - i;
 
 		base64_encode(&chr[i], chrlen, enc, &enclen, BASE64_FORCE_PLAIN);
 
 		if (!base64_decode(enc, enclen, dec, &declen, flags)) {
 			printf("FAIL: decoding @ %d: decoding error\n", i);
-			fail = 1;
+			fail = true;
 			continue;
 		}
 		if (declen != chrlen) {
@@ -127,39 +121,40 @@ test_char_table (int flags)
 				(unsigned long)chrlen,
 				(unsigned long)declen
 			);
-			fail = 1;
+			fail = true;
 			continue;
 		}
 		if (strncmp(&chr[i], dec, declen) != 0) {
 			printf("FAIL: roundtrip @ %d: decoded output not same as input\n", i);
-			fail = 1;
+			fail = true;
 		}
 	}
+
+	return fail;
 }
 
-static void
+static int
 test_streaming (int flags)
 {
-	int i;
-	size_t bs;
+	bool fail = false;
 	char chr[256];
 	char ref[400], enc[400];
-	size_t reflen, enclen;
+	size_t reflen;
 	struct base64_state state;
 
-	/* Fill array with all characters 0..255: */
-	for (i = 0; i < 256; i++) {
+	// Fill array with all characters 0..255:
+	for (int i = 0; i < 256; i++)
 		chr[i] = (unsigned char)i;
-	}
-	/* Create reference base64 encoding: */
+
+	// Create reference base64 encoding:
 	base64_encode(chr, 256, ref, &reflen, BASE64_FORCE_PLAIN);
 
-	/* Encode the table with various block sizes and compare to reference: */
-	for (bs = 1; bs < 255; bs++)
+	// Encode the table with various block sizes and compare to reference:
+	for (size_t bs = 1; bs < 255; bs++)
 	{
-		size_t inpos = 0;
+		size_t inpos   = 0;
 		size_t partlen = 0;
-		enclen = 0;
+		size_t enclen  = 0;
 
 		base64_stream_encode_init(&state, flags);
 		memset(enc, 0, 400);
@@ -180,22 +175,23 @@ test_streaming (int flags)
 				(unsigned long)enclen,
 				(unsigned long)reflen
 			);
-			fail = 1;
+			fail = true;
 		}
 		if (strncmp(ref, enc, reflen) != 0) {
 			printf("FAIL: stream encoding with blocksize %lu failed\n",
 				(unsigned long)bs
 			);
-			fail = 1;
+			fail = true;
 		}
 	}
-	/* Decode the reference encoding with various block sizes and
-	 * compare to input char table: */
-	for (bs = 1; bs < 255; bs++)
+
+	// Decode the reference encoding with various block sizes and
+	// compare to input char table:
+	for (size_t bs = 1; bs < 255; bs++)
 	{
-		size_t inpos = 0;
+		size_t inpos   = 0;
 		size_t partlen = 0;
-		enclen = 0;
+		size_t enclen  = 0;
 
 		base64_stream_decode_init(&state, flags);
 		memset(enc, 0, 400);
@@ -208,30 +204,31 @@ test_streaming (int flags)
 				"%lu instead of 255\n",
 				(unsigned long)enclen
 			);
-			fail = 1;
+			fail = true;
 		}
 		if (strncmp(chr, enc, 256) != 0) {
 			printf("FAIL: stream decoding with blocksize %lu failed\n",
 				(unsigned long)bs
 			);
-			fail = 1;
+			fail = true;
 		}
 	}
+
+	return fail;
 }
 
 static int
 test_one_codec (const char *codec, int flags)
 {
+	bool fail = false;
+
 	printf("Codec %s:\n", codec);
 
 	// Skip if this codec is not supported:
 	if (!codec_supported(flags)) {
 		puts("  skipping");
-		return 0;
+		return false;
 	}
-
-	// Reset failure flag:
-	fail = 0;
 
 	// Test vectors:
 	struct {
@@ -256,19 +253,18 @@ test_one_codec (const char *codec, int flags)
 	for (size_t i = 0; i < sizeof(vec) / sizeof(vec[0]); i++) {
 
 		// Encode plain string, check against output:
-		assert_enc(flags, vec[i].in, vec[i].out);
+		fail |= assert_enc(flags, vec[i].in, vec[i].out);
 
 		// Decode the output string, check if we get the input:
-		assert_dec(flags, vec[i].out, vec[i].in);
+		fail |= assert_dec(flags, vec[i].out, vec[i].in);
 
 		// Do a roundtrip on the inputs and the outputs:
 		fail |= assert_roundtrip(flags, vec[i].in);
 		fail |= assert_roundtrip(flags, vec[i].out);
 	}
 
-	test_char_table(flags);
-
-	test_streaming(flags);
+	fail |= test_char_table(flags);
+	fail |= test_streaming(flags);
 
 	if (!fail)
 		puts("  all tests passed.");
@@ -279,7 +275,7 @@ test_one_codec (const char *codec, int flags)
 int
 main ()
 {
-	int ret = 0;
+	bool fail = false;
 
 	// Loop over all codecs:
 	for (size_t i = 0; codecs[i]; i++) {
@@ -288,8 +284,8 @@ main ()
 		int codec_flags = (1 << i);
 
 		// Test this codec, merge the results:
-		ret |= test_one_codec(codecs[i], codec_flags);
+		fail |= test_one_codec(codecs[i], codec_flags);
 	}
 
-	return ret;
+	return (fail) ? 1 : 0;
 }
