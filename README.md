@@ -314,14 +314,33 @@ int main ()
 	char buf[12000], out[16000];
 	struct base64_state state;
 
+	// Initialize stream encoder:
 	base64_stream_encode_init(&state, 0);
+
+	// Read contents of stdin into buffer:
 	while ((nread = fread(buf, 1, sizeof(buf), stdin)) > 0) {
+
+		// Encode buffer:
 		base64_stream_encode(&state, buf, nread, out, &nout);
-		if (nout) fwrite(out, nout, 1, stdout);
-		if (feof(stdin)) break;
+
+		// If there's output, print it to stdout:
+		if (nout) {
+			fwrite(out, nout, 1, stdout);
+		}
+
+		// If an error occurred, exit the loop:
+		if (feof(stdin)) {
+			break;
+		}
 	}
+
+	// Finalize encoding:
 	base64_stream_encode_final(&state, out, &nout);
-	if (nout) fwrite(out, nout, 1, stdout);
+
+	// If the finalizing resulted in extra output bytes, print them:
+	if (nout) {
+		fwrite(out, nout, 1, stdout);
+	}
 
 	return 0;
 }
