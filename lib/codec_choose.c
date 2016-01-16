@@ -5,7 +5,9 @@
 
 #include "../include/libbase64.h"
 #include "codecs.h"
+#ifndef CMD_DEFINED_CONFIG
 #include "config.h"
+#endif
 
 #if __x86_64__ || __i386__ || _M_X86 || _M_X64
 #ifdef _MSC_VER
