@@ -31,11 +31,6 @@ Base64 library to offer SIMD acceleration. The author wrote
 possible SIMD approach to encoding/decoding Base64. The article can help figure
 out what the code is doing, and why.
 
-The original AVX2, NEON and Aarch64/NEON codecs were generously contributed by
-[Inkymail](https://github.com/inkymail/base64), who, in their fork, also
-implemented some additional features. Their work is slowly being backported
-into this project.
-
 Notable features:
 
 - Really fast on x86 and ARM systems by using SIMD vector processing;
@@ -46,6 +41,19 @@ Notable features:
 - Re-entrant and threadsafe;
 - Unit tested;
 - Uses Duff's Device.
+
+## Acknowledgements
+
+The original AVX2, NEON and Aarch64/NEON codecs were generously contributed by
+[Inkymail](https://github.com/inkymail/base64), who, in their fork, also
+implemented some additional features. Their work is slowly being backported
+into this project.
+
+The SSSE3 and AVX2 codecs were substantially improved by using some very clever
+optimizations described by Wojciech Muła in a
+[series](http://0x80.pl/notesen/2016-01-12-sse-base64-encoding.html) of
+[articles](http://0x80.pl/notesen/2016-01-17-sse-base64-decoding.html).
+His own code is [here](https://github.com/WojciechMula/toys/tree/master/base64).
 
 ## Building
 
