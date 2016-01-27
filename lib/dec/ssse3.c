@@ -5,80 +5,44 @@
 // gap. 16 + 2 + 6 = 24 bytes:
 while (srclen >= 24)
 {
-	__m128i str, mask, ormask, res;
-	__m128i s1mask, s2mask, s3mask, s4mask, s5mask;
-
 	// Load string:
-	str = _mm_loadu_si128((__m128i *)c);
+	__m128i str = _mm_loadu_si128((__m128i *)c);
 
-	// Classify characters into five sets:
-	// Set 1: "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	s1mask = _mm_andnot_si128(
-			_mm_cmplt_epi8(str, _mm_set1_epi8('A')),
-			_mm_cmplt_epi8(str, _mm_set1_epi8('Z' + 1)));
+	// The input consists of six character sets in the Base64 alphabet,
+	// which we need to map back to the 6-bit values they represent.
+	// There are three ranges, two singles, and then there's the rest.
+	//
+	//  #  From       To        Add  Characters
+	//  1  [43]       [62]      +19  +
+	//  2  [47]       [63]      +16  /
+	//  3  [48..57]   [52..61]   +4  0..9
+	//  4  [65..90]   [0..25]   -65  A..Z
+	//  5  [97..122]  [26..51]  -71  a..z
+	// (6) Everything else => invalid input
 
-	// Set 2: "abcdefghijklmnopqrstuvwxyz"
-	s2mask = _mm_andnot_si128(
-			_mm_cmplt_epi8(str, _mm_set1_epi8('a')),
-			_mm_cmplt_epi8(str, _mm_set1_epi8('z' + 1)));
+	const __m128i set1 = CMPEQ(str, '+');
+	const __m128i set2 = CMPEQ(str, '/');
+	const __m128i set3 = RANGE(str, '0', '9');
+	const __m128i set4 = RANGE(str, 'A', 'Z');
+	const __m128i set5 = RANGE(str, 'a', 'z');
 
-	// Set 3: "0123456789"
-	s3mask = _mm_andnot_si128(
-			_mm_cmplt_epi8(str, _mm_set1_epi8('0')),
-			_mm_cmplt_epi8(str, _mm_set1_epi8('9' + 1)));
+	__m128i delta = REPLACE(set1, 19);
+	delta = _mm_or_si128(delta, REPLACE(set2,  16));
+	delta = _mm_or_si128(delta, REPLACE(set3,   4));
+	delta = _mm_or_si128(delta, REPLACE(set4, -65));
+	delta = _mm_or_si128(delta, REPLACE(set5, -71));
 
-	// Set 4: "+"
-	s4mask = _mm_cmpeq_epi8(str, _mm_set1_epi8('+'));
-
-	// Set 5: "/"
-	s5mask = _mm_cmpeq_epi8(str, _mm_set1_epi8('/'));
-
-	// Check if all bytes have been classified; else fall back on bytewise
-	// code to do error checking and reporting:
-	ormask = _mm_or_si128(s1mask, s2mask);
-	ormask = _mm_or_si128(ormask, s3mask);
-	ormask = _mm_or_si128(ormask, s4mask);
-	ormask = _mm_or_si128(ormask, s5mask);
-
-	if ((uint32_t)_mm_movemask_epi8(ormask) != (uint32_t)0xFFFF) {
+	// Check for invalid input: if any of the delta values are zero,
+	// fall back on bytewise code to do error checking and reporting:
+	if (_mm_movemask_epi8(CMPEQ(delta, 0))) {
 		break;
 	}
 
-	// Subtract sets from byte values:
-	res = _mm_and_si128(s1mask, _mm_sub_epi8(str, _mm_set1_epi8('A')));
-	res = _mm_or_si128(res, _mm_and_si128(s2mask, _mm_sub_epi8(str, _mm_set1_epi8('a' - 26))));
-	res = _mm_or_si128(res, _mm_and_si128(s3mask, _mm_sub_epi8(str, _mm_set1_epi8('0' - 52))));
-	res = _mm_or_si128(res, _mm_and_si128(s4mask, _mm_set1_epi8(62)));
-	res = _mm_or_si128(res, _mm_and_si128(s5mask, _mm_set1_epi8(63)));
+	// Now simply add the delta values to the input:
+	str = _mm_add_epi8(str, delta);
 
-	// Shuffle bytes to 32-bit bigendian:
-	res = _mm_shuffle_epi8(res, _mm_setr_epi8(
-		 3,  2,  1,  0,
-		 7,  6,  5,  4,
-		11, 10,  9,  8,
-		15, 14, 13, 12));
-
-	// Mask in a single byte per shift:
-	mask = _mm_set1_epi32(0x3F000000);
-
-	// Pack bytes together:
-	str = _mm_slli_epi32(_mm_and_si128(res, mask), 2);
-	mask = _mm_srli_epi32(mask, 8);
-
-	str = _mm_or_si128(str,_mm_slli_epi32(_mm_and_si128(res, mask), 4));
-	mask = _mm_srli_epi32(mask, 8);
-
-	str = _mm_or_si128(str, _mm_slli_epi32(_mm_and_si128(res, mask), 6));
-	mask = _mm_srli_epi32(mask, 8);
-
-	str = _mm_or_si128(str, _mm_slli_epi32(_mm_and_si128(res, mask), 8));
-
-	// Reshuffle and repack into 12-byte output format:
-	str = _mm_shuffle_epi8(str, _mm_setr_epi8(
-		 3,  2,  1,  7,
-		 6,  5, 11, 10,
-		 9, 15, 14, 13,
-		-1, -1, -1, -1));
+	// Reshuffle the input to packed 12-byte output format:
+	str = dec_reshuffle(str);
 
 	// Store back:
 	_mm_storeu_si128((__m128i *)o, str);

@@ -10,6 +10,7 @@
 #define CMPGT(s,n)	_mm_cmpgt_epi8((s), _mm_set1_epi8(n))
 #define CMPEQ(s,n)	_mm_cmpeq_epi8((s), _mm_set1_epi8(n))
 #define REPLACE(s,n)	_mm_and_si128((s), _mm_set1_epi8(n))
+#define RANGE(s,a,b)	_mm_andnot_si128(CMPGT((s), (b)), CMPGT((s), (a) - 1));
 
 static inline __m128i
 _mm_bswap_epi32 (const __m128i in)
@@ -87,6 +88,36 @@ enc_translate (const __m128i in)
 	out = _mm_add_epi8(out, REPLACE(mask4,  3));
 
 	return out;
+}
+
+static inline __m128i
+dec_reshuffle (__m128i in)
+{
+	// Shuffle bytes to 32-bit bigendian:
+	in = _mm_bswap_epi32(in);
+
+	// Mask in a single byte per shift:
+	__m128i mask = _mm_set1_epi32(0x3F000000);
+
+	// Pack bytes together:
+	__m128i out = _mm_slli_epi32(_mm_and_si128(in, mask), 2);
+	mask = _mm_srli_epi32(mask, 8);
+
+	out = _mm_or_si128(out, _mm_slli_epi32(_mm_and_si128(in, mask), 4));
+	mask = _mm_srli_epi32(mask, 8);
+
+	out = _mm_or_si128(out, _mm_slli_epi32(_mm_and_si128(in, mask), 6));
+	mask = _mm_srli_epi32(mask, 8);
+
+	out = _mm_or_si128(out, _mm_slli_epi32(_mm_and_si128(in, mask), 8));
+
+	// Reshuffle and repack into 12-byte output format:
+	return _mm_shuffle_epi8(out, _mm_setr_epi8(
+		 3,  2,  1,
+		 7,  6,  5,
+		11, 10,  9,
+		15, 14, 13,
+		-1, -1, -1, -1));
 }
 
 #endif	// __SSSE3__
