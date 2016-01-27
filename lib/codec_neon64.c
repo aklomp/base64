@@ -12,9 +12,9 @@
 #include "codecs.h"
 
 #if (defined(__aarch64__) && defined(__ARM_NEON__))
-/* With this transposed encoding table, we can use
- * a 64-byte lookup to do the encoding. Read the
- * table top to bottom, left to right. */
+// With this transposed encoding table, we can use
+// a 64-byte lookup to do the encoding.
+// Read the table top to bottom, left to right.
 static const uint8_t *base64_table_enc_transposed =
 {
 	"AQgw"
@@ -36,9 +36,9 @@ static const uint8_t *base64_table_enc_transposed =
 };
 #endif
 
-/* Stride size is so large on these NEON 64-bit functions
- * (48 bytes encode, 64 bytes decode) that we inline the
- * uint64 codec to stay performant on smaller inputs. */
+// Stride size is so large on these NEON 64-bit functions
+// (48 bytes encode, 64 bytes decode) that we inline the
+// uint64 codec to stay performant on smaller inputs.
 
 BASE64_ENC_FUNCTION(neon64)
 {

@@ -12,9 +12,9 @@
 #include "codecs.h"
 
 #if (defined(__arm__) && defined(__ARM_NEON__))
-/* With this transposed encoding table, we can use
- * two 32-byte lookups to do the encoding. Read the
- * tables top to bottom, left to right. */
+// With this transposed encoding table, we can use
+// two 32-byte lookups to do the encoding.
+// Read the tables top to bottom, left to right.
 static const uint8_t *base64_table_enc_transposed[2] =
 {
 	"AIQY"
@@ -37,9 +37,9 @@ static const uint8_t *base64_table_enc_transposed[2] =
 };
 #endif
 
-/* Stride size is so large on these NEON 32-bit functions
- * (48 bytes encode, 32 bytes decode) that we inline the
- * uint32 codec to stay performant on smaller inputs. */
+// Stride size is so large on these NEON 32-bit functions
+// (48 bytes encode, 32 bytes decode) that we inline the
+// uint32 codec to stay performant on smaller inputs.
 
 BASE64_ENC_FUNCTION(neon32)
 {

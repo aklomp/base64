@@ -1,13 +1,13 @@
-#include <stddef.h>	/* size_t */
-#include <stdio.h>	/* fopen() */
-#include <string.h>	/* strlen() */
+#include <stddef.h>	// size_t
+#include <stdio.h>	// fopen()
+#include <string.h>	// strlen()
 #include <getopt.h>
 #include "../include/libbase64.h"
 
 #define BUFSIZE 1024 * 1024
 
 static char buf[BUFSIZE];
-static char out[(BUFSIZE * 5) / 3];	/* Technically 4/3 of input, but take some margin */
+static char out[(BUFSIZE * 5) / 3];	// Technically 4/3 of input, but take some margin
 size_t nread;
 size_t nout;
 
@@ -80,7 +80,7 @@ main (int argc, char **argv)
 	FILE *fp;
 	int decode = 0;
 
-	/* Parse options: */
+	// Parse options:
 	for (;;)
 	{
 		int c;
@@ -99,11 +99,13 @@ main (int argc, char **argv)
 				break;
 		}
 	}
-	/* No options left on command line? Read from stdin: */
+
+	// No options left on command line? Read from stdin:
 	if (optind >= argc) {
 		fp = stdin;
 	}
-	/* One option left on command line? Treat it as a file: */
+
+	// One option left on command line? Treat it as a file:
 	else if (optind + 1 == argc) {
 		file = argv[optind];
 		if (strcmp(file, "-") == 0) {
@@ -114,11 +116,13 @@ main (int argc, char **argv)
 			return 1;
 		}
 	}
-	/* More than one option left on command line? Syntax error: */
+
+	// More than one option left on command line? Syntax error:
 	else {
 		printf("Usage: %s <file>\n", argv[0]);
 		return 1;
 	}
-	/* Invert return codes to create shell return code: */
+
+	// Invert return codes to create shell return code:
 	return (decode) ? !dec(fp) : !enc(fp);
 }

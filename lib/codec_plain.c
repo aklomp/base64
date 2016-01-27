@@ -4,14 +4,14 @@
 #include "../include/libbase64.h"
 #include "codecs.h"
 
-/* Define machine endianness: */
+// Define machine endianness:
 #if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 	#define LITTLE_ENDIAN 1
 #else
 	#define LITTLE_ENDIAN 0
 #endif
 
-/* Endian conversion functions */
+// Endian conversion functions
 #if LITTLE_ENDIAN
 	#define cpu_to_be32(x)	__builtin_bswap32(x)
 	#define cpu_to_be64(x)	__builtin_bswap64(x)

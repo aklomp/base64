@@ -16,7 +16,7 @@ char **codecs = _codecs;
 int
 codec_supported (int flags)
 {
-	/* Check if given codec is supported by trying to decode a test string: */
+	// Check if given codec is supported by trying to decode a test string:
 	char *a = "aGVsbG8=";
 	char b[10];
 	size_t outlen;

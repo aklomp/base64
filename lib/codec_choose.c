@@ -53,7 +53,7 @@
 #define _XCR_XMM_AND_YMM_STATE_ENABLED_BY_OS 0x6
 #endif
 
-/* Function declarations: */
+// Function declarations:
 #define BASE64_CODEC_FUNCS(arch)	\
 	BASE64_ENC_FUNCTION(arch);	\
 	BASE64_DEC_FUNCTION(arch);	\
@@ -67,9 +67,10 @@ BASE64_CODEC_FUNCS(ssse3)
 static bool
 codec_choose_forced (struct codec *codec, int flags)
 {
-	/* If the user wants to use a certain codec,
-	 * always allow it, even if the codec is a no-op.
-	 * For testing purposes. */
+	// If the user wants to use a certain codec,
+	// always allow it, even if the codec is a no-op.
+	// For testing purposes.
+
 	if (!(flags & 0x1F)) {
 		return false;
 	}
@@ -106,9 +107,9 @@ codec_choose_arm (struct codec *codec)
 {
 #if (defined(__ARM_NEON__) || defined(__ARM_NEON)) && ((defined(__aarch64__) && HAVE_NEON64) || HAVE_NEON32)
 
-	/* Unfortunately there is no portable way to check for NEON
-	 * support at runtime from userland in the same way that x86
-	 * has cpuid, so just stick to the compile-time configuration: */
+	// Unfortunately there is no portable way to check for NEON
+	// support at runtime from userland in the same way that x86
+	// has cpuid, so just stick to the compile-time configuration:
 
 	#if defined(__aarch64__) && HAVE_NEON64
 	codec->enc = base64_stream_encode_neon64;
@@ -143,17 +144,16 @@ codec_choose_x86 (struct codec *codec)
 	#endif
 
 	#if HAVE_AVX2
-	/* Check for AVX2 support: 
-	 Checking for AVX requires 3 things:
-	 1) CPUID indicates that the OS uses XSAVE and XRSTORE
-	     instructions (allowing saving YMM registers on context
-	     switch)
-	 2) CPUID indicates support for AVX
-	 3) XGETBV indicates the AVX registers will be saved and
-	     restored on context switch
-	
-	 Note that XGETBV is only available on 686 or later CPUs, so
-	 the instruction needs to be conditionally run.*/
+	// Check for AVX2 support:
+	// Checking for AVX requires 3 things:
+	// 1) CPUID indicates that the OS uses XSAVE and XRSTORE instructions
+	//    (allowing saving YMM registers on context switch)
+	// 2) CPUID indicates support for AVX
+	// 3) XGETBV indicates the AVX registers will be saved and restored on
+	//    context switch
+	//
+	// Note that XGETBV is only available on 686 or later CPUs, so the
+	// instruction needs to be conditionally run.
 	if (max_level >= 7) {
 		__cpuid_count(7, 0, eax, ebx, ecx, edx);
 
@@ -170,7 +170,7 @@ codec_choose_x86 (struct codec *codec)
 	#endif
 
 	#if HAVE_SSSE3
-	/* Check for SSSE3 support: */
+	// Check for SSSE3 support:
 	if (max_level >= 1) {
 		__cpuid(1, eax, ebx, ecx, edx);
 		if (ecx & bit_SSSE3) {
@@ -191,11 +191,12 @@ codec_choose_x86 (struct codec *codec)
 void
 codec_choose (struct codec *codec, int flags)
 {
-	/* User forced a codec: */
+	// User forced a codec:
 	if (codec_choose_forced(codec, flags)) {
 		return;
 	}
-	/* Runtime feature detection: */
+
+	// Runtime feature detection:
 	if (codec_choose_arm(codec)) {
 		return;
 	}
