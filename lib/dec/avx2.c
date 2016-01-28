@@ -5,94 +5,72 @@
 // gap. 32 + 2 + 11 = 45 bytes:
 while (srclen >= 45)
 {
-	__m128i l0, l1;
-	__m256i str, mask, ormask, res;
-	__m256i s1mask, s2mask, s3mask, s4mask, s5mask;
-
 	// Load string:
-	str = _mm256_loadu_si256((__m256i *)c);
+	__m256i str = _mm256_loadu_si256((__m256i *)c);
 
-	// Classify characters into five sets:
-	// Set 1: "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	s1mask = _mm256_andnot_si256(
-			_mm256_cmpgt_epi8(str, _mm256_set1_epi8('Z')),
-			_mm256_cmpgt_epi8(str, _mm256_set1_epi8('A' - 1)));
+	// The input consists of six character sets in the Base64 alphabet,
+	// which we need to map back to the 6-bit values they represent.
+	// There are three ranges, two singles, and then there's the rest.
+	//
+	//  #  From       To        Add  Characters
+	//  1  [43]       [62]      +19  +
+	//  2  [47]       [63]      +16  /
+	//  3  [48..57]   [52..61]   +4  0..9
+	//  4  [65..90]   [0..25]   -65  A..Z
+	//  5  [97..122]  [26..51]  -71  a..z
+	// (6) Everything else => invalid input
 
-	// Set 2: "abcdefghijklmnopqrstuvwxyz"
-	s2mask = _mm256_andnot_si256(
-			_mm256_cmpgt_epi8(str, _mm256_set1_epi8('z')),
-			_mm256_cmpgt_epi8(str, _mm256_set1_epi8('a' - 1)));
+	const __m256i set1 = CMPEQ(str, '+');
+	const __m256i set2 = CMPEQ(str, '/');
+	const __m256i set3 = RANGE(str, '0', '9');
+	const __m256i set4 = RANGE(str, 'A', 'Z');
+	const __m256i set5 = RANGE(str, 'a', 'z');
 
-	// Set 3: "0123456789"
-	s3mask = _mm256_andnot_si256(
-			_mm256_cmpgt_epi8(str, _mm256_set1_epi8('9')),
-			_mm256_cmpgt_epi8(str, _mm256_set1_epi8('0' - 1)));
+	__m256i delta = REPLACE(set1, 19);
+	delta = _mm256_or_si256(delta, REPLACE(set2,  16));
+	delta = _mm256_or_si256(delta, REPLACE(set3,   4));
+	delta = _mm256_or_si256(delta, REPLACE(set4, -65));
+	delta = _mm256_or_si256(delta, REPLACE(set5, -71));
 
-	// Set 4: "+"
-	s4mask = _mm256_cmpeq_epi8(str, _mm256_set1_epi8('+'));
-
-	// Set 5: "/"
-	s5mask = _mm256_cmpeq_epi8(str, _mm256_set1_epi8('/'));
-
-	// Check if all bytes have been classified; else fall back on bytewise
-	// code to do error checking and reporting:
-	ormask = _mm256_or_si256(s1mask, s2mask);
-	ormask = _mm256_or_si256(ormask, s3mask);
-	ormask = _mm256_or_si256(ormask, s4mask);
-	ormask = _mm256_or_si256(ormask, s5mask);
-
-	if ((uint32_t)_mm256_movemask_epi8(ormask) != (uint32_t)0xFFFFFFFF) {
+	// Check for invalid input: if any of the delta values are zero,
+	// fall back on bytewise code to do error checking and reporting:
+	if (_mm256_movemask_epi8(CMPEQ(delta, 0))) {
 		break;
 	}
 
-	// Subtract sets from byte values:
-	res = _mm256_and_si256(_mm256_sub_epi8(str, _mm256_set1_epi8('A')), s1mask);
-	res = _mm256_blendv_epi8(res, _mm256_sub_epi8(str, _mm256_set1_epi8('a' - 26)), s2mask);
-	res = _mm256_blendv_epi8(res, _mm256_sub_epi8(str, _mm256_set1_epi8('0' - 52)), s3mask);
-	res = _mm256_blendv_epi8(res, _mm256_set1_epi8(62), s4mask);
-	res = _mm256_blendv_epi8(res, _mm256_set1_epi8(63), s5mask);
+	// Now simply add the delta values to the input:
+	str = _mm256_add_epi8(str, delta);
 
 	// Shuffle bytes to 32-bit bigendian:
-	res = _mm256_shuffle_epi8(res,
-	      _mm256_setr_epi8(
-			 3,  2,  1,  0,
-			 7,  6,  5,  4,
-			11, 10,  9,  8,
-			15, 14, 13, 12,
-			 3,  2,  1,  0,
-			 7,  6,  5,  4,
-			11, 10,  9,  8,
-			15, 14, 13, 12));
+	str = _mm256_bswap_epi32(str);
 
 	// Mask in a single byte per shift:
-	mask = _mm256_set1_epi32(0x3F000000);
+	__m256i mask = _mm256_set1_epi32(0x3F000000);
 
 	// Pack bytes together:
-	str = _mm256_slli_epi32(_mm256_and_si256(res, mask), 2);
+	__m256i res = _mm256_slli_epi32(_mm256_and_si256(str, mask), 2);
 	mask = _mm256_srli_epi32(mask, 8);
 
-	str = _mm256_or_si256(str, _mm256_slli_epi32(_mm256_and_si256(res, mask), 4));
+	res = _mm256_or_si256(res, _mm256_slli_epi32(_mm256_and_si256(str, mask), 4));
 	mask = _mm256_srli_epi32(mask, 8);
 
-	str = _mm256_or_si256(str, _mm256_slli_epi32(_mm256_and_si256(res, mask), 6));
+	res = _mm256_or_si256(res, _mm256_slli_epi32(_mm256_and_si256(str, mask), 6));
 	mask = _mm256_srli_epi32(mask, 8);
 
-	str = _mm256_or_si256(str,_mm256_slli_epi32(_mm256_and_si256(res, mask), 8));
+	res = _mm256_or_si256(res, _mm256_slli_epi32(_mm256_and_si256(str, mask), 8));
 
 	// As in AVX2 encoding, we have to shuffle and repack each 128-bit lane
 	// separately due to the way _mm256_shuffle_epi8 works:
-	l0 = _mm_shuffle_epi8(
-	     _mm256_extractf128_si256(str, 0),
-	     _mm_setr_epi8(
+	__m128i l0 = _mm_shuffle_epi8(_mm256_extractf128_si256(res, 0),
+		_mm_setr_epi8(
 			 3,  2,  1,
 			 7,  6,  5,
 			11, 10,  9,
 			15, 14, 13,
 			-1, -1, -1, -1));
 
-	l1 = _mm_shuffle_epi8(
-	     _mm256_extractf128_si256(str, 1),
-	     _mm_setr_epi8(
+	__m128i l1 = _mm_shuffle_epi8(_mm256_extractf128_si256(res, 1),
+		_mm_setr_epi8(
 			 3,  2,  1,
 			 7,  6,  5,
 			11, 10,  9,
@@ -100,8 +78,8 @@ while (srclen >= 45)
 			-1, -1, -1, -1));
 
 	// Store back:
-	_mm_storeu_si128((__m128i *)o, l0);
-	_mm_storeu_si128((__m128i *)&o[12], l1);
+	_mm_storeu_si128((__m128i *) &o[ 0], l0);
+	_mm_storeu_si128((__m128i *) &o[12], l1);
 
 	c += 32;
 	o += 24;

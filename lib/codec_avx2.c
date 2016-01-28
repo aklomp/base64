@@ -10,6 +10,7 @@
 #define CMPGT(s,n)	_mm256_cmpgt_epi8((s), _mm256_set1_epi8(n))
 #define CMPEQ(s,n)	_mm256_cmpeq_epi8((s), _mm256_set1_epi8(n))
 #define REPLACE(s,n)	_mm256_and_si256((s), _mm256_set1_epi8(n))
+#define RANGE(s,a,b)	_mm256_andnot_si256(CMPGT((s), (b)), CMPGT((s), (a) - 1));
 
 static inline __m256i
 _mm256_bswap_epi32 (const __m256i in)
