@@ -41,45 +41,11 @@ while (srclen >= 45)
 	// Now simply add the delta values to the input:
 	str = _mm256_add_epi8(str, delta);
 
-	// Shuffle bytes to 32-bit bigendian:
-	str = _mm256_bswap_epi32(str);
-
-	// Mask in a single byte per shift:
-	__m256i mask = _mm256_set1_epi32(0x3F000000);
-
-	// Pack bytes together:
-	__m256i res = _mm256_slli_epi32(_mm256_and_si256(str, mask), 2);
-	mask = _mm256_srli_epi32(mask, 8);
-
-	res = _mm256_or_si256(res, _mm256_slli_epi32(_mm256_and_si256(str, mask), 4));
-	mask = _mm256_srli_epi32(mask, 8);
-
-	res = _mm256_or_si256(res, _mm256_slli_epi32(_mm256_and_si256(str, mask), 6));
-	mask = _mm256_srli_epi32(mask, 8);
-
-	res = _mm256_or_si256(res, _mm256_slli_epi32(_mm256_and_si256(str, mask), 8));
-
-	// As in AVX2 encoding, we have to shuffle and repack each 128-bit lane
-	// separately due to the way _mm256_shuffle_epi8 works:
-	__m128i l0 = _mm_shuffle_epi8(_mm256_extractf128_si256(res, 0),
-		_mm_setr_epi8(
-			 3,  2,  1,
-			 7,  6,  5,
-			11, 10,  9,
-			15, 14, 13,
-			-1, -1, -1, -1));
-
-	__m128i l1 = _mm_shuffle_epi8(_mm256_extractf128_si256(res, 1),
-		_mm_setr_epi8(
-			 3,  2,  1,
-			 7,  6,  5,
-			11, 10,  9,
-			15, 14, 13,
-			-1, -1, -1, -1));
+	// Reshuffle the input to packed 12-byte output format:
+	str = dec_reshuffle(str);
 
 	// Store back:
-	_mm_storeu_si128((__m128i *) &o[ 0], l0);
-	_mm_storeu_si128((__m128i *) &o[12], l1);
+	_mm256_storeu_si256((__m256i *)o, str);
 
 	c += 32;
 	o += 24;
