@@ -28,25 +28,24 @@ _mm256_bswap_epi32 (const __m256i in)
 }
 
 static inline __m256i
-enc_reshuffle (__m128i l0, __m128i l1)
+enc_reshuffle (__m256i in)
 {
-	// _mm256_shuffle_epi8 works on 128-bit lanes, so we need to get the
-	// two 128-bit lanes into big-endian order separately:
-	l0 = _mm_shuffle_epi8(l0, _mm_setr_epi8(
+	// Reorder 32-bit words in input string:
+	in = _mm256_permutevar8x32_epi32(in, _mm256_setr_epi32(
+		0, 1, 2, -1,
+		3, 4, 5, -1));
+
+	// For each 32-bit word, reorder to bigendian, duplicating the third
+	// byte in every block of four:
+	in = _mm256_shuffle_epi8(in, _mm256_setr_epi8(
+		 2,  2,  1,  0,
+		 5,  5,  4,  3,
+		 8,  8,  7,  6,
+		11, 11, 10,  9,
 		 2,  2,  1,  0,
 		 5,  5,  4,  3,
 		 8,  8,  7,  6,
 		11, 11, 10,  9));
-
-	l1 = _mm_shuffle_epi8(l1, _mm_setr_epi8(
-		 2,  2,  1,  0,
-		 5,  5,  4,  3,
-		 8,  8,  7,  6,
-		11, 11, 10,  9));
-
-	// Combine back into a single 256-bit register:
-	__m256i in = _mm256_castsi128_si256(l0);
-	in = _mm256_insertf128_si256(in, l1, 1);
 
 	// Mask to pass through only the lower 6 bits of one byte:
 	__m256i mask = _mm256_set1_epi32(0x3F000000);

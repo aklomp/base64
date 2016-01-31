@@ -3,12 +3,11 @@
 // full 32-byte read without segfaulting:
 while (srclen >= 32)
 {
-	// Load string as two segments of 12 bytes:
-	__m128i lo = _mm_loadu_si128((__m128i *) &c[ 0]);
-	__m128i hi = _mm_loadu_si128((__m128i *) &c[12]);
+	// Load string:
+	__m256i str = _mm256_loadu_si256((__m256i *)c);
 
 	// Reshuffle:
-	__m256i str = enc_reshuffle(lo, hi);
+	str = enc_reshuffle(str);
 
 	// Translate reshuffled bytes to the Base64 alphabet:
 	str = enc_translate(str);
