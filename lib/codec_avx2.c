@@ -10,7 +10,7 @@
 #define CMPGT(s,n)	_mm256_cmpgt_epi8((s), _mm256_set1_epi8(n))
 #define CMPEQ(s,n)	_mm256_cmpeq_epi8((s), _mm256_set1_epi8(n))
 #define REPLACE(s,n)	_mm256_and_si256((s), _mm256_set1_epi8(n))
-#define RANGE(s,a,b)	_mm256_andnot_si256(CMPGT((s), (b)), CMPGT((s), (a) - 1));
+#define RANGE(s,a,b)	_mm256_andnot_si256(CMPGT((s), (b)), CMPGT((s), (a) - 1))
 
 static inline __m256i
 _mm256_bswap_epi32 (const __m256i in)
@@ -30,7 +30,7 @@ _mm256_bswap_epi32 (const __m256i in)
 static inline __m256i
 enc_reshuffle (__m256i in)
 {
-	// Reorder 32-bit words in input string:
+	// Spread out 32-bit words over both halves of the input register:
 	in = _mm256_permutevar8x32_epi32(in, _mm256_setr_epi32(
 		0, 1, 2, -1,
 		3, 4, 5, -1));
@@ -135,7 +135,7 @@ dec_reshuffle (__m256i in)
 		15, 14, 13,
 		-1, -1, -1, -1));
 
-	// Pack 32-bit words together, removing empty words 3 and 7:
+	// Pack 32-bit words together, squashing empty words 3 and 7:
 	return _mm256_permutevar8x32_epi32(out, _mm256_setr_epi32(
 		0, 1, 2, 4, 5, 6, -1, -1));
 }

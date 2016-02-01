@@ -253,6 +253,8 @@ int base64_decode
 Wrapper function to decode a plain string of given length.
 Output is written to `out` without trailing zero. Output length in bytes is written to `outlen`.
 The buffer in `out` has been allocated by the caller and is at least 3/4 the size of the input.
+Returns `1` for success, and `0` when a decode error has occured due to invalid input.
+Returns `-1` if the chosen codec is not included in the current build.
 
 #### base64_stream_decode_init
 
