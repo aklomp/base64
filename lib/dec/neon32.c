@@ -1,100 +1,108 @@
-// If we have NEON support on 32-bit ARM, pick off 32 bytes at a time for as
-// long as we can. We use 64-bit wide vectors instead of 128-bit wide ones,
-// because this routine consumes a lot of registers. By working in 64-bit
-// space, we have enough registers to avoid using the stack.
-// Unlike the SSE codecs, we don't write trailing zero bytes to output, so we
-// don't need to check if we have enough remaining input to cover them:
-while (srclen >= 32)
+// If we have NEON support on 32-bit ARM, pick off 64 bytes at a time for as
+// long as we can. Unlike the SSE codecs, we don't write trailing zero bytes to
+// output, so we don't need to check if we have enough remaining input to cover
+// them:
+while (srclen >= 64)
 {
-	uint8x8_t classified;
-	uint8x8x4_t s1mask, s2mask, s3mask, s4mask, s5mask;
-	uint8x8x4_t str, res;
-	uint8x8x3_t dec;
+	uint8x16x4_t set1, set2, set3, set4, set5, delta;
+	uint8x16x3_t dec;
 
-	// Load 32 bytes and deinterleave:
-	str = vld4_u8((uint8_t *)c);
+	// Load 64 bytes and deinterleave:
+	uint8x16x4_t str = vld4q_u8((uint8_t *)c);
 
-	// Classify characters into five sets:
-	// Set 1: "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	s1mask.val[0] = vcge_u8(str.val[0], vdup_n_u8('A')) & vcle_u8(str.val[0], vdup_n_u8('Z'));
-	s1mask.val[1] = vcge_u8(str.val[1], vdup_n_u8('A')) & vcle_u8(str.val[1], vdup_n_u8('Z'));
-	s1mask.val[2] = vcge_u8(str.val[2], vdup_n_u8('A')) & vcle_u8(str.val[2], vdup_n_u8('Z'));
-	s1mask.val[3] = vcge_u8(str.val[3], vdup_n_u8('A')) & vcle_u8(str.val[3], vdup_n_u8('Z'));
+	// The input consists of six character sets in the Base64 alphabet,
+	// which we need to map back to the 6-bit values they represent.
+	// There are three ranges, two singles, and then there's the rest.
+	//
+	//  #  From       To        Add  Characters
+	//  1  [43]       [62]      +19  +
+	//  2  [47]       [63]      +16  /
+	//  3  [48..57]   [52..61]   +4  0..9
+	//  4  [65..90]   [0..25]   -65  A..Z
+	//  5  [97..122]  [26..51]  -71  a..z
+	// (6) Everything else => invalid input
 
-	// Set 2: "abcdefghijklmnopqrstuvwxyz"
-	s2mask.val[0] = vcge_u8(str.val[0], vdup_n_u8('a')) & vcle_u8(str.val[0], vdup_n_u8('z'));
-	s2mask.val[1] = vcge_u8(str.val[1], vdup_n_u8('a')) & vcle_u8(str.val[1], vdup_n_u8('z'));
-	s2mask.val[2] = vcge_u8(str.val[2], vdup_n_u8('a')) & vcle_u8(str.val[2], vdup_n_u8('z'));
-	s2mask.val[3] = vcge_u8(str.val[3], vdup_n_u8('a')) & vcle_u8(str.val[3], vdup_n_u8('z'));
+	set1.val[0] = CMPEQ(str.val[0], '+');
+	set1.val[1] = CMPEQ(str.val[1], '+');
+	set1.val[2] = CMPEQ(str.val[2], '+');
+	set1.val[3] = CMPEQ(str.val[3], '+');
 
-	// Set 3: "0123456789"
-	s3mask.val[0] = vcge_u8(str.val[0], vdup_n_u8('0')) & vcle_u8(str.val[0], vdup_n_u8('9'));
-	s3mask.val[1] = vcge_u8(str.val[1], vdup_n_u8('0')) & vcle_u8(str.val[1], vdup_n_u8('9'));
-	s3mask.val[2] = vcge_u8(str.val[2], vdup_n_u8('0')) & vcle_u8(str.val[2], vdup_n_u8('9'));
-	s3mask.val[3] = vcge_u8(str.val[3], vdup_n_u8('0')) & vcle_u8(str.val[3], vdup_n_u8('9'));
+	set2.val[0] = CMPEQ(str.val[0], '/');
+	set2.val[1] = CMPEQ(str.val[1], '/');
+	set2.val[2] = CMPEQ(str.val[2], '/');
+	set2.val[3] = CMPEQ(str.val[3], '/');
 
-	// Set 4: "+"
-	s4mask.val[0] = vceq_u8(str.val[0], vdup_n_u8('+'));
-	s4mask.val[1] = vceq_u8(str.val[1], vdup_n_u8('+'));
-	s4mask.val[2] = vceq_u8(str.val[2], vdup_n_u8('+'));
-	s4mask.val[3] = vceq_u8(str.val[3], vdup_n_u8('+'));
+	set3.val[0] = RANGE(str.val[0], '0', '9');
+	set3.val[1] = RANGE(str.val[1], '0', '9');
+	set3.val[2] = RANGE(str.val[2], '0', '9');
+	set3.val[3] = RANGE(str.val[3], '0', '9');
 
-	// Set 5: "/"
-	s5mask.val[0] = vceq_u8(str.val[0], vdup_n_u8('/'));
-	s5mask.val[1] = vceq_u8(str.val[1], vdup_n_u8('/'));
-	s5mask.val[2] = vceq_u8(str.val[2], vdup_n_u8('/'));
-	s5mask.val[3] = vceq_u8(str.val[3], vdup_n_u8('/'));
+	set4.val[0] = RANGE(str.val[0], 'A', 'Z');
+	set4.val[1] = RANGE(str.val[1], 'A', 'Z');
+	set4.val[2] = RANGE(str.val[2], 'A', 'Z');
+	set4.val[3] = RANGE(str.val[3], 'A', 'Z');
 
-	// Check if all bytes have been classified;
-	// else fall back on bytewise code to do error checking and reporting:
-	classified  = (s1mask.val[0] | s2mask.val[0] | s3mask.val[0] | s4mask.val[0] | s5mask.val[0]);
-	classified &= (s1mask.val[1] | s2mask.val[1] | s3mask.val[1] | s4mask.val[1] | s5mask.val[1]);
-	classified &= (s1mask.val[2] | s2mask.val[2] | s3mask.val[2] | s4mask.val[2] | s5mask.val[2]);
-	classified &= (s1mask.val[3] | s2mask.val[3] | s3mask.val[3] | s4mask.val[3] | s5mask.val[3]);
-	classified  = vmvn_u8(classified);
+	set5.val[0] = RANGE(str.val[0], 'a', 'z');
+	set5.val[1] = RANGE(str.val[1], 'a', 'z');
+	set5.val[2] = RANGE(str.val[2], 'a', 'z');
+	set5.val[3] = RANGE(str.val[3], 'a', 'z');
+
+	delta.val[0] = REPLACE(set1.val[0], 19);
+	delta.val[1] = REPLACE(set1.val[1], 19);
+	delta.val[2] = REPLACE(set1.val[2], 19);
+	delta.val[3] = REPLACE(set1.val[3], 19);
+
+	delta.val[0] = vorrq_u8(delta.val[0], REPLACE(set2.val[0], 16));
+	delta.val[1] = vorrq_u8(delta.val[1], REPLACE(set2.val[1], 16));
+	delta.val[2] = vorrq_u8(delta.val[2], REPLACE(set2.val[2], 16));
+	delta.val[3] = vorrq_u8(delta.val[3], REPLACE(set2.val[3], 16));
+
+	delta.val[0] = vorrq_u8(delta.val[0], REPLACE(set3.val[0], 4));
+	delta.val[1] = vorrq_u8(delta.val[1], REPLACE(set3.val[1], 4));
+	delta.val[2] = vorrq_u8(delta.val[2], REPLACE(set3.val[2], 4));
+	delta.val[3] = vorrq_u8(delta.val[3], REPLACE(set3.val[3], 4));
+
+	delta.val[0] = vorrq_u8(delta.val[0], REPLACE(set4.val[0], -65));
+	delta.val[1] = vorrq_u8(delta.val[1], REPLACE(set4.val[1], -65));
+	delta.val[2] = vorrq_u8(delta.val[2], REPLACE(set4.val[2], -65));
+	delta.val[3] = vorrq_u8(delta.val[3], REPLACE(set4.val[3], -65));
+
+	delta.val[0] = vorrq_u8(delta.val[0], REPLACE(set5.val[0], -71));
+	delta.val[1] = vorrq_u8(delta.val[1], REPLACE(set5.val[1], -71));
+	delta.val[2] = vorrq_u8(delta.val[2], REPLACE(set5.val[2], -71));
+	delta.val[3] = vorrq_u8(delta.val[3], REPLACE(set5.val[3], -71));
+
+	// Check for invalid input: if any of the delta values are zero,
+	// fall back on bytewise code to do error checking and reporting:
+	uint8x16_t classified = CMPEQ(delta.val[0], 0);
+	classified = vorrq_u8(classified, CMPEQ(delta.val[1], 0));
+	classified = vorrq_u8(classified, CMPEQ(delta.val[2], 0));
+	classified = vorrq_u8(classified, CMPEQ(delta.val[3], 0));
 
 	// Extract both 32-bit halves; check that all bits are zero:
-	if (vget_lane_u32((uint32x2_t)classified, 0) != 0
-	 || vget_lane_u32((uint32x2_t)classified, 1) != 0) {
+	if (vgetq_lane_u32((uint32x4_t)classified, 0) != 0
+	 || vgetq_lane_u32((uint32x4_t)classified, 1) != 0
+	 || vgetq_lane_u32((uint32x4_t)classified, 2) != 0
+	 || vgetq_lane_u32((uint32x4_t)classified, 3) != 0) {
 		break;
 	}
 
-	// Subtract sets from byte values:
-	res.val[0] = s1mask.val[0] & vsub_u8(str.val[0], vdup_n_u8('A'));
-	res.val[1] = s1mask.val[1] & vsub_u8(str.val[1], vdup_n_u8('A'));
-	res.val[2] = s1mask.val[2] & vsub_u8(str.val[2], vdup_n_u8('A'));
-	res.val[3] = s1mask.val[3] & vsub_u8(str.val[3], vdup_n_u8('A'));
-
-	res.val[0] = vbsl_u8(s2mask.val[0], vsub_u8(str.val[0], vdup_n_u8('a' - 26)), res.val[0]);
-	res.val[1] = vbsl_u8(s2mask.val[1], vsub_u8(str.val[1], vdup_n_u8('a' - 26)), res.val[1]);
-	res.val[2] = vbsl_u8(s2mask.val[2], vsub_u8(str.val[2], vdup_n_u8('a' - 26)), res.val[2]);
-	res.val[3] = vbsl_u8(s2mask.val[3], vsub_u8(str.val[3], vdup_n_u8('a' - 26)), res.val[3]);
-
-	res.val[0] = vbsl_u8(s3mask.val[0], vsub_u8(str.val[0], vdup_n_u8('0' - 52)), res.val[0]);
-	res.val[1] = vbsl_u8(s3mask.val[1], vsub_u8(str.val[1], vdup_n_u8('0' - 52)), res.val[1]);
-	res.val[2] = vbsl_u8(s3mask.val[2], vsub_u8(str.val[2], vdup_n_u8('0' - 52)), res.val[2]);
-	res.val[3] = vbsl_u8(s3mask.val[3], vsub_u8(str.val[3], vdup_n_u8('0' - 52)), res.val[3]);
-
-	res.val[0] = vbsl_u8(s4mask.val[0], vdup_n_u8(62), res.val[0]);
-	res.val[1] = vbsl_u8(s4mask.val[1], vdup_n_u8(62), res.val[1]);
-	res.val[2] = vbsl_u8(s4mask.val[2], vdup_n_u8(62), res.val[2]);
-	res.val[3] = vbsl_u8(s4mask.val[3], vdup_n_u8(62), res.val[3]);
-
-	res.val[0] = vbsl_u8(s5mask.val[0], vdup_n_u8(63), res.val[0]);
-	res.val[1] = vbsl_u8(s5mask.val[1], vdup_n_u8(63), res.val[1]);
-	res.val[2] = vbsl_u8(s5mask.val[2], vdup_n_u8(63), res.val[2]);
-	res.val[3] = vbsl_u8(s5mask.val[3], vdup_n_u8(63), res.val[3]);
+	// Now simply add the delta values to the input:
+	str.val[0] = vaddq_u8(str.val[0], delta.val[0]);
+	str.val[1] = vaddq_u8(str.val[1], delta.val[1]);
+	str.val[2] = vaddq_u8(str.val[2], delta.val[2]);
+	str.val[3] = vaddq_u8(str.val[3], delta.val[3]);
 
 	// Compress four bytes into three:
-	dec.val[0] = vshl_n_u8(res.val[0], 2) | vshr_n_u8(res.val[1], 4);
-	dec.val[1] = vshl_n_u8(res.val[1], 4) | vshr_n_u8(res.val[2], 2);
-	dec.val[2] = vshl_n_u8(res.val[2], 6) | res.val[3];
+	dec.val[0] = vshlq_n_u8(str.val[0], 2) | vshrq_n_u8(str.val[1], 4);
+	dec.val[1] = vshlq_n_u8(str.val[1], 4) | vshrq_n_u8(str.val[2], 2);
+	dec.val[2] = vshlq_n_u8(str.val[2], 6) | str.val[3];
 
 	// Interleave and store decoded result:
-	vst3_u8((uint8_t *)o, dec);
+	vst3q_u8((uint8_t *)o, dec);
 
-	c += 32;
-	o += 24;
-	outl += 24;
-	srclen -= 32;
+	c += 64;
+	o += 48;
+	outl += 48;
+	srclen -= 64;
 }

@@ -16,6 +16,7 @@
 #define CMPGT(s,n)	vcgtq_u8((s), vdupq_n_u8(n))
 #define CMPEQ(s,n)	vceqq_u8((s), vdupq_n_u8(n))
 #define REPLACE(s,n)	vandq_u8((s), vdupq_n_u8(n))
+#define RANGE(s,a,b)	vandq_u8(vcgeq_u8((s), vdupq_n_u8(a)), vcleq_u8((s), vdupq_n_u8(b)))
 
 static inline uint8x16x4_t
 enc_reshuffle (uint8x16x3_t in)
