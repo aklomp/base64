@@ -378,17 +378,17 @@ It will run an encoding and decoding benchmark for all of the compiled-in codecs
 
 The table below contains some results on random machines. All numbers are in MB/sec, rounded to the nearest integer.
 
-| Processor              | Plain enc | Plain dec | SSSE3 enc | SSSE3 dec | AVX2 enc | AVX2 dec | NEON enc | NEON dec |
-|------------------------|----------:|----------:|----------:|----------:|---------:|---------:|---------:|---------:|
-| i7-4771 @ 3.5 GHz      | 833       | 1111      | 3333      | 4444      | 4999     | 6666     | -        | -        |
-| i5-4590S @ 3.0 GHz     | 1721      | 1643      | 3255      | 3404      | 4124     | 5403     | -        | -        |
-| Xeon X5570 @ 2.93 GHz  | 1097      | 1048      | 2077      | 2215      | -        | -        | -        | -        |
-| Pentium4 @ 3.4 GHz     | 528       | 448       | -         | -         | -        | -        | -        | -        |
-| Atom N270              | 112       | 125       | 331       | 368       | -        | -        | -        | -        |
-| AMD E-450              | 370       | 332       | 405       | 366       | -        | -        | -        | -        |
-| PowerPC E6500 @ 1.8GHz | 270       | 265       | -         | -         | -        | -        | -        | -        |
-| Raspberry PI B+        | 46        | 40        | -         | -         | -        | -        | -        | -        |
-| Raspberry PI 2 B       | 39        | 35        | -         | -         | -        | -        | 7        | 27       |
+| Processor              | Plain enc | Plain dec | SSSE3 enc | SSSE3 dec | AVX2 enc | AVX2 dec | NEON32 enc | NEON32 dec |
+|------------------------|----------:|----------:|----------:|----------:|---------:|---------:|-----------:|-----------:|
+| i7-4771 @ 3.5 GHz      | 833       | 1111      | 3333      | 4444      | 4999     | 6666     | -          | -          |
+| i5-4590S @ 3.0 GHz     | 1721      | 1643      | 3255      | 3404      | 4124     | 5403     | -          | -          |
+| Xeon X5570 @ 2.93 GHz  | 1097      | 1048      | 2077      | 2215      | -        | -        | -          | -          |
+| Pentium4 @ 3.4 GHz     | 528       | 448       | -         | -         | -        | -        | -          | -          |
+| Atom N270              | 112       | 125       | 331       | 368       | -        | -        | -          | -          |
+| AMD E-450              | 370       | 332       | 405       | 366       | -        | -        | -          | -          |
+| PowerPC E6500 @ 1.8GHz | 270       | 265       | -         | -         | -        | -        | -          | -          |
+| Raspberry PI B+ V1.2   | 46        | 40        | -         | -         | -        | -        | -          | -          |
+| Raspberry PI 2 B V1.1  | 104       | 88        | -         | -         | -        | -        | 158        | 114        |
 
 ## License
 
