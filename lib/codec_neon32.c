@@ -15,7 +15,7 @@
 // With this transposed encoding table, we can use
 // two 32-byte lookups to do the encoding.
 // Read the tables top to bottom, left to right.
-static const uint8_t *base64_table_enc_transposed[2] =
+static const char *base64_table_enc_transposed[2] =
 {
 	"AIQY"
 	"BJRZ"
