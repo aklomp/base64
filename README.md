@@ -137,10 +137,10 @@ CC=clang CFLAGS="-march=armv6" NEON32_CFLAGS="-march=armv7 -mfpu=neon" make
 ```
 
 For option 3, put everything in your `CFLAGS` and use a stub, but non-empty, `NEON32_CFLAGS`.
-This example works for the Raspberry Pi 2, which has NEON support:
+This example works for the Raspberry Pi 2B V1.1, which has NEON support:
 
 ```sh
-CC=clang CFLAGS="-march=armv7 -mtune=cortex-a7" NEON32_CFLAGS=" " make
+CC=clang CFLAGS="-march=armv7 -mtune=cortex-a7" NEON32_CFLAGS="-mfpu=neon" make
 ```
 
 To build and include the NEON64 codec, use `CFLAGS` as usual to define the platform and set `NEON64_CFLAGS` to a nonempty stub.
