@@ -21,55 +21,21 @@ while (srclen >= 64)
 	//  5  [97..122]  [26..51]  -71  a..z
 	// (6) Everything else => invalid input
 
-	set1.val[0] = CMPEQ(str.val[0], '+');
-	set1.val[1] = CMPEQ(str.val[1], '+');
-	set1.val[2] = CMPEQ(str.val[2], '+');
-	set1.val[3] = CMPEQ(str.val[3], '+');
+	// Benchmarking on the Raspberry Pi 2B and Clang shows that looping
+	// generates slightly faster code than explicit unrolling:
+	for (int i = 0; i < 4; i++) {
+		set1.val[i] = CMPEQ(str.val[i], '+');
+		set2.val[i] = CMPEQ(str.val[i], '/');
+		set3.val[i] = RANGE(str.val[i], '0', '9');
+		set4.val[i] = RANGE(str.val[i], 'A', 'Z');
+		set5.val[i] = RANGE(str.val[i], 'a', 'z');
 
-	set2.val[0] = CMPEQ(str.val[0], '/');
-	set2.val[1] = CMPEQ(str.val[1], '/');
-	set2.val[2] = CMPEQ(str.val[2], '/');
-	set2.val[3] = CMPEQ(str.val[3], '/');
-
-	set3.val[0] = RANGE(str.val[0], '0', '9');
-	set3.val[1] = RANGE(str.val[1], '0', '9');
-	set3.val[2] = RANGE(str.val[2], '0', '9');
-	set3.val[3] = RANGE(str.val[3], '0', '9');
-
-	set4.val[0] = RANGE(str.val[0], 'A', 'Z');
-	set4.val[1] = RANGE(str.val[1], 'A', 'Z');
-	set4.val[2] = RANGE(str.val[2], 'A', 'Z');
-	set4.val[3] = RANGE(str.val[3], 'A', 'Z');
-
-	set5.val[0] = RANGE(str.val[0], 'a', 'z');
-	set5.val[1] = RANGE(str.val[1], 'a', 'z');
-	set5.val[2] = RANGE(str.val[2], 'a', 'z');
-	set5.val[3] = RANGE(str.val[3], 'a', 'z');
-
-	delta.val[0] = REPLACE(set1.val[0], 19);
-	delta.val[1] = REPLACE(set1.val[1], 19);
-	delta.val[2] = REPLACE(set1.val[2], 19);
-	delta.val[3] = REPLACE(set1.val[3], 19);
-
-	delta.val[0] = vorrq_u8(delta.val[0], REPLACE(set2.val[0], 16));
-	delta.val[1] = vorrq_u8(delta.val[1], REPLACE(set2.val[1], 16));
-	delta.val[2] = vorrq_u8(delta.val[2], REPLACE(set2.val[2], 16));
-	delta.val[3] = vorrq_u8(delta.val[3], REPLACE(set2.val[3], 16));
-
-	delta.val[0] = vorrq_u8(delta.val[0], REPLACE(set3.val[0], 4));
-	delta.val[1] = vorrq_u8(delta.val[1], REPLACE(set3.val[1], 4));
-	delta.val[2] = vorrq_u8(delta.val[2], REPLACE(set3.val[2], 4));
-	delta.val[3] = vorrq_u8(delta.val[3], REPLACE(set3.val[3], 4));
-
-	delta.val[0] = vorrq_u8(delta.val[0], REPLACE(set4.val[0], -65));
-	delta.val[1] = vorrq_u8(delta.val[1], REPLACE(set4.val[1], -65));
-	delta.val[2] = vorrq_u8(delta.val[2], REPLACE(set4.val[2], -65));
-	delta.val[3] = vorrq_u8(delta.val[3], REPLACE(set4.val[3], -65));
-
-	delta.val[0] = vorrq_u8(delta.val[0], REPLACE(set5.val[0], -71));
-	delta.val[1] = vorrq_u8(delta.val[1], REPLACE(set5.val[1], -71));
-	delta.val[2] = vorrq_u8(delta.val[2], REPLACE(set5.val[2], -71));
-	delta.val[3] = vorrq_u8(delta.val[3], REPLACE(set5.val[3], -71));
+		delta.val[i] = REPLACE(set1.val[i], 19);
+		delta.val[i] = vorrq_u8(delta.val[i], REPLACE(set2.val[i],  16));
+		delta.val[i] = vorrq_u8(delta.val[i], REPLACE(set3.val[i],   4));
+		delta.val[i] = vorrq_u8(delta.val[i], REPLACE(set4.val[i], -65));
+		delta.val[i] = vorrq_u8(delta.val[i], REPLACE(set5.val[i], -71));
+	}
 
 	// Check for invalid input: if any of the delta values are zero,
 	// fall back on bytewise code to do error checking and reporting:

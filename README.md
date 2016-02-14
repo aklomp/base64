@@ -388,7 +388,7 @@ The table below contains some results on random machines. All numbers are in MB/
 | AMD E-450              | 370       | 332       | 405       | 366       | -        | -        | -          | -          |
 | PowerPC E6500 @ 1.8GHz | 270       | 265       | -         | -         | -        | -        | -          | -          |
 | Raspberry PI B+ V1.2   | 46        | 40        | -         | -         | -        | -        | -          | -          |
-| Raspberry PI 2 B V1.1  | 104       | 88        | -         | -         | -        | -        | 158        | 114        |
+| Raspberry PI 2 B V1.1  | 104       | 88        | -         | -         | -        | -        | 158        | 116        |
 
 ## License
 
