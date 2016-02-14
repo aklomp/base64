@@ -1,7 +1,6 @@
-// If we have NEON support on 32-bit ARM, pick off 64 bytes at a time for as
-// long as we can. Unlike the SSE codecs, we don't write trailing zero bytes to
-// output, so we don't need to check if we have enough remaining input to cover
-// them:
+// If we have NEON support, pick off 64 bytes at a time for as long as we can.
+// Unlike the SSE codecs, we don't write trailing zero bytes to output, so we
+// don't need to check if we have enough remaining input to cover them:
 while (srclen >= 64)
 {
 	uint8x16x4_t set1, set2, set3, set4, set5, delta;

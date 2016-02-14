@@ -126,7 +126,7 @@ BASE64_DEC_FUNCTION(neon32)
 {
 #if (defined(__arm__) && defined(__ARM_NEON__))
 	#include "dec/head.c"
-	#include "dec/neon32.c"
+	#include "dec/neon.c"
 	#include "dec/uint32.c"
 	#include "dec/tail.c"
 #else

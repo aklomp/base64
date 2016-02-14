@@ -59,7 +59,7 @@ BASE64_DEC_FUNCTION(neon64)
 #if (defined(__aarch64__) && defined(__ARM_NEON__))
 
 	#include "dec/head.c"
-	#include "dec/neon64.c"
+	#include "dec/neon.c"
 	#include "dec/uint64.c"
 	#include "dec/tail.c"
 #else
