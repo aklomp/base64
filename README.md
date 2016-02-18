@@ -151,6 +151,33 @@ Example:
 CC=clang CFLAGS="--target=aarch64-linux-gnu -march=armv8-a" NEON64_CFLAGS=" " make
 ```
 
+### Openmp
+
+To enable Openmp on GCC you need to build with -fopenmp. This can be by setting the the `OPENMP` environment variable to 1.
+
+Example:
+
+```sh
+OPENMP=1 make
+```
+
+This will let the compiler define _OPENMP, which in turn will include the Openmp optimized lib_openmp.c into lib.c. Otherwise lib_plain.c is included.
+
+By default the number of parallel threads will be equal to the number of cores of the processor.
+On a quad core with hyperthreading eight cores will be detected, but hyperthreading will not increase the performance.
+
+To get verbose information about openmp start the program with OMP_DISPLAY_ENV=VERBOSE for instance
+
+```sh
+OMP_DISPLAY_ENV=VERBOSE test/benchmark
+```
+
+To put a limit on the number of threads start the program with OMP_THREAD_LIMIT=n for instance
+
+```sh
+OMP_THREAD_LIMIT=2 test/benchmark
+```
+
 ## API reference
 
 Strings are represented as a pointer and a length; they are not

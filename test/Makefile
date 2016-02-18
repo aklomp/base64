@@ -1,4 +1,7 @@
 CFLAGS += -std=c99 -O3 -Wall -Wextra -pedantic
+ifdef OPENMP
+  CFLAGS += -fopenmp
+endif
 
 .PHONY: clean test
 

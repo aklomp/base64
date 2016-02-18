@@ -31,6 +31,10 @@ endif
 ifdef SSSE3_CFLAGS
   HAVE_SSSE3 = 1
 endif
+ifdef OPENMP
+  CFLAGS += -fopenmp
+endif
+
 
 .PHONY: all analyze clean
 

@@ -12,7 +12,7 @@
 #include "../include/libbase64.h"
 #include "codec_supported.h"
 
-#define INSIZE_MB  10
+#define INSIZE_MB  100
 #define RANDOMDEV  "/dev/urandom"
 
 struct buffers {
