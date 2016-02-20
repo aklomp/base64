@@ -403,16 +403,16 @@ make -C test benchmark <buildflags> && test/benchmark
 
 It will run an encoding and decoding benchmark for all of the compiled-in codecs.
 
-The table below contains some results on random machines. All numbers are in MB/sec, rounded to the nearest integer.
+The table below contains some results on random machines. All numbers measured with a 10MB buffer in MB/sec, rounded to the nearest integer.
 
 | Processor                                 | Plain enc | Plain dec | SSSE3 enc | SSSE3 dec | AVX2 enc | AVX2 dec | NEON32 enc | NEON32 dec |
 |-------------------------------------------|----------:|----------:|----------:|----------:|---------:|---------:|-----------:|-----------:|
 | i7-4771 @ 3.5 GHz                         | 833       | 1111      | 3333      | 4444      | 4999     | 6666     | -          | -          |
-| i7-4770 @ 3.4 GHz DDR1333                 | 1812      | 1734      | 3356      | 3776      | 4160     | 5376     | -          | -          |
-| i7-4770 @ 3.4 GHz DDR1600                 | 1786      | 1729      | 3406      | 3572      | 4627     | 5769     | -          | -          |
-| i7-4770 @ 3.4 GHz DDR1600 OPENMP 1 thread | 1788      | 1728      | 3405      | 3787      | 4627     | 5749     | -          | -          |
-| i7-4770 @ 3.4 GHz DDR1600 OPENMP 2 thread | 3502      | 3376      | 4839      | 6994      | 4779     | 7111     | -          | -          |
-| i7-4770 @ 3.4 GHz DDR1600 OPENMP 8 thread | 4588      | 6198      | 4866      | 6594      | 4867     | 7020     | -          | -          |
+| i7-4770 @ 3.4 GHz DDR1600                 | 1831      | 1748      | 3570      | 3695      | 6539     | 6512     | -          | -          |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 1 thread | 1779      | 1727      | 3419      | 3788      | 4589     | 5871     | -          | -          |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 2 thread | 3367      | 3374      | 4784      | 6672      | 5120     | 7721     | -          | -          |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 4 thread | 4834      | 6075      | 4906      | 8154      | 4839     | 6911     | -          | -          |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 8 thread | 4696      | 6361      | 5227      | 7737      | 4813     | 7189     | -          | -          |
 | i5-4590S @ 3.0 GHz                        | 1721      | 1643      | 3255      | 3404      | 4124     | 5403     | -          | -          |
 | Xeon X5570 @ 2.93 GHz                     | 1097      | 1048      | 2077      | 2215      | -        | -        | -          | -          |
 | Pentium4 @ 3.4 GHz                        | 528       | 448       | -         | -         | -        | -        | -          | -          |
@@ -424,7 +424,10 @@ The table below contains some results on random machines. All numbers are in MB/
 | Intel Edison @ 500 MHz                    | 79        | 92        | 152       | 172       | -        | -        | -          | -          |
 | Intel Edison @ 500 MHz OPENMP 2 thread    | 158       | 184       | 300       | 343       | -        | -        | -          | -          |
 
-Note that as the AVX2 routines are already close to memory bandwidth saturation increasing the number of threads above 2 may actually degrade performance.
+Benchmarks on i7-4770 @ 3.4 GHz DDR1600 with varrying buffer sizes:
+![Benchmarks](base64-benchmarks.png)
+
+Note: Optimum buffer size to take advantage of the cache is in the range of 100kB to 1 MB, leading to 12x faster AVX encoding/decoding compared to Plain, or a throughput of 24/27GB/sec. Also note the performance degradation when the buffer size is less than 10kB due to thread creation overhead. To prevent this from happening lib_openmp.c defines OMP_THRESHOLD 20000, requiring at least a 20000 byte buffer to enable multithreading.
 
 ## License
 

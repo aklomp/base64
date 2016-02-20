@@ -39,5 +39,5 @@ base64_decode
 	base64_stream_decode_init(&state, flags);
 
 	// Feed the whole string to the stream reader:
-	return base64_stream_decode(&state, src, srclen, out, outlen);;
+	return base64_stream_decode(&state, src, srclen, out, outlen);
 }

@@ -12,7 +12,7 @@
 #include "../include/libbase64.h"
 #include "codec_supported.h"
 
-#define INSIZE_MB  100
+#define INSIZE_MB  10
 #define RANDOMDEV  "/dev/urandom"
 
 struct buffers {
@@ -66,17 +66,21 @@ codec_bench_enc (struct buffers *b, const char *name, unsigned int flags)
 {
 	float timediff, fastest = -1.0f;
 	struct timespec start, end;
+	int number_of_repeats;
+	
+	// For short enc repeat the process multiple times to increase timer accuracy
+	number_of_repeats = (10 * 1024 * 1024 * INSIZE_MB) / b->regsz;
 
 	// Choose fastest of ten runs:
 	for (int i = 0; i < 10; i++) {
 		clock_gettime(CLOCK_REALTIME, &start);
-		base64_encode(b->reg, b->regsz, b->enc, &b->encsz, flags);
+		for(int j = 0; j < number_of_repeats; j++) base64_encode(b->reg, b->regsz, b->enc, &b->encsz, flags);
 		clock_gettime(CLOCK_REALTIME, &end);
 		timediff = timediff_sec(&start, &end);
 		if (fastest < 0.0f || timediff < fastest)
 			fastest = timediff;
 	}
-
+	fastest /= number_of_repeats;
 	printf("%s\tencode\t%.02f MB/sec\n", name, bytes_to_mb(b->regsz) / fastest);
 }
 
@@ -85,17 +89,22 @@ codec_bench_dec (struct buffers *b, const char *name, unsigned int flags)
 {
 	float timediff, fastest = -1.0f;
 	struct timespec start, end;
+	int number_of_repeats;
+	
+	// For short enc repeat the process multiple times to increase timer accuracy
+
+	number_of_repeats = (10 * 1024 * 1024 * INSIZE_MB * 4) / 3 / b->encsz;
 
 	// Choose fastest of ten runs:
 	for (int i = 0; i < 10; i++) {
 		clock_gettime(CLOCK_REALTIME, &start);
-		base64_decode(b->enc, b->encsz, b->reg, &b->regsz, flags);
+		for(int j = 0; j < number_of_repeats; j++) base64_decode(b->enc, b->encsz, b->reg, &b->regsz, flags);
 		clock_gettime(CLOCK_REALTIME, &end);
 		timediff = timediff_sec(&start, &end);
 		if (fastest < 0.0f || timediff < fastest)
 			fastest = timediff;
 	}
-
+	fastest /= number_of_repeats;
 	printf("%s\tdecode\t%.02f MB/sec\n", name, bytes_to_mb(b->encsz) / fastest);
 }
 
@@ -112,8 +121,9 @@ main ()
 	int ret = 0;
 	char *errmsg = NULL;
 	struct buffers b;
+	int len[5] = {0, 1048576, 102400, 10240, 1024};
 
-	b.regsz = 1024 * 1024 * INSIZE_MB;
+	len[0] = b.regsz = 1024 * 1024 * INSIZE_MB;
 	b.encsz = 1024 * 1024 * ((INSIZE_MB * 5) / 3);
 
 	// Allocate space for megabytes of random data:
@@ -137,10 +147,13 @@ main ()
 	}
 
 	// Loop over all codecs:
-	for (size_t i = 0; codecs[i]; i++)
-		if (codec_supported(1 << i))
-			codec_bench(&b, codecs[i], 1 << i);
-
+	for(unsigned j = 0; j < 5; j++) {
+		b.regsz = len[j];
+		printf("Testing with bufferlength %d\n", (int)b.regsz);
+		for (size_t i = 0; codecs[i]; i++)
+			if (codec_supported(1 << i))
+				codec_bench(&b, codecs[i], 1 << i);
+	};
 	// Free memory:
 err2:	free(b.enc);
 err1:	free(b.reg);
