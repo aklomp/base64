@@ -405,17 +405,26 @@ It will run an encoding and decoding benchmark for all of the compiled-in codecs
 
 The table below contains some results on random machines. All numbers are in MB/sec, rounded to the nearest integer.
 
-| Processor              | Plain enc | Plain dec | SSSE3 enc | SSSE3 dec | AVX2 enc | AVX2 dec | NEON32 enc | NEON32 dec |
-|------------------------|----------:|----------:|----------:|----------:|---------:|---------:|-----------:|-----------:|
-| i7-4771 @ 3.5 GHz      | 833       | 1111      | 3333      | 4444      | 4999     | 6666     | -          | -          |
-| i5-4590S @ 3.0 GHz     | 1721      | 1643      | 3255      | 3404      | 4124     | 5403     | -          | -          |
-| Xeon X5570 @ 2.93 GHz  | 1097      | 1048      | 2077      | 2215      | -        | -        | -          | -          |
-| Pentium4 @ 3.4 GHz     | 528       | 448       | -         | -         | -        | -        | -          | -          |
-| Atom N270              | 112       | 125       | 331       | 368       | -        | -        | -          | -          |
-| AMD E-450              | 370       | 332       | 405       | 366       | -        | -        | -          | -          |
-| PowerPC E6500 @ 1.8GHz | 270       | 265       | -         | -         | -        | -        | -          | -          |
-| Raspberry PI B+ V1.2   | 46        | 40        | -         | -         | -        | -        | -          | -          |
-| Raspberry PI 2 B V1.1  | 104       | 88        | -         | -         | -        | -        | 158        | 114        |
+| Processor                                 | Plain enc | Plain dec | SSSE3 enc | SSSE3 dec | AVX2 enc | AVX2 dec | NEON32 enc | NEON32 dec |
+|-------------------------------------------|----------:|----------:|----------:|----------:|---------:|---------:|-----------:|-----------:|
+| i7-4771 @ 3.5 GHz                         | 833       | 1111      | 3333      | 4444      | 4999     | 6666     | -          | -          |
+| i7-4770 @ 3.4 GHz DDR1333                 | 1812      | 1734      | 3356      | 3776      | 4160     | 5376     | -          | -          |
+| i7-4770 @ 3.4 GHz DDR1600                 | 1786      | 1729      | 3406      | 3572      | 4627     | 5769     | -          | -          |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 1 thread | 1788      | 1728      | 3405      | 3787      | 4627     | 5749     | -          | -          |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 2 thread | 3502      | 3376      | 4839      | 6994      | 4779     | 7111     | -          | -          |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 8 thread | 4588      | 6198      | 4866      | 6594      | 4867     | 7020     | -          | -          |
+| i5-4590S @ 3.0 GHz                        | 1721      | 1643      | 3255      | 3404      | 4124     | 5403     | -          | -          |
+| Xeon X5570 @ 2.93 GHz                     | 1097      | 1048      | 2077      | 2215      | -        | -        | -          | -          |
+| Pentium4 @ 3.4 GHz                        | 528       | 448       | -         | -         | -        | -        | -          | -          |
+| Atom N270                                 | 112       | 125       | 331       | 368       | -        | -        | -          | -          |
+| AMD E-450                                 | 370       | 332       | 405       | 366       | -        | -        | -          | -          |
+| PowerPC E6500 @ 1.8GHz                    | 270       | 265       | -         | -         | -        | -        | -          | -          |
+| Raspberry PI B+ V1.2                      | 46        | 40        | -         | -         | -        | -        | -          | -          |
+| Raspberry PI 2 B V1.1                     | 104       | 88        | -         | -         | -        | -        | 158        | 114        |
+| Intel Edison @ 500 MHz                    | 79        | 92        | 152       | 172       | -        | -        | -          | -          |
+| Intel Edison @ 500 MHz OPENMP 2 thread    | 158       | 184       | 300       | 343       | -        | -        | -          | -          |
+
+Note that as the AVX2 routines are already close to memory bandwidth saturation increasing the number of threads above 2 may actually degrade performance.
 
 ## License
 
