@@ -1,5 +1,8 @@
 #include <stdint.h>
 #include <stddef.h>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 #include "../include/libbase64.h"
 #include "codecs.h"
@@ -117,46 +120,8 @@ base64_stream_decode
 	return codec.dec(state, src, srclen, out, outlen);
 }
 
-void
-base64_encode
-	( const char	*src
-	, size_t	 srclen
-	, char		*out
-	, size_t	*outlen
-	, int		 flags
-	)
-{
-	size_t s;
-	size_t t;
-	struct base64_state state;
-
-	// Init the stream reader:
-	base64_stream_encode_init(&state, flags);
-
-	// Feed the whole string to the stream reader:
-	base64_stream_encode(&state, src, srclen, out, &s);
-
-	// Finalize the stream by writing trailer if any:
-	base64_stream_encode_final(&state, out + s, &t);
-
-	// Final output length is stream length plus tail:
-	*outlen = s + t;
-}
-
-int
-base64_decode
-	( const char	*src
-	, size_t	 srclen
-	, char		*out
-	, size_t	*outlen
-	, int		 flags
-	)
-{
-	struct base64_state state;
-
-	// Init the stream reader:
-	base64_stream_decode_init(&state, flags);
-
-	// Feed the whole string to the stream reader:
-	return base64_stream_decode(&state, src, srclen, out, outlen);
-}
+#ifdef _OPENMP
+	#include "lib_openmp.c"
+#else
+	#include "lib_plain.c"
+#endif
