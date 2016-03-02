@@ -165,7 +165,6 @@ OPENMP=1 make
 ```
 
 This will let the compiler define `_OPENMP`, which in turn will include the OpenMP optimized `lib_openmp.c` into `lib.c`.
-Otherwise `lib_plain.c` is included.
 
 By default the number of parallel threads will be equal to the number of cores of the processor.
 On a quad core with hyperthreading eight cores will be detected, but hyperthreading will not increase the performance.

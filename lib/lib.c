@@ -121,7 +121,68 @@ base64_stream_decode
 }
 
 #ifdef _OPENMP
+
+	// Due to the overhead of initializing OpenMP and creating a team of
+	// threads, we require the data length to be larger than a threshold:
+	#define OMP_THRESHOLD 20000
+
+	// Conditionally include OpenMP-accelerated codec implementations:
 	#include "lib_openmp.c"
-#else
-	#include "lib_plain.c"
 #endif
+
+void
+base64_encode
+	( const char	*src
+	, size_t	 srclen
+	, char		*out
+	, size_t	*outlen
+	, int		 flags
+	)
+{
+	size_t s;
+	size_t t;
+	struct base64_state state;
+
+	#ifdef _OPENMP
+	if (srclen >= OMP_THRESHOLD) {
+		base64_encode_openmp(src, srclen, out, outlen, flags);
+		return;
+	}
+	#endif
+
+	// Init the stream reader:
+	base64_stream_encode_init(&state, flags);
+
+	// Feed the whole string to the stream reader:
+	base64_stream_encode(&state, src, srclen, out, &s);
+
+	// Finalize the stream by writing trailer if any:
+	base64_stream_encode_final(&state, out + s, &t);
+
+	// Final output length is stream length plus tail:
+	*outlen = s + t;
+}
+
+int
+base64_decode
+	( const char	*src
+	, size_t	 srclen
+	, char		*out
+	, size_t	*outlen
+	, int		 flags
+	)
+{
+	struct base64_state state;
+
+	#ifdef _OPENMP
+	if (srclen >= OMP_THRESHOLD) {
+		return base64_decode_openmp(src, srclen, out, outlen, flags);
+	}
+	#endif
+
+	// Init the stream reader:
+	base64_stream_decode_init(&state, flags);
+
+	// Feed the whole string to the stream reader:
+	return base64_stream_decode(&state, src, srclen, out, outlen);
+}
