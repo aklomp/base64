@@ -12,7 +12,9 @@
 #include "../include/libbase64.h"
 #include "codec_supported.h"
 
-#define INSIZE_MB  10
+#define KB	1024
+#define MB	(1024 * KB)
+
 #define RANDOMDEV  "/dev/urandom"
 
 struct buffers {
@@ -22,10 +24,25 @@ struct buffers {
 	size_t encsz;
 };
 
+// Define buffer sizes to test with:
+static struct bufsize {
+	char	*label;
+	size_t	 len;
+	int	 repeat;
+	int	 batch;
+}
+sizes[] = {
+	{ "10 MB",	MB * 10,	10,	1	},
+	{ "1 MB",	MB * 1,		10,	10	},
+	{ "100 KB",	KB * 100,	10,	100	},
+	{ "10 KB",	KB * 10,	100,	100	},
+	{ "1 KB",	KB * 1,		100,	1000	},
+};
+
 static inline float
 bytes_to_mb (size_t bytes)
 {
-	return bytes / 1024.0f / 1024.0f;
+	return bytes / (float) MB;
 }
 
 static bool
@@ -62,54 +79,68 @@ timediff_sec (struct timespec *start, struct timespec *end)
 }
 
 static void
-codec_bench_enc (struct buffers *b, const char *name, unsigned int flags)
+codec_bench_enc (struct buffers *b, const struct bufsize *bs, const char *name, unsigned int flags)
 {
 	float timediff, fastest = -1.0f;
 	struct timespec start, end;
 
-	// For short enc repeat the process multiple times to increase timer accuracy:
-	int nrepeats = (10 * 1024 * 1024 * INSIZE_MB) / b->regsz;
+	// Reset buffer size:
+	b->regsz = bs->len;
 
-	// Choose fastest of ten runs:
-	for (int i = 0; i < 10; i++) {
+	// Repeat benchmark a number of times for a fair test:
+	for (int i = bs->repeat; i; i--) {
+
+		// Timing loop, use batches to increase timer resolution:
 		clock_gettime(CLOCK_REALTIME, &start);
-		for (int j = 0; j < nrepeats; j++)
+		for (int j = bs->batch; j; j--)
 			base64_encode(b->reg, b->regsz, b->enc, &b->encsz, flags);
 		clock_gettime(CLOCK_REALTIME, &end);
-		timediff = timediff_sec(&start, &end) / nrepeats;
+
+		// Calculate average time of batch:
+		timediff = timediff_sec(&start, &end) / bs->batch;
+
+		// Update fastest time seen:
 		if (fastest < 0.0f || timediff < fastest)
 			fastest = timediff;
 	}
+
 	printf("%s\tencode\t%.02f MB/sec\n", name, bytes_to_mb(b->regsz) / fastest);
 }
 
 static void
-codec_bench_dec (struct buffers *b, const char *name, unsigned int flags)
+codec_bench_dec (struct buffers *b, const struct bufsize *bs, const char *name, unsigned int flags)
 {
 	float timediff, fastest = -1.0f;
 	struct timespec start, end;
 
-	// For short enc repeat the process multiple times to increase timer accuracy:
-	int nrepeats = (10 * 1024 * 1024 * INSIZE_MB * 4) / 3 / b->encsz;
+	// Reset buffer size:
+	b->encsz = bs->len;
 
-	// Choose fastest of ten runs:
-	for (int i = 0; i < 10; i++) {
+	// Repeat benchmark a number of times for a fair test:
+	for (int i = bs->repeat; i; i--) {
+
+		// Timing loop, use batches to increase timer resolution:
 		clock_gettime(CLOCK_REALTIME, &start);
-		for (int j = 0; j < nrepeats; j++)
+		for (int j = bs->batch; j; j--)
 			base64_decode(b->enc, b->encsz, b->reg, &b->regsz, flags);
 		clock_gettime(CLOCK_REALTIME, &end);
-		timediff = timediff_sec(&start, &end) / nrepeats;
+
+		// Calculate average time of batch:
+		timediff = timediff_sec(&start, &end) / bs->batch;
+
+		// Update fastest time seen:
 		if (fastest < 0.0f || timediff < fastest)
 			fastest = timediff;
 	}
+
 	printf("%s\tdecode\t%.02f MB/sec\n", name, bytes_to_mb(b->encsz) / fastest);
 }
 
 static void
-codec_bench (struct buffers *b, const char *name, unsigned int flags)
+codec_bench (struct buffers *b, const struct bufsize *bs, const char *name, unsigned int flags)
 {
-	codec_bench_enc(b, name, flags);
-	codec_bench_dec(b, name, flags);
+	codec_bench_enc(b, bs, name, flags);
+	codec_bench_dec(b, bs, name, flags);
 }
 
 int
@@ -118,10 +149,10 @@ main ()
 	int ret = 0;
 	char *errmsg = NULL;
 	struct buffers b;
-	size_t len[] = { 0, 1048576, 102400, 10240, 1024 };
 
-	len[0] = b.regsz = 1024 * 1024 * INSIZE_MB;
-	b.encsz = 1024 * 1024 * ((INSIZE_MB * 5) / 3);
+	// Set buffer sizes to largest buffer length:
+	b.regsz = sizes[0].len;
+	b.encsz = sizes[0].len * 5 / 3;
 
 	// Allocate space for megabytes of random data:
 	if ((b.reg = malloc(b.regsz)) == NULL) {
@@ -143,15 +174,15 @@ main ()
 		goto err2;
 	}
 
-	// Loop over all buffer lengths:
-	for (size_t j = 0; j < sizeof(len) / sizeof(len[0]); j++) {
-		b.regsz = len[j];
-		printf("Testing with buffer length %d\n", (int)b.regsz);
+	// Loop over all buffer sizes:
+	for (size_t i = 0; i < sizeof(sizes) / sizeof(sizes[0]); i++) {
+		printf("Testing with buffer size %s, fastest of %d * %d\n",
+			sizes[i].label, sizes[i].repeat, sizes[i].batch);
 
 		// Loop over all codecs:
-		for (size_t i = 0; codecs[i]; i++)
-			if (codec_supported(1 << i))
-				codec_bench(&b, codecs[i], 1 << i);
+		for (size_t j = 0; codecs[j]; j++)
+			if (codec_supported(1 << j))
+				codec_bench(&b, &sizes[i], codecs[j], 1 << j);
 	};
 
 	// Free memory:
