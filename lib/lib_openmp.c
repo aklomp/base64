@@ -121,16 +121,25 @@ base64_decode_openmp
 			result += this_result;
 		}
 	}
+
+	// If `result' equals `-num_threads', then all threads returned -1,
+	// indicating that the requested codec is not available:
+	if (result == -num_threads) {
+		return -1;
+	}
+
+	// If `result' does not equal `num_threads', then at least one of the
+	// threads hit a decode error:
+	if (result != num_threads) {
+		return 0;
+	}
+
+	// So far so good, now decode whatever remains in the buffer. Reuse the
+	// initial state, since we are at a 4-byte boundary:
 	state = initial_state;
-	result += base64_stream_decode(&state, src + num_threads * len, last_len, out + num_threads * len * 3 / 4, &s);
+	result = base64_stream_decode(&state, src + num_threads * len, last_len, out + num_threads * len * 3 / 4, &s);
 	sum += s;
 	*outlen = sum;
-
-	if (result > 0)
-		result = 1;
-
-	if (result < 0)
-		result = -1;
 
 	return result;
 }
