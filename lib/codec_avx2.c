@@ -35,39 +35,40 @@ enc_reshuffle (__m256i in)
 		0, 1, 2, -1,
 		3, 4, 5, -1));
 
-	// For each 32-bit word, reorder to bigendian, duplicating the third
-	// byte in every block of four:
-	in = _mm256_shuffle_epi8(in, _mm256_setr_epi8(
-		 2,  2,  1,  0,
-		 5,  5,  4,  3,
-		 8,  8,  7,  6,
-		11, 11, 10,  9,
-		 2,  2,  1,  0,
-		 5,  5,  4,  3,
-		 8,  8,  7,  6,
-		11, 11, 10,  9));
+	// Slice into 32-bit chunks and operate on all chunks in parallel.
+	// All processing is done within the 32-bit chunk. First, shuffle:
+	// before: [eeeeeeff|ccdddddd|bbbbcccc|aaaaaabb]
+	// after:  [00000000|aaaaaabb|bbbbcccc|ccdddddd]
+	in = _mm256_shuffle_epi8(in, _mm256_set_epi8(
+		-1, 9, 10, 11,
+		-1, 6,  7,  8,
+		-1, 3,  4,  5,
+		-1, 0,  1,  2,
+		-1, 9, 10, 11,
+		-1, 6,  7,  8,
+		-1, 3,  4,  5,
+		-1, 0,  1,  2));
 
-	// Mask to pass through only the lower 6 bits of one byte:
-	__m256i mask = _mm256_set1_epi32(0x3F000000);
+	// cd      = [00000000|00000000|0000cccc|ccdddddd]
+	const __m256i cd = _mm256_and_si256(in, _mm256_set1_epi32(0x00000FFF));
 
-	// Shift bits by 2, mask in only the first byte:
-	__m256i out = _mm256_and_si256(_mm256_srli_epi32(in, 2), mask);
-	mask = _mm256_srli_epi32(mask, 8);
+	// ab      = [0000aaaa|aabbbbbb|00000000|00000000]
+	const __m256i ab = _mm256_and_si256(_mm256_slli_epi32(in, 4), _mm256_set1_epi32(0x0FFF0000));
 
-	// Shift bits by 4, mask in only the second byte:
-	out = _mm256_or_si256(out, _mm256_and_si256(_mm256_srli_epi32(in, 4), mask));
-	mask = _mm256_srli_epi32(mask, 8);
+	// merged  = [0000aaaa|aabbbbbb|0000cccc|ccdddddd]
+	const __m256i merged = _mm256_or_si256(ab, cd);
 
-	// Shift bits by 6, mask in only the third byte:
-	out = _mm256_or_si256(out, _mm256_and_si256(_mm256_srli_epi32(in, 6), mask));
-	mask = _mm256_srli_epi32(mask, 8);
+	// bd      = [00000000|00bbbbbb|00000000|00dddddd]
+	const __m256i bd = _mm256_and_si256(merged, _mm256_set1_epi32(0x003F003F));
 
-	// No shift necessary for the fourth byte because we duplicated the
-	// third byte to this position; just mask:
-	out = _mm256_or_si256(out, _mm256_and_si256(in, mask));
+	// ac      = [00aaaaaa|00000000|00cccccc|00000000]
+	const __m256i ac = _mm256_and_si256(_mm256_slli_epi32(merged, 2), _mm256_set1_epi32(0x3F003F00));
 
-	// Reorder to 32-bit little-endian:
-	return _mm256_bswap_epi32(out);
+	// indices = [00aaaaaa|00bbbbbb|00cccccc|00dddddd]
+	const __m256i indices = _mm256_or_si256(ac, bd);
+
+	// return  = [00dddddd|00cccccc|00bbbbbb|00aaaaaa]
+	return _mm256_bswap_epi32(indices);
 }
 
 static inline __m256i

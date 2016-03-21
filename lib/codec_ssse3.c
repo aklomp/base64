@@ -25,38 +25,36 @@ _mm_bswap_epi32 (const __m128i in)
 static inline __m128i
 enc_reshuffle (__m128i in)
 {
-	// Reorder to 32-bit big-endian, duplicating the third byte in every
-	// block of four. This copies the third byte to its final destination,
-	// so we can include it later by just masking instead of shifting and
-	// masking. The workset must be in big-endian, otherwise the shifted
-	// bits do not carry over properly among adjacent bytes:
-	in = _mm_shuffle_epi8(in, _mm_setr_epi8(
-		 2,  2,  1,  0,
-		 5,  5,  4,  3,
-		 8,  8,  7,  6,
-		11, 11, 10,  9));
+	// Slice into 32-bit chunks and operate on all chunks in parallel.
+	// All processing is done within the 32-bit chunk. First, shuffle:
+	// before: [eeeeeeff|ccdddddd|bbbbcccc|aaaaaabb]
+	// after:  [00000000|aaaaaabb|bbbbcccc|ccdddddd]
+	in = _mm_shuffle_epi8(in, _mm_set_epi8(
+		-1, 9, 10, 11,
+		-1, 6,  7,  8,
+		-1, 3,  4,  5,
+		-1, 0,  1,  2));
 
-	// Mask to pass through only the lower 6 bits of one byte:
-	__m128i mask = _mm_set1_epi32(0x3F000000);
+	// cd      = [00000000|00000000|0000cccc|ccdddddd]
+	const __m128i cd = _mm_and_si128(in, _mm_set1_epi32(0x00000FFF));
 
-	// Shift bits by 2, mask in only the first byte:
-	__m128i out = _mm_and_si128(_mm_srli_epi32(in, 2), mask);
-	mask = _mm_srli_epi32(mask, 8);
+	// ab      = [0000aaaa|aabbbbbb|00000000|00000000]
+	const __m128i ab = _mm_and_si128(_mm_slli_epi32(in, 4), _mm_set1_epi32(0x0FFF0000));
 
-	// Shift bits by 4, mask in only the second byte:
-	out = _mm_or_si128(out, _mm_and_si128(_mm_srli_epi32(in, 4), mask));
-	mask = _mm_srli_epi32(mask, 8);
+	// merged  = [0000aaaa|aabbbbbb|0000cccc|ccdddddd]
+	const __m128i merged = _mm_or_si128(ab, cd);
 
-	// Shift bits by 6, mask in only the third byte:
-	out = _mm_or_si128(out, _mm_and_si128(_mm_srli_epi32(in, 6), mask));
-	mask = _mm_srli_epi32(mask, 8);
+	// bd      = [00000000|00bbbbbb|00000000|00dddddd]
+	const __m128i bd = _mm_and_si128(merged, _mm_set1_epi32(0x003F003F));
 
-	// No shift necessary for the fourth byte because we duplicated
-	// the third byte to this position; just mask:
-	out = _mm_or_si128(out, _mm_and_si128(in, mask));
+	// ac      = [00aaaaaa|00000000|00cccccc|00000000]
+	const __m128i ac = _mm_and_si128(_mm_slli_epi32(merged, 2), _mm_set1_epi32(0x3F003F00));
 
-	// Reorder to 32-bit little-endian and return:
-	return _mm_bswap_epi32(out);
+	// indices = [00aaaaaa|00bbbbbb|00cccccc|00dddddd]
+	const __m128i indices = _mm_or_si128(ac, bd);
+
+	// return  = [00dddddd|00cccccc|00bbbbbb|00aaaaaa]
+	return _mm_bswap_epi32(indices);
 }
 
 static inline __m128i
