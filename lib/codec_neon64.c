@@ -43,7 +43,7 @@ static const char *base64_table_enc_transposed =
 BASE64_ENC_FUNCTION(neon64)
 {
 #if (defined(__aarch64__) && defined(__ARM_NEON__))
-	uint8x16x4_t tbl_enc = vld4q_u8(base64_table_enc_transposed);
+	uint8x16x4_t tbl_enc = vld4q_u8((uint8_t const*)base64_table_enc_transposed);
 
 	#include "enc/head.c"
 	#include "enc/neon64.c"
