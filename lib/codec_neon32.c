@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdlib.h>
 #ifdef __ARM_NEON__
 #include <arm_neon.h>
 #endif
