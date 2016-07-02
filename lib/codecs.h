@@ -93,6 +93,13 @@ struct codec
 	#define cpu_to_be64(x)	(x)
 	#define be32_to_cpu(x)	(x)
 	#define be64_to_cpu(x)	(x)
+#endif 
+
+// detect word size
+#ifdef _INTEGRAL_MAX_BITS
+#define BASE64_WORDSIZE _INTEGRAL_MAX_BITS
+#else
+#define BASE64_WORDSIZE __WORDSIZE
 #endif
 
 void codec_choose (struct codec *, int flags);
