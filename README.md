@@ -1,9 +1,9 @@
 # Fast Base64 stream encoder/decoder
 
 This is an implementation of a base64 stream encoding/decoding library in C99
-with SIMD (AVX2, NEON, AArch64/NEON, SSSE3) acceleration. It also contains
-wrapper functions to encode/decode simple length-delimited strings. This
-library aims to be:
+with SIMD (AVX2, NEON, AArch64/NEON, SSSE3) and [OpenMP](http://www.openmp.org)
+acceleration. It also contains wrapper functions to encode/decode simple
+length-delimited strings. This library aims to be:
 
 - FAST;
 - easy to use;
@@ -34,6 +34,7 @@ out what the code is doing, and why.
 Notable features:
 
 - Really fast on x86 and ARM systems by using SIMD vector processing;
+- Can use [OpenMP](http://www.openmp.org) for even more parallel speedups;
 - Really fast on other 32 or 64-bit platforms through optimized routines;
 - Reads/writes blocks of streaming data;
 - Does not dynamically allocate memory;
@@ -54,6 +55,8 @@ optimizations described by Wojciech Muła in a
 [series](http://0x80.pl/notesen/2016-01-12-sse-base64-encoding.html) of
 [articles](http://0x80.pl/notesen/2016-01-17-sse-base64-decoding.html).
 His own code is [here](https://github.com/WojciechMula/toys/tree/master/base64).
+
+The OpenMP implementation was added by Ferry Toth (@htot) from [Exalon Delft](http://www.exalondelft.nl).
 
 ## Building
 
@@ -149,6 +152,39 @@ Example:
 
 ```sh
 CC=clang CFLAGS="--target=aarch64-linux-gnu -march=armv8-a" NEON64_CFLAGS=" " make
+```
+
+### OpenMP
+
+To enable OpenMP on GCC you need to build with `-fopenmp`. This can be by setting the the `OPENMP` environment variable to `1`.
+
+Example:
+
+```sh
+OPENMP=1 make
+```
+
+This will let the compiler define `_OPENMP`, which in turn will include the OpenMP optimized `lib_openmp.c` into `lib.c`.
+
+By default the number of parallel threads will be equal to the number of cores of the processor.
+On a quad core with hyperthreading eight cores will be detected, but hyperthreading will not increase the performance.
+
+To get verbose information about OpenMP start the program with `OMP_DISPLAY_ENV=VERBOSE`, for instance
+
+```sh
+OMP_DISPLAY_ENV=VERBOSE test/benchmark
+```
+
+To put a limit on the number of threads, start the program with `OMP_THREAD_LIMIT=n`, for instance
+
+```sh
+OMP_THREAD_LIMIT=2 test/benchmark
+```
+
+An example of running a benchmark with OpenMP, SSSE3 and AVX2 enabled:
+
+```sh
+make clean && OPENMP=1 SSSE3_CFLAGS=-mssse3 AVX2_CFLAGS=-mavx2 make && OPENMP=1 make -C test
 ```
 
 ## API reference
@@ -376,19 +412,33 @@ make -C test benchmark <buildflags> && test/benchmark
 
 It will run an encoding and decoding benchmark for all of the compiled-in codecs.
 
-The table below contains some results on random machines. All numbers are in MB/sec, rounded to the nearest integer.
+The table below contains some results on random machines. All numbers measured with a 10MB buffer in MB/sec, rounded to the nearest integer.
 
-| Processor              | Plain enc | Plain dec | SSSE3 enc | SSSE3 dec | AVX2 enc | AVX2 dec | NEON32 enc | NEON32 dec |
-|------------------------|----------:|----------:|----------:|----------:|---------:|---------:|-----------:|-----------:|
-| i7-4771 @ 3.5 GHz      | 833       | 1111      | 3333      | 4444      | 4999     | 6666     | -          | -          |
-| i5-4590S @ 3.0 GHz     | 1721      | 1643      | 3255      | 3404      | 4124     | 5403     | -          | -          |
-| Xeon X5570 @ 2.93 GHz  | 1097      | 1048      | 2077      | 2215      | -        | -        | -          | -          |
-| Pentium4 @ 3.4 GHz     | 528       | 448       | -         | -         | -        | -        | -          | -          |
-| Atom N270              | 112       | 125       | 331       | 368       | -        | -        | -          | -          |
-| AMD E-450              | 370       | 332       | 405       | 366       | -        | -        | -          | -          |
-| PowerPC E6500 @ 1.8GHz | 270       | 265       | -         | -         | -        | -        | -          | -          |
-| Raspberry PI B+ V1.2   | 46        | 40        | -         | -         | -        | -        | -          | -          |
-| Raspberry PI 2 B V1.1  | 104       | 88        | -         | -         | -        | -        | 158        | 116        |
+| Processor                                 | Plain enc | Plain dec | SSSE3 enc | SSSE3 dec | AVX2 enc | AVX2 dec | NEON32 enc | NEON32 dec |
+|-------------------------------------------|----------:|----------:|----------:|----------:|---------:|---------:|-----------:|-----------:|
+| i7-4771 @ 3.5 GHz                         | 833       | 1111      | 3333      | 4444      | 4999     | 6666     | -          | -          |
+| i7-4770 @ 3.4 GHz DDR1600                 | 1831      | 1748      | 3570      | 3695      | 6539     | 6512     | -          | -          |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 1 thread | 1779      | 1727      | 3419      | 3788      | 4589     | 5871     | -          | -          |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 2 thread | 3367      | 3374      | 4784      | 6672      | 5120     | 7721     | -          | -          |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 4 thread | 4834      | 6075      | 4906      | 8154      | 4839     | 6911     | -          | -          |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 8 thread | 4696      | 6361      | 5227      | 7737      | 4813     | 7189     | -          | -          |
+| i5-4590S @ 3.0 GHz                        | 1721      | 1643      | 3255      | 3404      | 4124     | 5403     | -          | -          |
+| Xeon X5570 @ 2.93 GHz                     | 1097      | 1048      | 2077      | 2215      | -        | -        | -          | -          |
+| Pentium4 @ 3.4 GHz                        | 528       | 448       | -         | -         | -        | -        | -          | -          |
+| Atom N270                                 | 112       | 125       | 331       | 368       | -        | -        | -          | -          |
+| AMD E-450                                 | 370       | 332       | 405       | 366       | -        | -        | -          | -          |
+| PowerPC E6500 @ 1.8GHz                    | 270       | 265       | -         | -         | -        | -        | -          | -          |
+| Raspberry PI B+ V1.2                      | 46        | 40        | -         | -         | -        | -        | -          | -          |
+| Raspberry PI 2 B V1.1                     | 104       | 88        | -         | -         | -        | -        | 158        | 116        |
+| Intel Edison @ 500 MHz                    | 79        | 92        | 152       | 172       | -        | -        | -          | -          |
+| Intel Edison @ 500 MHz OPENMP 2 thread    | 158       | 184       | 300       | 343       | -        | -        | -          | -          |
+
+Benchmarks on i7-4770 @ 3.4 GHz DDR1600 with varrying buffer sizes:
+![Benchmarks](base64-benchmarks.png)
+
+Note: optimal buffer size to take advantage of the cache is in the range of 100 kB to 1 MB, leading to 12x faster AVX encoding/decoding compared to Plain, or a throughput of 24/27GB/sec.
+Also note the performance degradation when the buffer size is less than 10 kB due to thread creation overhead.
+To prevent this from happening `lib_openmp.c` defines `OMP_THRESHOLD 20000`, requiring at least a 20000 byte buffer to enable multithreading.
 
 ## License
 

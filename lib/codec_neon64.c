@@ -12,6 +12,12 @@
 #include "codecs.h"
 
 #if (defined(__aarch64__) && defined(__ARM_NEON__))
+
+#define CMPGT(s,n)	vcgtq_u8((s), vdupq_n_u8(n))
+#define CMPEQ(s,n)	vceqq_u8((s), vdupq_n_u8(n))
+#define REPLACE(s,n)	vandq_u8((s), vdupq_n_u8(n))
+#define RANGE(s,a,b)	vandq_u8(vcgeq_u8((s), vdupq_n_u8(a)), vcleq_u8((s), vdupq_n_u8(b)))
+
 // With this transposed encoding table, we can use
 // a 64-byte lookup to do the encoding.
 // Read the table top to bottom, left to right.
@@ -43,7 +49,7 @@ static const char *base64_table_enc_transposed =
 BASE64_ENC_FUNCTION(neon64)
 {
 #if (defined(__aarch64__) && defined(__ARM_NEON__))
-	uint8x16x4_t tbl_enc = vld4q_u8(base64_table_enc_transposed);
+	uint8x16x4_t tbl_enc = vld4q_u8((uint8_t const*)base64_table_enc_transposed);
 
 	#include "enc/head.c"
 	#include "enc/neon64.c"
