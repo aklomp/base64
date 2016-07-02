@@ -1,4 +1,4 @@
-# Written in 2016 by Henrik Steffen Gaßmann henrik@gassmann.onl
+# Written in 2016 by Henrik Steffen Gaï¿½mann henrik@gassmann.onl
 #
 # To the extent possible under law, the author(s) have dedicated all
 # copyright and related and neighboring rights to this software to the
@@ -25,6 +25,9 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU"
     set(BASE64_GNU_CXX_COMPATIBLE 1)
 endif()
 
+########################################################################
+# Compilation options
+#
 # set BASE64_INCLUDED to 1 if you include this project from another
 # cmake project (this is handy in combination with git submodules :)
 if (NOT BASE64_INCLUDED)
@@ -45,6 +48,13 @@ if (NOT BASE64_INCLUDED)
     #    if (NOT ";${BASE64_WITH_NEON};" MATCHES ";${BASE64_NEON_OPTIONS};")
     #        message(FATAL_ERROR "invalid neon option selected ${BASE64_WITH_NEON}")
     #endif()
+
+    ###################################################################
+    # OpenMP
+    find_package(OpenMP)
+    if (OPENMP_FOUND)
+        option(BASE64_USE_OpenMP "Utilize OpenMP to parallelize encoding and decoding.")
+    endif()
     
     ####################################################################
     # platform/compiler specific configuration
@@ -62,6 +72,8 @@ if (NOT BASE64_INCLUDED)
     endif()
 endif()
 
+########################################################################
+# library project
 add_library(base64 STATIC
     lib/lib.c
     lib/codec_avx2.c
@@ -126,6 +138,12 @@ target_compile_definitions(base64
         HAVE_NEON32=${HAVE_NEON32}
         HAVE_NEON64=${HAVE_NEON64}
 )
+
+########################################################################
+# OpenMP Settings
+if (BASE64_USE_OpenMP)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+endif()
 
 ########################################################################
 if (BASE64_BUILD_TESTS)
