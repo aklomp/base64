@@ -58,31 +58,48 @@ struct codec
 
 // Define machine endianness. This is for GCC:
 #if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
-	#define LITTLE_ENDIAN 1
+	#define BASE64_LITTLE_ENDIAN 1
 #else
-	#define LITTLE_ENDIAN 0
+	#define BASE64_LITTLE_ENDIAN 0
 #endif
 
 // This is for Clang:
 #ifdef __LITTLE_ENDIAN__
-	#define LITTLE_ENDIAN 1
+	#define BASE64_LITTLE_ENDIAN 1
 #endif
 
 #ifdef __BIG_ENDIAN__
-	#define LITTLE_ENDIAN 0
+	#define BASE64_LITTLE_ENDIAN 0
 #endif
 
-// Endian conversion functions
-#if LITTLE_ENDIAN
-	#define cpu_to_be32(x)	__builtin_bswap32(x)
-	#define cpu_to_be64(x)	__builtin_bswap64(x)
-	#define be32_to_cpu(x)	__builtin_bswap32(x)
-	#define be64_to_cpu(x)	__builtin_bswap64(x)
+// Endian conversion functions:
+#if BASE64_LITTLE_ENDIAN
+	#if defined(_MSC_VER)
+		// Microsoft Visual C++:
+		#define cpu_to_be32(x)	_byteswap_ulong(x)
+		#define cpu_to_be64(x)	_byteswap_uint64(x)
+		#define be32_to_cpu(x)	_byteswap_ulong(x)
+		#define be64_to_cpu(x)	_byteswap_uint64(x)
+	#else
+		// GCC and Clang:
+		#define cpu_to_be32(x)	__builtin_bswap32(x)
+		#define cpu_to_be64(x)	__builtin_bswap64(x)
+		#define be32_to_cpu(x)	__builtin_bswap32(x)
+		#define be64_to_cpu(x)	__builtin_bswap64(x)
+	#endif
 #else
+	// No conversion needed:
 	#define cpu_to_be32(x)	(x)
 	#define cpu_to_be64(x)	(x)
 	#define be32_to_cpu(x)	(x)
 	#define be64_to_cpu(x)	(x)
+#endif 
+
+// detect word size
+#ifdef _INTEGRAL_MAX_BITS
+#define BASE64_WORDSIZE _INTEGRAL_MAX_BITS
+#else
+#define BASE64_WORDSIZE __WORDSIZE
 #endif
 
 void codec_choose (struct codec *, int flags);

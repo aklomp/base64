@@ -24,7 +24,7 @@ base64_encode_openmp
 	size_t t;
 	size_t sum = 0, len, last_len;
 	struct base64_state state, initial_state;   
-	int num_threads;
+	int num_threads, i;
 
 	// Request a number of threads but not necessarily get them:
 	#pragma omp parallel
@@ -50,7 +50,7 @@ base64_encode_openmp
 		// Single has an implicit barrier for all threads to wait here
 		// for the above to complete:
 		#pragma omp for firstprivate(state) private(s) reduction(+:sum) schedule(static,1)
-		for (int i = 0; i < num_threads; i++)
+		for (i = 0; i < num_threads; i++)
 		{
 			// Feed each part of the string to the stream reader:
 			base64_stream_encode(&state, src + i * len, len, out + i * len * 4 / 3, &s);
@@ -82,7 +82,7 @@ base64_decode_openmp
 	, int		 flags
 	)
 {
-	int num_threads, result = 0;
+	int num_threads, result = 0, i;
 	size_t sum = 0, len, last_len, s;
 	struct base64_state state, initial_state;
 
@@ -111,7 +111,7 @@ base64_decode_openmp
 		// Single has an implicit barrier to wait here for the above to
 		// complete:
 		#pragma omp for firstprivate(state) private(s) reduction(+:sum, result) schedule(static,1)
-		for (int i = 0; i < num_threads; i++)
+		for (i = 0; i < num_threads; i++)
 		{
 			int this_result;
 
