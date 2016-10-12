@@ -61,30 +61,29 @@ enc_reshuffle (__m128i in)
 static inline __m128i
 enc_translate (const __m128i in)
 {
+	// LUT contains Absolute offset for all ranges:
+	const __m128i lut = _mm_setr_epi8(65, 71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 0, 0);
+
 	// Translate values 0..63 to the Base64 alphabet. There are five sets:
-	// #  From      To         Abs  Delta  Characters
-	// 0  [0..25]   [65..90]   +65  +65    ABCDEFGHIJKLMNOPQRSTUVWXYZ
-	// 1  [26..51]  [97..122]  +71   +6    abcdefghijklmnopqrstuvwxyz
-	// 2  [52..61]  [48..57]    -4  -75    0123456789
-	// 3  [62]      [43]       -19  -15    +
-	// 4  [63]      [47]       -16   +3    /
+	// #  From      To         Abs    Index  Characters
+	// 0  [0..25]   [65..90]   +65        0  ABCDEFGHIJKLMNOPQRSTUVWXYZ
+	// 1  [26..51]  [97..122]  +71        1  abcdefghijklmnopqrstuvwxyz
+	// 2  [52..61]  [48..57]    -4  [2..11]  0123456789
+	// 3  [62]      [43]       -19       12  +
+	// 4  [63]      [47]       -16       13  /
 
-	// Create cumulative masks for characters in sets [1,2,3,4], [2,3,4],
-	// [3,4], and [4]:
-	const __m128i mask1 = CMPGT(in, 25);
-	const __m128i mask2 = CMPGT(in, 51);
-	const __m128i mask3 = CMPGT(in, 61);
-	const __m128i mask4 = CMPEQ(in, 63);
+	// Create LUT indices from input:
+	// the index for range #0 is right, others are 1 less than expected:
+	__m128i indices = _mm_subs_epu8(in, _mm_set1_epi8(51));
 
-	// All characters are at least in cumulative set 0, so add 'A':
-	__m128i out = _mm_add_epi8(in, _mm_set1_epi8(65));
+	// mask is 0xFF (-1) for range #[1..4] and 0x00 for range #0:
+	__m128i mask = CMPGT(in, 25);
 
-	// For inputs which are also in any of the other cumulative sets,
-	// add delta values against the previous set(s) to correct the shift:
-	out = _mm_add_epi8(out, REPLACE(mask1,  6));
-	out = _mm_sub_epi8(out, REPLACE(mask2, 75));
-	out = _mm_sub_epi8(out, REPLACE(mask3, 15));
-	out = _mm_add_epi8(out, REPLACE(mask4,  3));
+	// substract -1, so add 1 to indices for range #[1..4], All indices are now correct:
+	indices = _mm_sub_epi8(indices, mask);
+
+	// Add offsets to input values:
+	__m128i out = _mm_add_epi8(in, _mm_shuffle_epi8(lut, indices));
 
 	return out;
 }
