@@ -105,23 +105,18 @@ enc_translate (const __m256i in)
 static inline __m256i
 dec_reshuffle (__m256i in)
 {
-	// Shuffle bytes to 32-bit bigendian:
-	in = _mm256_bswap_epi32(in);
-
 	// Mask in a single byte per shift:
-	__m256i mask = _mm256_set1_epi32(0x3F000000);
+	const __m256i maskB2 = _mm256_set1_epi32(0x003F0000);
+	const __m256i maskB1 = _mm256_set1_epi32(0x00003F00);
 
 	// Pack bytes together:
-	__m256i out = _mm256_slli_epi32(_mm256_and_si256(in, mask), 2);
-	mask = _mm256_srli_epi32(mask, 8);
+	__m256i out = _mm256_srli_epi32(in, 16);
 
-	out = _mm256_or_si256(out, _mm256_slli_epi32(_mm256_and_si256(in, mask), 4));
-	mask = _mm256_srli_epi32(mask, 8);
+	out = _mm256_or_si256(out, _mm256_srli_epi32(_mm256_and_si256(in, maskB2), 2));
 
-	out = _mm256_or_si256(out, _mm256_slli_epi32(_mm256_and_si256(in, mask), 6));
-	mask = _mm256_srli_epi32(mask, 8);
+	out = _mm256_or_si256(out, _mm256_slli_epi32(_mm256_and_si256(in, maskB1), 12));
 
-	out = _mm256_or_si256(out, _mm256_slli_epi32(_mm256_and_si256(in, mask), 8));
+	out = _mm256_or_si256(out, _mm256_slli_epi32(in, 26));
 
 	// Pack bytes together within 32-bit words, discarding words 3 and 7:
 	out = _mm256_shuffle_epi8(out, _mm256_setr_epi8(
