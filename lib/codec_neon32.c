@@ -39,68 +39,74 @@ enc_reshuffle (uint8x16x3_t in)
 	return out;
 }
 
+static inline uint8x16_t
+vqtbl1q_u8 (uint8x16_t lut, uint8x16_t indices)
+{
+	uint8x8x2_t lut2;
+	uint8x8x2_t result;
+
+	lut2.val[0] = vget_low_u8(lut);
+	lut2.val[1] = vget_high_u8(lut);
+
+	result.val[0] = vtbl2_u8(lut2, vget_low_u8(indices));
+	result.val[1] = vtbl2_u8(lut2, vget_high_u8(indices));
+
+	return vcombine_u8(result.val[0], result.val[1]);
+}
+
 static inline uint8x16x4_t
 enc_translate (uint8x16x4_t in)
 {
-	uint8x16x4_t mask1, mask2, mask3, mask4, out;
+	// LUT contains Absolute offset for all ranges:
+	const uint8x16_t lut = {
+		 65U,  71U, 252U, 252U,
+		252U, 252U, 252U, 252U,
+		252U, 252U, 252U, 252U,
+		237U, 240U,   0U,   0U
+	};
+
+	const uint8x16_t offset = vdupq_n_u8(51);
+
+	uint8x16x4_t indices, mask, delta, out;
 
 	// Translate values 0..63 to the Base64 alphabet. There are five sets:
-	// #  From      To         Abs  Delta  Characters
-	// 0  [0..25]   [65..90]   +65  +65    ABCDEFGHIJKLMNOPQRSTUVWXYZ
-	// 1  [26..51]  [97..122]  +71   +6    abcdefghijklmnopqrstuvwxyz
-	// 2  [52..61]  [48..57]    -4  -75    0123456789
-	// 3  [62]      [43]       -19  -15    +
-	// 4  [63]      [47]       -16   +3    /
+	// #  From      To         Abs    Index  Characters
+	// 0  [0..25]   [65..90]   +65        0  ABCDEFGHIJKLMNOPQRSTUVWXYZ
+	// 1  [26..51]  [97..122]  +71        1  abcdefghijklmnopqrstuvwxyz
+	// 2  [52..61]  [48..57]    -4  [2..11]  0123456789
+	// 3  [62]      [43]       -19       12  +
+	// 4  [63]      [47]       -16       13  /
 
-	// Create cumulative masks for characters in sets [1,2,3,4], [2,3,4],
-	// [3,4], and [4]:
-	mask1.val[0] = CMPGT(in.val[0], 25);
-	mask1.val[1] = CMPGT(in.val[1], 25);
-	mask1.val[2] = CMPGT(in.val[2], 25);
-	mask1.val[3] = CMPGT(in.val[3], 25);
+	// Create LUT indices from input:
+	// the index for range #0 is right, others are 1 less than expected:
+	indices.val[0] = vqsubq_u8(in.val[0], offset);
+	indices.val[1] = vqsubq_u8(in.val[1], offset);
+	indices.val[2] = vqsubq_u8(in.val[2], offset);
+	indices.val[3] = vqsubq_u8(in.val[3], offset);
 
-	mask2.val[0] = CMPGT(in.val[0], 51);
-	mask2.val[1] = CMPGT(in.val[1], 51);
-	mask2.val[2] = CMPGT(in.val[2], 51);
-	mask2.val[3] = CMPGT(in.val[3], 51);
+	// mask is 0xFF (-1) for range #[1..4] and 0x00 for range #0:
+	mask.val[0] = CMPGT(in.val[0], 25);
+	mask.val[1] = CMPGT(in.val[1], 25);
+	mask.val[2] = CMPGT(in.val[2], 25);
+	mask.val[3] = CMPGT(in.val[3], 25);
 
-	mask3.val[0] = CMPGT(in.val[0], 61);
-	mask3.val[1] = CMPGT(in.val[1], 61);
-	mask3.val[2] = CMPGT(in.val[2], 61);
-	mask3.val[3] = CMPGT(in.val[3], 61);
+	// substract -1, so add 1 to indices for range #[1..4], All indices are now correct:
+	indices.val[0] = vsubq_u8(indices.val[0], mask.val[0]);
+	indices.val[1] = vsubq_u8(indices.val[1], mask.val[1]);
+	indices.val[2] = vsubq_u8(indices.val[2], mask.val[2]);
+	indices.val[3] = vsubq_u8(indices.val[3], mask.val[3]);
 
-	mask4.val[0] = CMPEQ(in.val[0], 63);
-	mask4.val[1] = CMPEQ(in.val[1], 63);
-	mask4.val[2] = CMPEQ(in.val[2], 63);
-	mask4.val[3] = CMPEQ(in.val[3], 63);
+	// lookup delta values
+	delta.val[0] = vqtbl1q_u8(lut, indices.val[0]);
+	delta.val[1] = vqtbl1q_u8(lut, indices.val[1]);
+	delta.val[2] = vqtbl1q_u8(lut, indices.val[2]);
+	delta.val[3] = vqtbl1q_u8(lut, indices.val[3]);
 
-	// All characters are at least in cumulative set 0, so add 'A':
-	out.val[0] = vaddq_u8(in.val[0], vdupq_n_u8(65));
-	out.val[1] = vaddq_u8(in.val[1], vdupq_n_u8(65));
-	out.val[2] = vaddq_u8(in.val[2], vdupq_n_u8(65));
-	out.val[3] = vaddq_u8(in.val[3], vdupq_n_u8(65));
-
-	// For inputs which are also in any of the other cumulative sets,
-	// add delta values against the previous set(s) to correct the shift:
-	out.val[0] = vaddq_u8(out.val[0], REPLACE(mask1.val[0], 6));
-	out.val[1] = vaddq_u8(out.val[1], REPLACE(mask1.val[1], 6));
-	out.val[2] = vaddq_u8(out.val[2], REPLACE(mask1.val[2], 6));
-	out.val[3] = vaddq_u8(out.val[3], REPLACE(mask1.val[3], 6));
-
-	out.val[0] = vsubq_u8(out.val[0], REPLACE(mask2.val[0], 75));
-	out.val[1] = vsubq_u8(out.val[1], REPLACE(mask2.val[1], 75));
-	out.val[2] = vsubq_u8(out.val[2], REPLACE(mask2.val[2], 75));
-	out.val[3] = vsubq_u8(out.val[3], REPLACE(mask2.val[3], 75));
-
-	out.val[0] = vsubq_u8(out.val[0], REPLACE(mask3.val[0], 15));
-	out.val[1] = vsubq_u8(out.val[1], REPLACE(mask3.val[1], 15));
-	out.val[2] = vsubq_u8(out.val[2], REPLACE(mask3.val[2], 15));
-	out.val[3] = vsubq_u8(out.val[3], REPLACE(mask3.val[3], 15));
-
-	out.val[0] = vaddq_u8(out.val[0], REPLACE(mask4.val[0], 3));
-	out.val[1] = vaddq_u8(out.val[1], REPLACE(mask4.val[1], 3));
-	out.val[2] = vaddq_u8(out.val[2], REPLACE(mask4.val[2], 3));
-	out.val[3] = vaddq_u8(out.val[3], REPLACE(mask4.val[3], 3));
+	// add delta values:
+	out.val[0] = vaddq_u8(in.val[0], delta.val[0]);
+	out.val[1] = vaddq_u8(in.val[1], delta.val[1]);
+	out.val[2] = vaddq_u8(in.val[2], delta.val[2]);
+	out.val[3] = vaddq_u8(in.val[3], delta.val[3]);
 
 	return out;
 }
