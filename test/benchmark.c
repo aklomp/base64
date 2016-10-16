@@ -9,6 +9,10 @@
 #include <stdio.h>
 #include <time.h>
 
+#ifdef __MACH__
+#include <mach/mach_time.h>
+#endif
+
 #include "../include/libbase64.h"
 #include "codec_supported.h"
 
@@ -72,17 +76,43 @@ get_random_data (struct buffers *b, char **errmsg)
 	return true;
 }
 
+#ifdef __MACH__
+typedef uint64_t base64_timespec;
+static void
+base64_gettime (base64_timespec * o_time)
+{
+	*o_time = mach_absolute_time();
+}
+
 static float
-timediff_sec (struct timespec *start, struct timespec *end)
+timediff_sec (base64_timespec *start, base64_timespec *end)
+{
+	uint64_t diff = *end - *start;
+	mach_timebase_info_data_t tb = { 0, 0 };
+	mach_timebase_info(&tb);
+
+	return (float)((diff * tb.numer) / tb.denom) / 1e9f;
+}
+#else
+typedef struct timespec base64_timespec;
+static void
+base64_gettime (base64_timespec * o_time)
+{
+	clock_gettime(CLOCK_REALTIME, o_time);
+}
+
+static float
+timediff_sec (base64_timespec *start, base64_timespec *end)
 {
 	return (end->tv_sec - start->tv_sec) + ((float)(end->tv_nsec - start->tv_nsec)) / 1e9f;
 }
+#endif
 
 static void
 codec_bench_enc (struct buffers *b, const struct bufsize *bs, const char *name, unsigned int flags)
 {
 	float timediff, fastest = -1.0f;
-	struct timespec start, end;
+	base64_timespec start, end;
 
 	// Reset buffer size:
 	b->regsz = bs->len;
@@ -91,10 +121,10 @@ codec_bench_enc (struct buffers *b, const struct bufsize *bs, const char *name, 
 	for (int i = bs->repeat; i; i--) {
 
 		// Timing loop, use batches to increase timer resolution:
-		clock_gettime(CLOCK_REALTIME, &start);
+		base64_gettime(&start);
 		for (int j = bs->batch; j; j--)
 			base64_encode(b->reg, b->regsz, b->enc, &b->encsz, flags);
-		clock_gettime(CLOCK_REALTIME, &end);
+		base64_gettime(&end);
 
 		// Calculate average time of batch:
 		timediff = timediff_sec(&start, &end) / bs->batch;
@@ -111,7 +141,7 @@ static void
 codec_bench_dec (struct buffers *b, const struct bufsize *bs, const char *name, unsigned int flags)
 {
 	float timediff, fastest = -1.0f;
-	struct timespec start, end;
+	base64_timespec start, end;
 
 	// Reset buffer size:
 	b->encsz = bs->len;
@@ -120,10 +150,10 @@ codec_bench_dec (struct buffers *b, const struct bufsize *bs, const char *name, 
 	for (int i = bs->repeat; i; i--) {
 
 		// Timing loop, use batches to increase timer resolution:
-		clock_gettime(CLOCK_REALTIME, &start);
+		base64_gettime(&start);
 		for (int j = bs->batch; j; j--)
 			base64_decode(b->enc, b->encsz, b->reg, &b->regsz, flags);
-		clock_gettime(CLOCK_REALTIME, &end);
+		base64_gettime(&end);
 
 		// Calculate average time of batch:
 		timediff = timediff_sec(&start, &end) / bs->batch;

@@ -44,7 +44,7 @@ bin/base64: bin/base64.o lib/libbase64.o
 	$(CC) $(CFLAGS) -o $@ $^
 
 lib/libbase64.o: $(OBJS)
-	$(LD) --relocatable -o $@ $^
+	$(LD) -r -o $@ $^
 	$(OBJCOPY) --keep-global-symbols=lib/exports.txt $@
 
 lib/config.h:
