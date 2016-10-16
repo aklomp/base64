@@ -50,14 +50,8 @@ enc_reshuffle (__m256i in)
 		-1, 3,  4,  5,
 		-1, 0,  1,  2));
 
-	// cd      = [00000000|00000000|0000cccc|ccdddddd]
-	const __m256i cd = _mm256_and_si256(in, _mm256_set1_epi32(0x00000FFF));
-
-	// ab      = [0000aaaa|aabbbbbb|00000000|00000000]
-	const __m256i ab = _mm256_and_si256(_mm256_slli_epi32(in, 4), _mm256_set1_epi32(0x0FFF0000));
-
-	// merged  = [0000aaaa|aabbbbbb|0000cccc|ccdddddd]
-	const __m256i merged = _mm256_or_si256(ab, cd);
+	// merged  = [0000aaaa|aabbbbbb|bbbbcccc|ccdddddd]
+	const __m256i merged = _mm256_blend_epi16(_mm256_slli_epi32(in, 4), in, 0x55);
 
 	// bd      = [00000000|00bbbbbb|00000000|00dddddd]
 	const __m256i bd = _mm256_and_si256(merged, _mm256_set1_epi32(0x003F003F));
