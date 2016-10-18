@@ -9,6 +9,7 @@ static char *_codecs[] =
 , "plain"
 , "SSSE3"
 , "SSE41"
+, "SSE42"
 , NULL
 } ;
 

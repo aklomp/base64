@@ -1,7 +1,7 @@
 # Fast Base64 stream encoder/decoder
 
 This is an implementation of a base64 stream encoding/decoding library in C99
-with SIMD (AVX2, NEON, AArch64/NEON, SSSE3, SSE4.1) and
+with SIMD (AVX2, NEON, AArch64/NEON, SSSE3, SSE4.1, SSE4.2) and
 [OpenMP](http://www.openmp.org) acceleration. It also contains wrapper functions
 to encode/decode simple length-delimited strings. This library aims to be:
 
@@ -12,9 +12,10 @@ to encode/decode simple length-delimited strings. This library aims to be:
 On x86, the library does runtime feature detection. The first time it's called,
 the library will determine the appropriate encoding/decoding routines for the
 machine. It then remembers them for the lifetime of the program. If your
-processor supports AVX2, SSSE3 or SSE4.1 instructions, the library will pick an
-optimized codec that lets it encode/decode 12 or 24 bytes at a time, which
-gives a speedup of four or more times compared to the "plain" bytewise codec.
+processor supports AVX2, SSSE3, SSE4.1 or SSE4.2 instructions, the library will
+pick an optimized codec that lets it encode/decode 12 or 24 bytes at a time,
+which gives a speedup of four or more times compared to the "plain" bytewise
+codec.
 
 NEON support is hardcoded to on or off at compile time, because portable
 runtime feature detection is unavailable on ARM.
@@ -73,12 +74,12 @@ To compile just the "plain" library without SIMD codecs, type:
 make lib/libbase64.o
 ```
 
-Optional SIMD codecs can be included by specifying the `AVX2_CFLAGS`, `NEON32_CFLAGS`, `NEON64_CFLAGS`, `SSSE3_CFLAGS`
-and/or `SSE41_CFLAGS` environment variables.
+Optional SIMD codecs can be included by specifying the `AVX2_CFLAGS`, `NEON32_CFLAGS`, `NEON64_CFLAGS`,
+`SSSE3_CFLAGS`, `SSE41_CFLAGS` and/or `SSE42_CFLAGS` environment variables.
 A typical build invocation on x86 looks like this:
 
 ```sh
-AVX2_CFLAGS=-mavx2 SSSE3_CFLAGS=-mssse3 SSE41_CFLAGS=-msse4.1 make lib/libbase64.o
+AVX2_CFLAGS=-mavx2 SSSE3_CFLAGS=-mssse3 SSE41_CFLAGS=-msse4.1 SSE42_CFLAGS=-msse4.2 make lib/libbase64.o
 ```
 
 ### AVX2
@@ -210,6 +211,7 @@ The following constants can be used:
 - `BASE64_FORCE_PLAIN`
 - `BASE64_FORCE_SSSE3`
 - `BASE64_FORCE_SSE41`
+- `BASE64_FORCE_SSE42`
 
 Set `flags` to `0` for the default behavior, which is runtime feature detection on x86, a compile-time fixed codec on ARM, and the plain codec on other platforms.
 
