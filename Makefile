@@ -9,6 +9,7 @@ OBJS = \
   lib/arch/neon32/codec.o \
   lib/arch/neon64/codec.o \
   lib/arch/ssse3/codec.o \
+  lib/arch/sse41/codec.o \
   lib/lib.o \
   lib/codec_choose.o
 
@@ -16,6 +17,7 @@ HAVE_AVX2   = 0
 HAVE_NEON32 = 0
 HAVE_NEON64 = 0
 HAVE_SSSE3  = 0
+HAVE_SSE41  = 0
 
 # The user should supply compiler flags for the codecs they want to build.
 # Check which codecs we're going to include:
@@ -30,6 +32,9 @@ ifdef NEON64_CFLAGS
 endif
 ifdef SSSE3_CFLAGS
   HAVE_SSSE3 = 1
+endif
+ifdef SSE41_CFLAGS
+  HAVE_SSE41 = 1
 endif
 ifdef OPENMP
   CFLAGS += -fopenmp
@@ -52,6 +57,7 @@ lib/config.h:
 	@echo "#define HAVE_NEON32 $(HAVE_NEON32)" >> $@
 	@echo "#define HAVE_NEON64 $(HAVE_NEON64)" >> $@
 	@echo "#define HAVE_SSSE3  $(HAVE_SSSE3)"  >> $@
+	@echo "#define HAVE_SSE41  $(HAVE_SSE41)"  >> $@
 
 lib/codec_choose.o: lib/config.h
 
@@ -59,6 +65,7 @@ lib/arch/avx2/codec.o:   CFLAGS += $(AVX2_CFLAGS)
 lib/arch/neon32/codec.o: CFLAGS += $(NEON32_CFLAGS)
 lib/arch/neon64/codec.o: CFLAGS += $(NEON64_CFLAGS)
 lib/arch/ssse3/codec.o:  CFLAGS += $(SSSE3_CFLAGS)
+lib/arch/sse41/codec.o:  CFLAGS += $(SSE41_CFLAGS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $<

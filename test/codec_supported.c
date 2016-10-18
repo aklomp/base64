@@ -8,6 +8,7 @@ static char *_codecs[] =
 , "NEON64"
 , "plain"
 , "SSSE3"
+, "SSE41"
 , NULL
 } ;
 
