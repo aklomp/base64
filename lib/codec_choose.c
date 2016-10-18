@@ -43,6 +43,9 @@
 #ifndef bit_SSSE3
 #define bit_SSSE3 (1 << 9)
 #endif
+#ifndef bit_SSE42
+#define bit_SSE42 (1 << 20)
+#endif
 
 #define bit_XSAVE_XRSTORE (1 << 27)
 
@@ -56,13 +59,14 @@
 // Function declarations:
 #define BASE64_CODEC_FUNCS(arch)	\
 	BASE64_ENC_FUNCTION(arch);	\
-	BASE64_DEC_FUNCTION(arch);	\
+	BASE64_DEC_FUNCTION(arch)
 
-BASE64_CODEC_FUNCS(avx2)
-BASE64_CODEC_FUNCS(neon32)
-BASE64_CODEC_FUNCS(neon64)
-BASE64_CODEC_FUNCS(plain)
-BASE64_CODEC_FUNCS(ssse3)
+BASE64_CODEC_FUNCS(avx2);
+BASE64_CODEC_FUNCS(neon32);
+BASE64_CODEC_FUNCS(neon64);
+BASE64_CODEC_FUNCS(plain);
+BASE64_CODEC_FUNCS(ssse3);
+BASE64_DEC_FUNCTION(sse42);
 
 static bool
 codec_choose_forced (struct codec *codec, int flags)
@@ -71,7 +75,7 @@ codec_choose_forced (struct codec *codec, int flags)
 	// always allow it, even if the codec is a no-op.
 	// For testing purposes.
 
-	if (!(flags & 0x1F)) {
+	if (!(flags & 0x3F)) {
 		return false;
 	}
 	if (flags & BASE64_FORCE_AVX2) {
@@ -97,6 +101,11 @@ codec_choose_forced (struct codec *codec, int flags)
 	if (flags & BASE64_FORCE_SSSE3) {
 		codec->enc = base64_stream_encode_ssse3;
 		codec->dec = base64_stream_decode_ssse3;
+		return true;
+	}
+	if (flags & BASE64_FORCE_SSE42) {
+		codec->enc = base64_stream_encode_ssse3;
+		codec->dec = base64_stream_decode_sse42;
 		return true;
 	}
 	return false;
@@ -130,12 +139,12 @@ codec_choose_arm (struct codec *codec)
 static bool
 codec_choose_x86 (struct codec *codec)
 {
-#if (__x86_64__ || __i386__ || _M_X86 || _M_X64) && (HAVE_AVX2 || HAVE_SSSE3)
+#if (__x86_64__ || __i386__ || _M_X86 || _M_X64) && (HAVE_AVX2 || HAVE_SSSE3 || HAVE_SSE42)
 
 	unsigned int eax, ebx = 0, ecx = 0, edx;
 	unsigned int max_level;
 
-	#ifdef _MSC_VER 
+	#ifdef _MSC_VER
 	int info[4];
 	__cpuidex(info, 0, 0);
 	max_level = info[0];
@@ -165,6 +174,18 @@ codec_choose_x86 (struct codec *codec)
 				codec->dec = base64_stream_decode_avx2;
 				return true;
 			}
+		}
+	}
+	#endif
+
+	#if HAVE_SSE42
+	// Check for SSE42 support:
+	if (max_level >= 1) {
+		__cpuid(1, eax, ebx, ecx, edx);
+		if (ecx & bit_SSE42) {
+			codec->enc = base64_stream_encode_ssse3;
+			codec->dec = base64_stream_decode_sse42;
+			return true;
 		}
 	}
 	#endif

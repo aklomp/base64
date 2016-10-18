@@ -10,12 +10,14 @@ OBJS = \
   lib/codec_neon32.o \
   lib/codec_neon64.o \
   lib/codec_plain.o \
-  lib/codec_ssse3.o
+  lib/codec_ssse3.o \
+  lib/codec_sse42.o
 
 HAVE_AVX2   = 0
 HAVE_NEON32 = 0
 HAVE_NEON64 = 0
 HAVE_SSSE3  = 0
+HAVE_SSE42  = 0
 
 # The user should supply compiler flags for the codecs they want to build.
 # Check which codecs we're going to include:
@@ -30,6 +32,9 @@ ifdef NEON64_CFLAGS
 endif
 ifdef SSSE3_CFLAGS
   HAVE_SSSE3 = 1
+endif
+ifdef SSE42_CFLAGS
+  HAVE_SSE42 = 1
 endif
 ifdef OPENMP
   CFLAGS += -fopenmp
@@ -52,6 +57,7 @@ lib/config.h:
 	@echo "#define HAVE_NEON32 $(HAVE_NEON32)" >> $@
 	@echo "#define HAVE_NEON64 $(HAVE_NEON64)" >> $@
 	@echo "#define HAVE_SSSE3  $(HAVE_SSSE3)"  >> $@
+	@echo "#define HAVE_SSE42  $(HAVE_SSE42)"  >> $@
 
 lib/codec_choose.o: lib/config.h
 
@@ -59,6 +65,7 @@ lib/codec_avx2.o:   CFLAGS += $(AVX2_CFLAGS)
 lib/codec_neon32.o: CFLAGS += $(NEON32_CFLAGS)
 lib/codec_neon64.o: CFLAGS += $(NEON64_CFLAGS)
 lib/codec_ssse3.o:  CFLAGS += $(SSSE3_CFLAGS)
+lib/codec_sse42.o:  CFLAGS += $(SSE42_CFLAGS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $<
