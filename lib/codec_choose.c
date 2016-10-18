@@ -23,7 +23,7 @@
 		__cpuid_count(__level, 0, __eax, __ebx, __ecx, __edx)
 #else
 	#include <cpuid.h>
-	#if HAVE_AVX2
+	#if HAVE_AVX2 || HAVE_AVX
 		#if ((__GNUC__ > 4 || __GNUC__ == 4 && __GNUC_MINOR__ >= 2) || (__clang_major__ >= 3))
 			static inline uint64_t _xgetbv (uint32_t index)
 			{
@@ -49,6 +49,9 @@
 #ifndef bit_SSE42
 #define bit_SSE42 (1 << 20)
 #endif
+#ifndef bit_AVX
+#define bit_AVX (1 << 28)
+#endif
 
 #define bit_XSAVE_XRSTORE (1 << 27)
 
@@ -71,6 +74,7 @@ BASE64_CODEC_FUNCS(plain)
 BASE64_CODEC_FUNCS(ssse3)
 BASE64_CODEC_FUNCS(sse41)
 BASE64_CODEC_FUNCS(sse42)
+BASE64_CODEC_FUNCS(avx)
 
 static bool
 codec_choose_forced (struct codec *codec, int flags)
@@ -79,7 +83,7 @@ codec_choose_forced (struct codec *codec, int flags)
 	// always allow it, even if the codec is a no-op.
 	// For testing purposes.
 
-	if (!(flags & 0x7F)) {
+	if (!(flags & 0xFF)) {
 		return false;
 	}
 	if (flags & BASE64_FORCE_AVX2) {
@@ -117,6 +121,11 @@ codec_choose_forced (struct codec *codec, int flags)
 		codec->dec = base64_stream_decode_sse42;
 		return true;
 	}
+	if (flags & BASE64_FORCE_AVX) {
+		codec->enc = base64_stream_encode_avx;
+		codec->dec = base64_stream_decode_avx;
+		return true;
+	}
 	return false;
 }
 
@@ -148,12 +157,12 @@ codec_choose_arm (struct codec *codec)
 static bool
 codec_choose_x86 (struct codec *codec)
 {
-#if (__x86_64__ || __i386__ || _M_X86 || _M_X64) && (HAVE_AVX2 || HAVE_SSSE3 || HAVE_SSE41 || HAVE_SSE42)
+#if (__x86_64__ || __i386__ || _M_X86 || _M_X64) && (HAVE_AVX2 || HAVE_SSSE3 || HAVE_SSE41 || HAVE_SSE42 || HAVE_AVX)
 
 	unsigned int eax, ebx = 0, ecx = 0, edx;
 	unsigned int max_level;
 
-	#ifdef _MSC_VER 
+	#ifdef _MSC_VER
 	int info[4];
 	__cpuidex(info, 0, 0);
 	max_level = info[0];
@@ -161,8 +170,8 @@ codec_choose_x86 (struct codec *codec)
 	max_level = __get_cpuid_max(0, NULL);
 	#endif
 
-	#if HAVE_AVX2
-	// Check for AVX2 support:
+	#if HAVE_AVX2 || HAVE_AVX
+	// Check for AVX/AVX2 support:
 	// Checking for AVX requires 3 things:
 	// 1) CPUID indicates that the OS uses XSAVE and XRSTORE instructions
 	//    (allowing saving YMM registers on context switch)
@@ -175,13 +184,24 @@ codec_choose_x86 (struct codec *codec)
 	if (max_level >= 7) {
 		__cpuid_count(7, 0, eax, ebx, ecx, edx);
 
-		if ((ebx & bit_AVX2) && (ecx & bit_XSAVE_XRSTORE)) {
+		if (ecx & bit_XSAVE_XRSTORE) {
 			uint64_t xcr_mask;
 			xcr_mask = _xgetbv(_XCR_XFEATURE_ENABLED_MASK);
 			if (xcr_mask & _XCR_XMM_AND_YMM_STATE_ENABLED_BY_OS) {
-				codec->enc = base64_stream_encode_avx2;
-				codec->dec = base64_stream_decode_avx2;
-				return true;
+				#if HAVE_AVX2
+				if (ebx & bit_AVX2) {
+					codec->enc = base64_stream_encode_avx2;
+					codec->dec = base64_stream_decode_avx2;
+					return true;
+				}
+				#endif
+				#if HAVE_AVX
+				if (ecx & bit_AVX) {
+					codec->enc = base64_stream_encode_avx;
+					codec->dec = base64_stream_decode_avx;
+					return true;
+				}
+				#endif
 			}
 		}
 	}

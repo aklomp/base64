@@ -10,6 +10,7 @@ static char *_codecs[] =
 , "SSSE3"
 , "SSE41"
 , "SSE42"
+, "AVX"
 , NULL
 } ;
 
