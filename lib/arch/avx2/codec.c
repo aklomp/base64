@@ -2,8 +2,8 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#include "../include/libbase64.h"
-#include "codecs.h"
+#include "../../../include/libbase64.h"
+#include "../../codecs.h"
 
 #ifdef __AVX2__
 #include <immintrin.h>
@@ -135,9 +135,9 @@ dec_reshuffle (__m256i in)
 BASE64_ENC_FUNCTION(avx2)
 {
 #ifdef __AVX2__
-	#include "enc/head.c"
-	#include "enc/avx2.c"
-	#include "enc/tail.c"
+	#include "../generic/enc_head.c"
+	#include "enc_loop.c"
+	#include "../generic/enc_tail.c"
 #else
 	BASE64_ENC_STUB
 #endif
@@ -146,9 +146,9 @@ BASE64_ENC_FUNCTION(avx2)
 BASE64_DEC_FUNCTION(avx2)
 {
 #ifdef __AVX2__
-	#include "dec/head.c"
-	#include "dec/avx2.c"
-	#include "dec/tail.c"
+	#include "../generic/dec_head.c"
+	#include "dec_loop.c"
+	#include "../generic/dec_tail.c"
 #else
 	BASE64_DEC_STUB
 #endif

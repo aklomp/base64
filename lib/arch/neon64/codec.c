@@ -9,8 +9,8 @@
 #include <arm_neon.h>
 #endif
 
-#include "../include/libbase64.h"
-#include "codecs.h"
+#include "../../../include/libbase64.h"
+#include "../../codecs.h"
 
 #if (defined(__aarch64__) && defined(__ARM_NEON__))
 
@@ -52,10 +52,10 @@ BASE64_ENC_FUNCTION(neon64)
 #if (defined(__aarch64__) && defined(__ARM_NEON__))
 	uint8x16x4_t tbl_enc = vld4q_u8((uint8_t const*)base64_table_enc_transposed);
 
-	#include "enc/head.c"
-	#include "enc/neon64.c"
-	#include "enc/uint64.c"
-	#include "enc/tail.c"
+	#include "../generic/enc_head.c"
+	#include "enc_loop.c"
+	#include "../generic/64/enc_loop.c"
+	#include "../generic/enc_tail.c"
 #else
 	BASE64_ENC_STUB
 #endif
@@ -65,10 +65,10 @@ BASE64_DEC_FUNCTION(neon64)
 {
 #if (defined(__aarch64__) && defined(__ARM_NEON__))
 
-	#include "dec/head.c"
-	#include "dec/neon.c"
-	#include "dec/uint64.c"
-	#include "dec/tail.c"
+	#include "../generic/dec_head.c"
+	#include "../neon32/dec_loop.c"
+	#include "../generic/64/dec_loop.c"
+	#include "../generic/dec_tail.c"
 #else
 	BASE64_DEC_STUB
 #endif

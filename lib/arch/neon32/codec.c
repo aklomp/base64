@@ -9,8 +9,8 @@
 #include <arm_neon.h>
 #endif
 
-#include "../include/libbase64.h"
-#include "codecs.h"
+#include "../../../include/libbase64.h"
+#include "../../codecs.h"
 
 #if (defined(__arm__) && defined(__ARM_NEON__))
 
@@ -120,10 +120,10 @@ enc_translate (uint8x16x4_t in)
 BASE64_ENC_FUNCTION(neon32)
 {
 #if (defined(__arm__) && defined(__ARM_NEON__))
-	#include "enc/head.c"
-	#include "enc/neon32.c"
-	#include "enc/uint32.c"
-	#include "enc/tail.c"
+	#include "../generic/enc_head.c"
+	#include "enc_loop.c"
+	#include "../generic/32/enc_loop.c"
+	#include "../generic/enc_tail.c"
 #else
 	BASE64_ENC_STUB
 #endif
@@ -132,10 +132,10 @@ BASE64_ENC_FUNCTION(neon32)
 BASE64_DEC_FUNCTION(neon32)
 {
 #if (defined(__arm__) && defined(__ARM_NEON__))
-	#include "dec/head.c"
-	#include "dec/neon.c"
-	#include "dec/uint32.c"
-	#include "dec/tail.c"
+	#include "../generic/dec_head.c"
+	#include "dec_loop.c"
+	#include "../generic/32/dec_loop.c"
+	#include "../generic/dec_tail.c"
 #else
 	BASE64_DEC_STUB
 #endif
