@@ -1,8 +1,38 @@
 language: c
 
-compiler:
-  - clang
-  - gcc
+matrix:
+  include:
+    - os: linux
+      compiler: clang
+      env: SSSE3_CFLAGS=-mssse3 SSE41_CFLAGS=-msse4.1 SSE42_CFLAGS=-msse4.2 AVX_CFLAGS=-mavx
+    - os: linux
+      compiler: gcc
+      env: SSSE3_CFLAGS=-mssse3 SSE41_CFLAGS=-msse4.1 SSE42_CFLAGS=-msse4.2 AVX_CFLAGS=-mavx
+    - os: linux
+      env: DOCKER_TAG=arm64-xenial NEON64_CFLAGS=" "
+      sudo: required
+      services:
+        - docker
+    - os: linux
+      env: DOCKER_TAG=armhf-xenial NEON32_CFLAGS="-march=armv7 -mfpu=neon"
+      sudo: required
+      services:
+        - docker
+    - os: linux
+      env: DOCKER_TAG=ppc64-fedora24
+      sudo: required
+      services:
+        - docker
+
+install:
+  - if [ "${DOCKER_TAG:-}" != "" ]; then
+      docker run --rm --privileged multiarch/qemu-user-static:register &&
+      docker pull mayeut/ljtbuilder2:${DOCKER_TAG};
+    fi
 
 script:
-  - SSSE3_CFLAGS=-mssse3 SSE41_CFLAGS=-msse4.1 SSE42_CFLAGS=-msse4.2 AVX_CFLAGS=-mavx make -C test
+  - if [ "${DOCKER_TAG:-}" == "" ]; then
+      make -C test;
+    else
+      docker run -e NEON32_CFLAGS -e NEON64_CFLAGS -v $TRAVIS_BUILD_DIR:/root/src -w /root/src -t mayeut/ljtbuilder2:${DOCKER_TAG} bash -c "make -C test";
+    fi
