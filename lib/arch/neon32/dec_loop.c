@@ -31,10 +31,10 @@ while (srclen >= 64)
 		set5.val[i] = RANGE(str.val[i], 'a', 'z');
 
 		delta.val[i] = REPLACE(set1.val[i], 19);
-		delta.val[i] = vorrq_u8(delta.val[i], REPLACE(set2.val[i],  16));
-		delta.val[i] = vorrq_u8(delta.val[i], REPLACE(set3.val[i],   4));
-		delta.val[i] = vorrq_u8(delta.val[i], REPLACE(set4.val[i], -65));
-		delta.val[i] = vorrq_u8(delta.val[i], REPLACE(set5.val[i], -71));
+		delta.val[i] = vbslq_u8(set2.val[i], vdupq_n_u8( 16), delta.val[i]);
+		delta.val[i] = vbslq_u8(set3.val[i], vdupq_n_u8(  4), delta.val[i]);
+		delta.val[i] = vbslq_u8(set4.val[i], vdupq_n_u8(-65), delta.val[i]);
+		delta.val[i] = vbslq_u8(set5.val[i], vdupq_n_u8(-71), delta.val[i]);
 	}
 
 	// Check for invalid input: if any of the delta values are zero,
