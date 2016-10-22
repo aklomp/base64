@@ -16,29 +16,25 @@
 
 #define CMPGT(s,n)	vcgtq_u8((s), vdupq_n_u8(n))
 
-// Encoding
-// With this transposed encoding table, we can use
-// a 64-byte lookup to do the encoding.
-// Read the table top to bottom, left to right.
-static const char *base64_table_enc_transposed =
+static inline uint8x16x4_t
+load_64byte_table (const uint8_t *p)
 {
-	"AQgw"
-	"BRhx"
-	"CSiy"
-	"DTjz"
-	"EUk0"
-	"FVl1"
-	"GWm2"
-	"HXn3"
-	"IYo4"
-	"JZp5"
-	"Kaq6"
-	"Lbr7"
-	"Mcs8"
-	"Ndt9"
-	"Oeu+"
-	"Pfv/"
-};
+#if defined(__GNUC__) && !defined(__clang__)
+	// As of October 2016, GCC does not support the 'vld1q_u8_x4()' intrinsic.
+	uint8x16x4_t ret;
+	ret.val[0] = vld1q_u8(p +  0);
+	ret.val[1] = vld1q_u8(p + 16);
+	ret.val[2] = vld1q_u8(p + 32);
+	ret.val[3] = vld1q_u8(p + 48);
+	return ret;
+#else
+	return vld1q_u8_x4(p);
+#endif
+}
+
+// Encoding
+// Use a 64-byte lookup to do the encoding.
+// Reuse existing base64_table_enc table.
 
 // Decoding
 // The input consists of five valid character sets in the Base64 alphabet,
@@ -95,7 +91,7 @@ static const uint8_t base64_dec_lut2[] =
 BASE64_ENC_FUNCTION(neon64)
 {
 #if (defined(__aarch64__) && defined(__ARM_NEON__))
-	uint8x16x4_t tbl_enc = vld4q_u8((uint8_t const*)base64_table_enc_transposed);
+	const uint8x16x4_t tbl_enc = load_64byte_table(base64_table_enc);
 
 	#include "../generic/enc_head.c"
 	#include "enc_loop.c"
@@ -109,8 +105,8 @@ BASE64_ENC_FUNCTION(neon64)
 BASE64_DEC_FUNCTION(neon64)
 {
 #if (defined(__aarch64__) && defined(__ARM_NEON__))
-	uint8x16x4_t tbl_dec1 = vld1q_u8_x4(base64_dec_lut1);
-	uint8x16x4_t tbl_dec2 = vld1q_u8_x4(base64_dec_lut2);
+	const uint8x16x4_t tbl_dec1 = load_64byte_table(base64_dec_lut1);
+	const uint8x16x4_t tbl_dec2 = load_64byte_table(base64_dec_lut2);
 
 	#include "../generic/dec_head.c"
 	#include "dec_loop.c"
