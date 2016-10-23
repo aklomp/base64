@@ -181,21 +181,24 @@ codec_choose_x86 (struct codec *codec)
 	//
 	// Note that XGETBV is only available on 686 or later CPUs, so the
 	// instruction needs to be conditionally run.
-	if (max_level >= 7) {
-		__cpuid_count(7, 0, eax, ebx, ecx, edx);
-
+	if (max_level >= 1) {
+		__cpuid_count(1, 0, eax, ebx, ecx, edx);
 		if (ecx & bit_XSAVE_XRSTORE) {
 			uint64_t xcr_mask;
 			xcr_mask = _xgetbv(_XCR_XFEATURE_ENABLED_MASK);
 			if (xcr_mask & _XCR_XMM_AND_YMM_STATE_ENABLED_BY_OS) {
 				#if HAVE_AVX2
-				if (ebx & bit_AVX2) {
-					codec->enc = base64_stream_encode_avx2;
-					codec->dec = base64_stream_decode_avx2;
-					return true;
+				if (max_level >= 7) {
+					__cpuid_count(7, 0, eax, ebx, ecx, edx);
+					if (ebx & bit_AVX2) {
+						codec->enc = base64_stream_encode_avx2;
+						codec->dec = base64_stream_decode_avx2;
+						return true;
+					}
 				}
 				#endif
 				#if HAVE_AVX
+				__cpuid_count(1, 0, eax, ebx, ecx, edx);
 				if (ecx & bit_AVX) {
 					codec->enc = base64_stream_encode_avx;
 					codec->dec = base64_stream_decode_avx;
