@@ -16,8 +16,9 @@ if (st.eof) {
 	ret = 0;
 	// If there was a trailing '=' to check, check it:
 	if (srclen && (st.eof == BASE64_AEOF)) {
-		st.eof = BASE64_EOF;
-		ret = (base64_table_dec[*c++] == 254) ? 1 : 0;
+		state->bytes = 0;
+		state->eof = BASE64_EOF;
+		ret = ((base64_table_dec[*c++] == 254) && (srclen == 1)) ? 1 : 0;
 	}
 	return ret;
 }

@@ -172,6 +172,7 @@ base64_decode
 	, int		 flags
 	)
 {
+	int ret;
 	struct base64_state state;
 
 	#ifdef _OPENMP
@@ -184,5 +185,11 @@ base64_decode
 	base64_stream_decode_init(&state, flags);
 
 	// Feed the whole string to the stream reader:
-	return base64_stream_decode(&state, src, srclen, out, outlen);
+	ret = base64_stream_decode(&state, src, srclen, out, outlen);
+
+	// If when decoding a whole block, we're still waiting for input then fail:
+	if (ret && (state.bytes == 0)) {
+		return ret;
+	}
+	return 0;
 }

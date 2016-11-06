@@ -221,7 +221,14 @@ static int
 test_invalid_dec_input (int flags)
 {
 	// Subset of invalid characters to cover all ranges
-	const char invalid_set[] = { '\0', -1, '!', '-', ';', '_', '|' };
+	static const char invalid_set[] = { '\0', -1, '!', '-', ';', '_', '|' };
+	static const char* invalid_strings[] = {
+		"Zm9vYg=",
+		"Zm9vYg",
+		"Zm9vY",
+		"Zm9vYmF=Zm9v"
+	};
+
 	bool fail = false;
 	char chr[256];
 	char enc[400], dec[400];
@@ -233,6 +240,14 @@ test_invalid_dec_input (int flags)
 
 	// Create reference base64 encoding:
 	base64_encode(chr, 256, enc, &enclen, BASE64_FORCE_PLAIN);
+
+	// Test invalid strings returns error.
+	for (size_t i = 0U; i < sizeof(invalid_strings) / sizeof(invalid_strings[0]); ++i) {
+		if (base64_decode(invalid_strings[i], strlen(invalid_strings[i]), dec, &declen, flags)) {
+			printf("FAIL: decoding invalid input \"%s\": no decoding error\n", invalid_strings[i]);
+			fail = true;
+		}
+	}
 
 	// Loop, corrupting each char to increase test coverage:
 	for (size_t c = 0U; c < sizeof(invalid_set); ++c) {
