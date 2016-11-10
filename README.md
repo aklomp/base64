@@ -417,26 +417,44 @@ make -C test benchmark <buildflags> && test/benchmark
 
 It will run an encoding and decoding benchmark for all of the compiled-in codecs.
 
-The table below contains some results on random machines. All numbers measured with a 10MB buffer in MB/sec, rounded to the nearest integer.
+The tables below contain some results on random machines. All numbers measured with a 10MB buffer in MB/sec, rounded to the nearest integer.
 
-| Processor                                 | Plain enc | Plain dec | SSSE3 enc | SSSE3 dec | AVX2 enc | AVX2 dec | NEON32 enc | NEON32 dec |
-|-------------------------------------------|----------:|----------:|----------:|----------:|---------:|---------:|-----------:|-----------:|
-| i7-4771 @ 3.5 GHz                         | 833       | 1111      | 3333      | 4444      | 4999     | 6666     | -          | -          |
-| i7-4770 @ 3.4 GHz DDR1600                 | 1831      | 1748      | 3570      | 3695      | 6539     | 6512     | -          | -          |
-| i7-4770 @ 3.4 GHz DDR1600 OPENMP 1 thread | 1779      | 1727      | 3419      | 3788      | 4589     | 5871     | -          | -          |
-| i7-4770 @ 3.4 GHz DDR1600 OPENMP 2 thread | 3367      | 3374      | 4784      | 6672      | 5120     | 7721     | -          | -          |
-| i7-4770 @ 3.4 GHz DDR1600 OPENMP 4 thread | 4834      | 6075      | 4906      | 8154      | 4839     | 6911     | -          | -          |
-| i7-4770 @ 3.4 GHz DDR1600 OPENMP 8 thread | 4696      | 6361      | 5227      | 7737      | 4813     | 7189     | -          | -          |
-| i5-4590S @ 3.0 GHz                        | 1721      | 1643      | 3255      | 3404      | 4124     | 5403     | -          | -          |
-| Xeon X5570 @ 2.93 GHz                     | 1097      | 1048      | 2077      | 2215      | -        | -        | -          | -          |
-| Pentium4 @ 3.4 GHz                        | 528       | 448       | -         | -         | -        | -        | -          | -          |
-| Atom N270                                 | 112       | 125       | 331       | 368       | -        | -        | -          | -          |
-| AMD E-450                                 | 370       | 332       | 405       | 366       | -        | -        | -          | -          |
-| PowerPC E6500 @ 1.8GHz                    | 270       | 265       | -         | -         | -        | -        | -          | -          |
-| Raspberry PI B+ V1.2                      | 46        | 40        | -         | -         | -        | -        | -          | -          |
-| Raspberry PI 2 B V1.1                     | 104       | 88        | -         | -         | -        | -        | 158        | 116        |
-| Intel Edison @ 500 MHz                    | 79        | 92        | 152       | 172       | -        | -        | -          | -          |
-| Intel Edison @ 500 MHz OPENMP 2 thread    | 158       | 184       | 300       | 343       | -        | -        | -          | -          |
+\*: Update needed
+
+x86 processors
+
+| Processor                                 | Plain enc | Plain dec | SSSE3 enc | SSSE3 dec | SSE4.1 enc | SSE4.1 dec| SSE4.2 enc | SSE4.2 dec| AVX enc | AVX dec | AVX2 enc | AVX2 dec |
+|-------------------------------------------|----------:|----------:|----------:|----------:|-----------:|----------:|-----------:|----------:|--------:|--------:|---------:|---------:|
+| i7-4771 @ 3.5 GHz                         | 833       | 1111      | 3333\*    | 4444\*    | TBD        | TBD       | TBD        | TBD       | TBD     | TBD     | 4999\*   | 6666\*   |
+| i7-4770 @ 3.4 GHz DDR1600                 | 1831      | 1748      | 3570\*    | 3695\*    | TBD        | TBD       | TBD        | TBD       | TBD     | TBD     | 6539\*   | 6512\*   |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 1 thread | 1779      | 1727      | 3419\*    | 3788\*    | TBD        | TBD       | TBD        | TBD       | TBD     | TBD     | 4589\*   | 5871\*   |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 2 thread | 3367      | 3374      | 4784\*    | 6672\*    | TBD        | TBD       | TBD        | TBD       | TBD     | TBD     | 5120\*   | 7721\*   |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 4 thread | 4834      | 6075      | 4906\*    | 8154\*    | TBD        | TBD       | TBD        | TBD       | TBD     | TBD     | 4839\*   | 6911\*   |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 8 thread | 4696      | 6361      | 5227\*    | 7737\*    | TBD        | TBD       | TBD        | TBD       | TBD     | TBD     | 4813\*   | 7189\*   |
+| i7-4870HQ @ 2.5 GHz                       | 1471      | 1558      | 5599      | 3886      | 5882       | 3888      | 6202       | 5098      | 6524    | 5281    | 8113     | 7063     |
+| i5-4590S @ 3.0 GHz                        | 1721      | 1643      | 3255\*    | 3404\*    | TBD        | TBD       | TBD        | TBD       | TBD     | TBD     | 4124\*   | 5403\*   |
+| Xeon X5570 @ 2.93 GHz                     | 1097      | 1048      | 2077\*    | 2215\*    | TBD        | TBD       | TBD        | TBD       | -       | -       | -        | -        |
+| Pentium4 @ 3.4 GHz                        | 528       | 448       | -         | -         | -          | -         | -          | -         | -       | -       | -        | -        |
+| Atom N270                                 | 112       | 125       | 331\*     | 368\*     | -          | -         | -          | -         | -       | -       | -        | -        |
+| AMD E-450                                 | 370       | 332       | 405\*     | 366\*     | -          | -         | -          | -         | -       | -       | -        | -        |
+| Intel Edison @ 500 MHz                    | 79        | 92        | 152\*     | 172\*     | TBD        | TBD       | TBD        | TBD       | -       | -       | -        | -        |
+| Intel Edison @ 500 MHz OPENMP 2 thread    | 158       | 184       | 300\*     | 343\*     | TBD        | TBD       | TBD        | TBD       | -       | -       | -        | -        |
+
+ARM processors
+
+| Processor                                 | Plain enc | Plain dec | NEON32 enc | NEON32 dec | NEON64 enc | NEON64 dec |
+|-------------------------------------------|----------:|----------:|-----------:|-----------:|-----------:|-----------:|
+| Raspberry PI B+ V1.2                      | 46        | 40        | -          | -          | -          | -          |
+| Raspberry PI 2 B V1.1                     | 104       | 88        | 188        | 116\*      | -          | -          |
+| Apple iPhone SE armv7                     | 1056      | 722       | 2943       | 1573       | -          | -          |
+| Apple iPhone SE arm64                     | 1061      | 1237      | -          | -          | 4098       | 3983       |
+
+PowerPC processors
+
+| Processor                                 | Plain enc | Plain dec |
+|-------------------------------------------|----------:|----------:|
+| PowerPC E6500 @ 1.8GHz                    | 270       | 265       |
+
 
 Benchmarks on i7-4770 @ 3.4 GHz DDR1600 with varrying buffer sizes:
 ![Benchmarks](base64-benchmarks.png)
