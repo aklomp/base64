@@ -134,7 +134,7 @@ codec_bench_enc (struct buffers *b, const struct bufsize *bs, const char *name, 
 			fastest = timediff;
 	}
 
-	printf("%s\tencode\t%.02f MB/sec\n", name, bytes_to_mb(b->regsz) / fastest);
+	printf("%-5s\tencode\t%.02f MB/sec\n", name, bytes_to_mb(b->regsz) / fastest);
 }
 
 static void
@@ -163,7 +163,7 @@ codec_bench_dec (struct buffers *b, const struct bufsize *bs, const char *name, 
 			fastest = timediff;
 	}
 
-	printf("%s\tdecode\t%.02f MB/sec\n", name, bytes_to_mb(b->encsz) / fastest);
+	printf("%-5s\tdecode\t%.02f MB/sec\n", name, bytes_to_mb(b->encsz) / fastest);
 }
 
 static void

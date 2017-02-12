@@ -1,3 +1,5 @@
+#include "config.h"
+
 // Function parameters for encoding functions:
 #define BASE64_ENC_PARAMS			\
 	( struct base64_state	*state		\
@@ -115,3 +117,8 @@ void codec_choose (struct codec *, int flags);
 // for fallback plain encoding/decoding:
 extern const uint8_t base64_table_enc[];
 extern const uint8_t base64_table_dec[];
+
+extern const uint32_t base64_table_dec_d0[];
+extern const uint32_t base64_table_dec_d1[];
+extern const uint32_t base64_table_dec_d2[];
+extern const uint32_t base64_table_dec_d3[];

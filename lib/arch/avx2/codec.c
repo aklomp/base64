@@ -13,57 +13,83 @@
 #define REPLACE(s,n)	_mm256_and_si256((s), _mm256_set1_epi8(n))
 #define RANGE(s,a,b)	_mm256_andnot_si256(CMPGT((s), (b)), CMPGT((s), (a) - 1))
 
-static inline __m256i
-_mm256_bswap_epi32 (const __m256i in)
-{
-	// _mm256_shuffle_epi8() works on two 128-bit lanes separately:
-	return _mm256_shuffle_epi8(in, _mm256_setr_epi8(
-		 3,  2,  1,  0,
-		 7,  6,  5,  4,
-		11, 10,  9,  8,
-		15, 14, 13, 12,
-		 3,  2,  1,  0,
-		 7,  6,  5,  4,
-		11, 10,  9,  8,
-		15, 14, 13, 12));
-}
+static inline __m256i enc_reshuffle(const __m256i input) {
+	// input, bytes MSB to LSB:
+	// 0 0 0 0 x w v u t s r q p o n m
+	// l k j i h g f e d c b a 0 0 0 0
 
-static inline __m256i
-enc_reshuffle (__m256i in)
-{
-	// Spread out 32-bit words over both halves of the input register:
-	in = _mm256_permutevar8x32_epi32(in, _mm256_setr_epi32(
-		0, 1, 2, -1,
-		3, 4, 5, -1));
+	// translation from SSE into AVX2 of procedure
+	// https://github.com/WojciechMula/base64simd/blob/master/encode/unpack_bigendian.cpp
+	const __m256i in = _mm256_shuffle_epi8(input, _mm256_set_epi8(
+		10, 11,  9, 10,
+		 7,  8,  6,  7,
+		 4,  5,  3,  4,
+		 1,  2,  0,  1,
 
-	// Slice into 32-bit chunks and operate on all chunks in parallel.
-	// All processing is done within the 32-bit chunk. First, shuffle:
-	// before: [eeeeeeff|ccdddddd|bbbbcccc|aaaaaabb]
-	// after:  [00000000|aaaaaabb|bbbbcccc|ccdddddd]
-	in = _mm256_shuffle_epi8(in, _mm256_set_epi8(
-		-1, 9, 10, 11,
-		-1, 6,  7,  8,
-		-1, 3,  4,  5,
-		-1, 0,  1,  2,
-		-1, 9, 10, 11,
-		-1, 6,  7,  8,
-		-1, 3,  4,  5,
-		-1, 0,  1,  2));
+		14, 15, 13, 14,
+		11, 12, 10, 11,
+		 8,  9,  7,  8,
+		 5,  6,  4,  5));
+	// in, bytes MSB to LSB:
+	// w x v w
+	// t u s t
+	// q r p q
+	// n o m n
+	// k l j k
+	// h i g h
+	// e f d e
+	// b c a b
 
-	// merged  = [0000aaaa|aabbbbbb|bbbbcccc|ccdddddd]
-	const __m256i merged = _mm256_blend_epi16(_mm256_slli_epi32(in, 4), in, 0x55);
+	const __m256i t0 = _mm256_and_si256(in, _mm256_set1_epi32(0x0fc0fc00));
+	// bits, upper case are most significant bits, lower case are least significant bits.
+	// 0000wwww XX000000 VVVVVV00 00000000
+	// 0000tttt UU000000 SSSSSS00 00000000
+	// 0000qqqq RR000000 PPPPPP00 00000000
+	// 0000nnnn OO000000 MMMMMM00 00000000
+	// 0000kkkk LL000000 JJJJJJ00 00000000
+	// 0000hhhh II000000 GGGGGG00 00000000
+	// 0000eeee FF000000 DDDDDD00 00000000
+	// 0000bbbb CC000000 AAAAAA00 00000000
 
-	// bd      = [00000000|00bbbbbb|00000000|00dddddd]
-	const __m256i bd = _mm256_and_si256(merged, _mm256_set1_epi32(0x003F003F));
+	const __m256i t1 = _mm256_mulhi_epu16(t0, _mm256_set1_epi32(0x04000040));
+	// 00000000 00wwwwXX 00000000 00VVVVVV
+	// 00000000 00ttttUU 00000000 00SSSSSS
+	// 00000000 00qqqqRR 00000000 00PPPPPP
+	// 00000000 00nnnnOO 00000000 00MMMMMM
+	// 00000000 00kkkkLL 00000000 00JJJJJJ
+	// 00000000 00hhhhII 00000000 00GGGGGG
+	// 00000000 00eeeeFF 00000000 00DDDDDD
+	// 00000000 00bbbbCC 00000000 00AAAAAA
 
-	// ac      = [00aaaaaa|00000000|00cccccc|00000000]
-	const __m256i ac = _mm256_and_si256(_mm256_slli_epi32(merged, 2), _mm256_set1_epi32(0x3F003F00));
+	const __m256i t2 = _mm256_and_si256(in, _mm256_set1_epi32(0x003f03f0));
+	// 00000000 00xxxxxx 000000vv WWWW0000
+	// 00000000 00uuuuuu 000000ss TTTT0000
+	// 00000000 00rrrrrr 000000pp QQQQ0000
+	// 00000000 00oooooo 000000mm NNNN0000
+	// 00000000 00llllll 000000jj KKKK0000
+	// 00000000 00iiiiii 000000gg HHHH0000
+	// 00000000 00ffffff 000000dd EEEE0000
+	// 00000000 00cccccc 000000aa BBBB0000
 
-	// indices = [00aaaaaa|00bbbbbb|00cccccc|00dddddd]
-	const __m256i indices = _mm256_or_si256(ac, bd);
+	const __m256i t3 = _mm256_mullo_epi16(t2, _mm256_set1_epi32(0x01000010));
+	// 00xxxxxx 00000000 00vvWWWW 00000000
+	// 00uuuuuu 00000000 00ssTTTT 00000000
+	// 00rrrrrr 00000000 00ppQQQQ 00000000
+	// 00oooooo 00000000 00mmNNNN 00000000
+	// 00llllll 00000000 00jjKKKK 00000000
+	// 00iiiiii 00000000 00ggHHHH 00000000
+	// 00ffffff 00000000 00ddEEEE 00000000
+	// 00cccccc 00000000 00aaBBBB 00000000
 
-	// return  = [00dddddd|00cccccc|00bbbbbb|00aaaaaa]
-	return _mm256_bswap_epi32(indices);
+	return _mm256_or_si256(t1, t3);
+	// 00xxxxxx 00wwwwXX 00vvWWWW 00VVVVVV
+	// 00uuuuuu 00ttttUU 00ssTTTT 00SSSSSS
+	// 00rrrrrr 00qqqqRR 00ppQQQQ 00PPPPPP
+	// 00oooooo 00nnnnOO 00mmNNNN 00MMMMMM
+	// 00llllll 00kkkkLL 00jjKKKK 00JJJJJJ
+	// 00iiiiii 00hhhhII 00ggHHHH 00GGGGGG
+	// 00ffffff 00eeeeFF 00ddEEEE 00DDDDDD
+	// 00cccccc 00bbbbCC 00aaBBBB 00AAAAAA
 }
 
 static inline __m256i
@@ -96,38 +122,45 @@ enc_translate (const __m256i in)
 	return out;
 }
 
-static inline __m256i
-dec_reshuffle (__m256i in)
-{
-	// Mask in a single byte per shift:
-	const __m256i maskB2 = _mm256_set1_epi32(0x003F0000);
-	const __m256i maskB1 = _mm256_set1_epi32(0x00003F00);
 
-	// Pack bytes together:
-	__m256i out = _mm256_srli_epi32(in, 16);
+static inline __m256i dec_reshuffle(__m256i in) {
+	// in, lower lane, bits, upper case are most significant bits, lower case are least significant bits:
+	// 00llllll 00kkkkLL 00jjKKKK 00JJJJJJ
+	// 00iiiiii 00hhhhII 00ggHHHH 00GGGGGG
+	// 00ffffff 00eeeeFF 00ddEEEE 00DDDDDD
+	// 00cccccc 00bbbbCC 00aaBBBB 00AAAAAA
 
-	out = _mm256_or_si256(out, _mm256_srli_epi32(_mm256_and_si256(in, maskB2), 2));
+	// inlined procedure pack_madd from https://github.com/WojciechMula/base64simd/blob/master/decode/pack.avx2.cpp
+	// The only difference is that elements are reversed,
+	// only the multiplication constants were changed.
 
-	out = _mm256_or_si256(out, _mm256_slli_epi32(_mm256_and_si256(in, maskB1), 12));
+	const __m256i merge_ab_and_bc = _mm256_maddubs_epi16(in, _mm256_set1_epi32(0x01400140)); //_mm256_maddubs_epi16 is likely expensive
+	// 0000kkkk LLllllll 0000JJJJ JJjjKKKK
+	// 0000hhhh IIiiiiii 0000GGGG GGggHHHH
+	// 0000eeee FFffffff 0000DDDD DDddEEEE
+	// 0000bbbb CCcccccc 0000AAAA AAaaBBBB
 
-	out = _mm256_or_si256(out, _mm256_slli_epi32(in, 26));
+	__m256i out = _mm256_madd_epi16(merge_ab_and_bc, _mm256_set1_epi32(0x00011000));
+	// 00000000 JJJJJJjj KKKKkkkk LLllllll
+	// 00000000 GGGGGGgg HHHHhhhh IIiiiiii
+	// 00000000 DDDDDDdd EEEEeeee FFffffff
+	// 00000000 AAAAAAaa BBBBbbbb CCcccccc
 
-	// Pack bytes together within 32-bit words, discarding words 3 and 7:
+	// end of inlined
+
+	// Pack bytes together in each lane:
 	out = _mm256_shuffle_epi8(out, _mm256_setr_epi8(
-		 3,  2,  1,
-		 7,  6,  5,
-		11, 10,  9,
-		15, 14, 13,
-		-1, -1, -1, -1,
-		 3,  2,  1,
-		 7,  6,  5,
-		11, 10,  9,
-		15, 14, 13,
-		-1, -1, -1, -1));
+		2, 1, 0, 6, 5, 4, 10, 9, 8, 14, 13, 12, -1, -1, -1, -1,
+		2, 1, 0, 6, 5, 4, 10, 9, 8, 14, 13, 12, -1, -1, -1, -1
+	));
 
-	// Pack 32-bit words together, squashing empty words 3 and 7:
-	return _mm256_permutevar8x32_epi32(out, _mm256_setr_epi32(
-		0, 1, 2, 4, 5, 6, -1, -1));
+	// 00000000 00000000 00000000 00000000
+	// LLllllll KKKKkkkk JJJJJJjj IIiiiiii
+	// HHHHhhhh GGGGGGgg FFffffff EEEEeeee
+	// DDDDDDdd CCcccccc BBBBbbbb AAAAAAaa
+
+	// Pack lanes
+	return _mm256_permutevar8x32_epi32(out, _mm256_setr_epi32(0, 1, 2, 4, 5, 6, -1, -1));
 }
 
 #endif	// __AVX2__
@@ -148,6 +181,11 @@ BASE64_DEC_FUNCTION(avx2)
 #ifdef __AVX2__
 	#include "../generic/dec_head.c"
 	#include "dec_loop.c"
+	#if BASE64_WORDSIZE == 32
+		#include "../generic/32/dec_loop.c"
+	#elif BASE64_WORDSIZE == 64
+		#include "../generic/64/dec_loop.c"
+	#endif
 	#include "../generic/dec_tail.c"
 #else
 	BASE64_DEC_STUB

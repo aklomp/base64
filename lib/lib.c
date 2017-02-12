@@ -45,6 +45,8 @@ base64_table_dec[] =
 	255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
 };
 
+#include "tables.h"
+
 void
 base64_stream_encode_init (struct base64_state *state, int flags)
 {

@@ -10,10 +10,9 @@
 
 #include "../sse2/compare_macros.h"
 
-#include "../ssse3/_mm_bswap_epi32.c"
 #include "../ssse3/dec_reshuffle.c"
 #include "../ssse3/enc_translate.c"
-#include "../sse41/enc_reshuffle.c"
+#include "../ssse3/enc_reshuffle.c"
 
 #endif	// __SSE4_2__
 
@@ -32,7 +31,12 @@ BASE64_DEC_FUNCTION(sse42)
 {
 #ifdef __SSE4_2__
 	#include "../generic/dec_head.c"
-	#include "dec_loop.c"
+	#include "../ssse3/dec_loop.c"
+	#if BASE64_WORDSIZE == 32
+		#include "../generic/32/dec_loop.c"
+	#elif BASE64_WORDSIZE == 64
+		#include "../generic/64/dec_loop.c"
+	#endif
 	#include "../generic/dec_tail.c"
 #else
 	BASE64_DEC_STUB

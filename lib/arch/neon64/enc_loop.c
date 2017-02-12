@@ -14,7 +14,7 @@ while (srclen >= 48)
 	res.val[3] = str.val[2];
 
 	// Clear top two bits:
-	res.val[0] &= vdupq_n_u8(0x3F);
+	// res.val[0] &= vdupq_n_u8(0x3F); // not needed
 	res.val[1] &= vdupq_n_u8(0x3F);
 	res.val[2] &= vdupq_n_u8(0x3F);
 	res.val[3] &= vdupq_n_u8(0x3F);
