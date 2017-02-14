@@ -110,7 +110,7 @@ BASE64_DEC_FUNCTION(neon64)
 
 	#include "../generic/dec_head.c"
 	#include "dec_loop.c"
-	#include "../generic/64/dec_loop.c"
+	#include "../generic/32/dec_loop.c"
 	#include "../generic/dec_tail.c"
 #else
 	BASE64_DEC_STUB

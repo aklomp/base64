@@ -22,11 +22,13 @@ HAVE_SSSE3  = 0
 HAVE_SSE41  = 0
 HAVE_SSE42  = 0
 HAVE_AVX    = 0
+HAVE_FAST_UNALIGNED_ACCESS = 0
 
 # The user should supply compiler flags for the codecs they want to build.
 # Check which codecs we're going to include:
 ifdef AVX2_CFLAGS
   HAVE_AVX2 = 1
+  HAVE_FAST_UNALIGNED_ACCESS = 1
 endif
 ifdef NEON32_CFLAGS
   HAVE_NEON32 = 1
@@ -36,15 +38,19 @@ ifdef NEON64_CFLAGS
 endif
 ifdef SSSE3_CFLAGS
   HAVE_SSSE3 = 1
+  HAVE_FAST_UNALIGNED_ACCESS = 1
 endif
 ifdef SSE41_CFLAGS
   HAVE_SSE41 = 1
+  HAVE_FAST_UNALIGNED_ACCESS = 1
 endif
 ifdef SSE42_CFLAGS
   HAVE_SSE42 = 1
+  HAVE_FAST_UNALIGNED_ACCESS = 1
 endif
 ifdef AVX_CFLAGS
   HAVE_AVX = 1
+  HAVE_FAST_UNALIGNED_ACCESS = 1
 endif
 ifdef OPENMP
   CFLAGS += -fopenmp
@@ -63,15 +69,22 @@ lib/libbase64.o: $(OBJS)
 	$(OBJCOPY) --keep-global-symbols=lib/exports.txt $@
 
 lib/config.h:
-	@echo "#define HAVE_AVX2   $(HAVE_AVX2)"    > $@
-	@echo "#define HAVE_NEON32 $(HAVE_NEON32)" >> $@
-	@echo "#define HAVE_NEON64 $(HAVE_NEON64)" >> $@
-	@echo "#define HAVE_SSSE3  $(HAVE_SSSE3)"  >> $@
-	@echo "#define HAVE_SSE41  $(HAVE_SSE41)"  >> $@
-	@echo "#define HAVE_SSE42  $(HAVE_SSE42)"  >> $@
-	@echo "#define HAVE_AVX    $(HAVE_AVX)"    >> $@
+	@echo "#define HAVE_AVX2                  $(HAVE_AVX2)"                   > $@
+	@echo "#define HAVE_NEON32                $(HAVE_NEON32)"                >> $@
+	@echo "#define HAVE_NEON64                $(HAVE_NEON64)"                >> $@
+	@echo "#define HAVE_SSSE3                 $(HAVE_SSSE3)"                 >> $@
+	@echo "#define HAVE_SSE41                 $(HAVE_SSE41)"                 >> $@
+	@echo "#define HAVE_SSE42                 $(HAVE_SSE42)"                 >> $@
+	@echo "#define HAVE_AVX                   $(HAVE_AVX)"                   >> $@
+	@echo "#define HAVE_FAST_UNALIGNED_ACCESS $(HAVE_FAST_UNALIGNED_ACCESS)" >> $@
 
-lib/codec_choose.o: lib/config.h
+lib/tables.h: lib/table_generator.c
+	$(CC) $(CFLAGS) -o lib/table_generator $^
+	./lib/table_generator > $@
+
+$(OBJS): lib/config.h
+
+lib/lib.o: lib/tables.h
 
 lib/arch/avx2/codec.o:   CFLAGS += $(AVX2_CFLAGS)
 lib/arch/neon32/codec.o: CFLAGS += $(NEON32_CFLAGS)
@@ -88,4 +101,4 @@ analyze: clean
 	scan-build --use-analyzer=`which clang` --status-bugs make
 
 clean:
-	rm -f bin/base64 bin/base64.o lib/libbase64.o lib/config.h $(OBJS)
+	rm -f bin/base64 bin/base64.o lib/libbase64.o lib/table_generator.o lib/table_generator lib/config.h $(OBJS)

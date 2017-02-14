@@ -5,7 +5,6 @@
 
 #include "../include/libbase64.h"
 #include "codecs.h"
-#include "config.h"
 
 #if __x86_64__ || __i386__ || _M_X86 || _M_X64
 #ifdef _MSC_VER

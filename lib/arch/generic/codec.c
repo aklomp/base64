@@ -19,10 +19,8 @@ BASE64_ENC_FUNCTION(plain)
 BASE64_DEC_FUNCTION(plain)
 {
 	#include "dec_head.c"
-#if BASE64_WORDSIZE == 32
+#if BASE64_WORDSIZE >= 32
 	#include "32/dec_loop.c"
-#elif BASE64_WORDSIZE == 64
-	#include "64/dec_loop.c"
 #endif
 	#include "dec_tail.c"
 }
