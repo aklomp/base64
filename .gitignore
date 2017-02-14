@@ -1,5 +1,7 @@
 *.o
 bin/base64
 lib/config.h
+lib/table_generator
+lib/tables.h
 test/benchmark
 test/test_base64

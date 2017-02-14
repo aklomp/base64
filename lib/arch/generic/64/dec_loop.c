@@ -1,68 +1,31 @@
-// If we have native uint64's, pick off 8 bytes at a time for as long as we
-// can, but make sure that we quit before seeing any == markers at the end of
-// the string. Also, because we write two zeroes at the end of the output,
-// ensure that there are at least 3 valid bytes of input data remaining to
-// close the gap. 8 + 2 + 3 = 13 bytes:
-while (srclen >= 13)
+while (srclen > 4)
 {
-	uint64_t str, res, dec;
+	union {
+		uint32_t asint;
+		uint8_t  aschar[4];
+	} x;
 
-	// Load string:
-	str = *(uint64_t *)c;
+	x.asint = base64_table_dec_d0[c[0]]
+	        | base64_table_dec_d1[c[1]]
+	        | base64_table_dec_d2[c[2]]
+	        | base64_table_dec_d3[c[3]];
 
-	// Shuffle bytes to 64-bit bigendian:
-	str = cpu_to_be64(str);
+#if BASE64_LITTLE_ENDIAN
+	if (x.asint & 0x8000000U) break;
+#else
+	if (x.asint & 1U) break;
+#endif
 
-	// Lookup each byte in the decoding table; if we encounter any
-	// "invalid" values, fall back on the bytewise code:
-	if ((dec = base64_table_dec[str >> 56]) > 63) {
-		break;
-	}
-	res = dec << 58;
+#if HAVE_FAST_UNALIGNED_ACCESS
+	*(uint32_t*)o = x.asint;
+#else
+	o[0] = x.aschar[0];
+	o[1] = x.aschar[1];
+	o[2] = x.aschar[2];
+#endif
 
-	if ((dec = base64_table_dec[(str >> 48) & 0xFF]) > 63) {
-		break;
-	}
-	res |= dec << 52;
-
-	if ((dec = base64_table_dec[(str >> 40) & 0xFF]) > 63) {
-		break;
-	}
-	res |= dec << 46;
-
-	if ((dec = base64_table_dec[(str >> 32) & 0xFF]) > 63) {
-		break;
-	}
-	res |= dec << 40;
-
-	if ((dec = base64_table_dec[(str >> 24) & 0xFF]) > 63) {
-		break;
-	}
-	res |= dec << 34;
-
-	if ((dec = base64_table_dec[(str >> 16) & 0xFF]) > 63) {
-		break;
-	}
-	res |= dec << 28;
-
-	if ((dec = base64_table_dec[(str >> 8) & 0xFF]) > 63) {
-		break;
-	}
-	res |= dec << 22;
-
-	if ((dec = base64_table_dec[str & 0xFF]) > 63) {
-		break;
-	}
-	res |= dec << 16;
-
-	// Reshuffle and repack into 6-byte output format:
-	res = be64_to_cpu(res);
-
-	// Store back:
-	*(uint64_t *)o = res;
-
-	c += 8;
-	o += 6;
-	outl += 6;
-	srclen -= 8;
+	c += 4;
+	o += 3;
+	outl += 3;
+	srclen -= 4;
 }
