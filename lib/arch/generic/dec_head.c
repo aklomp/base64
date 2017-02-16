@@ -13,7 +13,14 @@ st.carry = state->carry;
 // If we previously saw an EOF or an invalid character, bail out:
 if (st.eof) {
 	*outlen = 0;
-	return 0;
+	ret = 0;
+	// If there was a trailing '=' to check, check it:
+	if (srclen && (st.eof == BASE64_AEOF)) {
+		state->bytes = 0;
+		state->eof = BASE64_EOF;
+		ret = ((base64_table_dec[*c++] == 254) && (srclen == 1)) ? 1 : 0;
+	}
+	return ret;
 }
 
 // Turn four 6-bit numbers into three bytes:

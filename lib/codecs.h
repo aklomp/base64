@@ -102,6 +102,13 @@ struct codec
 #define BASE64_WORDSIZE __WORDSIZE
 #endif
 
+// end-of-file definitions
+// Almost end-of-file when waiting for the last '=' character:
+#define BASE64_AEOF 1
+// End-of-file when stream end has been reached or invalid input provided:
+#define BASE64_EOF 2
+
+
 void codec_choose (struct codec *, int flags);
 
 // These tables are used by all codecs

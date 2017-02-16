@@ -218,6 +218,79 @@ test_streaming (int flags)
 }
 
 static int
+test_invalid_dec_input (int flags)
+{
+	// Subset of invalid characters to cover all ranges
+	static const char invalid_set[] = { '\0', -1, '!', '-', ';', '_', '|' };
+	static const char* invalid_strings[] = {
+		"Zm9vYg=",
+		"Zm9vYg",
+		"Zm9vY",
+		"Zm9vYmF=Zm9v"
+	};
+
+	bool fail = false;
+	char chr[256];
+	char enc[400], dec[400];
+	size_t enclen, declen;
+
+	// Fill array with all characters 0..255:
+	for (int i = 0; i < 256; i++)
+		chr[i] = (unsigned char)i;
+
+	// Create reference base64 encoding:
+	base64_encode(chr, 256, enc, &enclen, BASE64_FORCE_PLAIN);
+
+	// Test invalid strings returns error.
+	for (size_t i = 0U; i < sizeof(invalid_strings) / sizeof(invalid_strings[0]); ++i) {
+		if (base64_decode(invalid_strings[i], strlen(invalid_strings[i]), dec, &declen, flags)) {
+			printf("FAIL: decoding invalid input \"%s\": no decoding error\n", invalid_strings[i]);
+			fail = true;
+		}
+	}
+
+	// Loop, corrupting each char to increase test coverage:
+	for (size_t c = 0U; c < sizeof(invalid_set); ++c) {
+		for (size_t i = 0U; i < enclen; i++) {
+			char backup = enc[i];
+
+			enc[i] = invalid_set[c];
+
+			if (base64_decode(enc, enclen, dec, &declen, flags)) {
+				printf("FAIL: decoding invalid input @ %d: no decoding error\n", (int)i);
+				fail = true;
+				enc[i] = backup;
+				continue;
+			}
+			enc[i] = backup;
+		}
+	}
+
+	// Loop, corrupting two chars to increase test coverage:
+	for (size_t c = 0U; c < sizeof(invalid_set); ++c) {
+		for (size_t i = 0U; i < enclen - 2U; i++) {
+			char backup  = enc[i+0];
+			char backup2 = enc[i+2];
+
+			enc[i+0] = invalid_set[c];
+			enc[i+2] = invalid_set[c];
+
+			if (base64_decode(enc, enclen, dec, &declen, flags)) {
+				printf("FAIL: decoding invalid input @ %d: no decoding error\n", (int)i);
+				fail = true;
+				enc[i+0] = backup;
+				enc[i+2] = backup2;
+				continue;
+			}
+			enc[i+0] = backup;
+			enc[i+2] = backup2;
+		}
+	}
+
+	return fail;
+}
+
+static int
 test_one_codec (const char *codec, int flags)
 {
 	bool fail = false;
@@ -265,6 +338,7 @@ test_one_codec (const char *codec, int flags)
 
 	fail |= test_char_table(flags);
 	fail |= test_streaming(flags);
+	fail |= test_invalid_dec_input(flags);
 
 	if (!fail)
 		puts("  all tests passed.");

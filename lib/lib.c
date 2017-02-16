@@ -49,7 +49,7 @@ void
 base64_stream_encode_init (struct base64_state *state, int flags)
 {
 	// If any of the codec flags are set, redo choice:
-	if (codec.enc == NULL || flags & 0x1F) {
+	if (codec.enc == NULL || flags & 0xFF) {
 		codec_choose(&codec, flags);
 	}
 	state->eof = 0;
@@ -99,7 +99,7 @@ void
 base64_stream_decode_init (struct base64_state *state, int flags)
 {
 	// If any of the codec flags are set, redo choice:
-	if (codec.dec == NULL || flags & 0x1F) {
+	if (codec.dec == NULL || flags & 0xFF) {
 		codec_choose(&codec, flags);
 	}
 	state->eof = 0;
@@ -172,6 +172,7 @@ base64_decode
 	, int		 flags
 	)
 {
+	int ret;
 	struct base64_state state;
 
 	#ifdef _OPENMP
@@ -184,5 +185,11 @@ base64_decode
 	base64_stream_decode_init(&state, flags);
 
 	// Feed the whole string to the stream reader:
-	return base64_stream_decode(&state, src, srclen, out, outlen);
+	ret = base64_stream_decode(&state, src, srclen, out, outlen);
+
+	// If when decoding a whole block, we're still waiting for input then fail:
+	if (ret && (state.bytes == 0)) {
+		return ret;
+	}
+	return 0;
 }

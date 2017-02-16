@@ -141,5 +141,9 @@ base64_decode_openmp
 	sum += s;
 	*outlen = sum;
 
-	return result;
+	// If when decoding a whole block, we're still waiting for input then fail:
+	if (result && (state.bytes == 0)) {
+		return result;
+	}
+	return 0;
 }

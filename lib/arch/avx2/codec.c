@@ -2,8 +2,8 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#include "../include/libbase64.h"
-#include "codecs.h"
+#include "../../../include/libbase64.h"
+#include "../../codecs.h"
 
 #ifdef __AVX2__
 #include <immintrin.h>
@@ -50,14 +50,8 @@ enc_reshuffle (__m256i in)
 		-1, 3,  4,  5,
 		-1, 0,  1,  2));
 
-	// cd      = [00000000|00000000|0000cccc|ccdddddd]
-	const __m256i cd = _mm256_and_si256(in, _mm256_set1_epi32(0x00000FFF));
-
-	// ab      = [0000aaaa|aabbbbbb|00000000|00000000]
-	const __m256i ab = _mm256_and_si256(_mm256_slli_epi32(in, 4), _mm256_set1_epi32(0x0FFF0000));
-
-	// merged  = [0000aaaa|aabbbbbb|0000cccc|ccdddddd]
-	const __m256i merged = _mm256_or_si256(ab, cd);
+	// merged  = [0000aaaa|aabbbbbb|bbbbcccc|ccdddddd]
+	const __m256i merged = _mm256_blend_epi16(_mm256_slli_epi32(in, 4), in, 0x55);
 
 	// bd      = [00000000|00bbbbbb|00000000|00dddddd]
 	const __m256i bd = _mm256_and_si256(merged, _mm256_set1_epi32(0x003F003F));
@@ -75,30 +69,29 @@ enc_reshuffle (__m256i in)
 static inline __m256i
 enc_translate (const __m256i in)
 {
+	// LUT contains Absolute offset for all ranges:
+	const __m256i lut = _mm256_setr_epi8(65, 71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 0, 0,
+	                                     65, 71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 0, 0);
 	// Translate values 0..63 to the Base64 alphabet. There are five sets:
-	// #  From      To         Abs  Delta  Characters
-	// 0  [0..25]   [65..90]   +65  +65    ABCDEFGHIJKLMNOPQRSTUVWXYZ
-	// 1  [26..51]  [97..122]  +71   +6    abcdefghijklmnopqrstuvwxyz
-	// 2  [52..61]  [48..57]    -4  -75    0123456789
-	// 3  [62]      [43]       -19  -15    +
-	// 4  [63]      [47]       -16   +3    /
+	// #  From      To         Abs    Index  Characters
+	// 0  [0..25]   [65..90]   +65        0  ABCDEFGHIJKLMNOPQRSTUVWXYZ
+	// 1  [26..51]  [97..122]  +71        1  abcdefghijklmnopqrstuvwxyz
+	// 2  [52..61]  [48..57]    -4  [2..11]  0123456789
+	// 3  [62]      [43]       -19       12  +
+	// 4  [63]      [47]       -16       13  /
 
-	// Create cumulative masks for characters in sets [1,2,3,4], [2,3,4],
-	// [3,4], and [4]:
-	const __m256i mask1 = CMPGT(in, 25);
-	const __m256i mask2 = CMPGT(in, 51);
-	const __m256i mask3 = CMPGT(in, 61);
-	const __m256i mask4 = CMPEQ(in, 63);
+	// Create LUT indices from input:
+	// the index for range #0 is right, others are 1 less than expected:
+	__m256i indices = _mm256_subs_epu8(in, _mm256_set1_epi8(51));
 
-	// All characters are at least in cumulative set 0, so add 'A':
-	__m256i out = _mm256_add_epi8(in, _mm256_set1_epi8(65));
+	// mask is 0xFF (-1) for range #[1..4] and 0x00 for range #0:
+	__m256i mask = CMPGT(in, 25);
 
-	// For inputs which are also in any of the other cumulative sets,
-	// add delta values against the previous set(s) to correct the shift:
-	out = _mm256_add_epi8(out, REPLACE(mask1,  6));
-	out = _mm256_sub_epi8(out, REPLACE(mask2, 75));
-	out = _mm256_sub_epi8(out, REPLACE(mask3, 15));
-	out = _mm256_add_epi8(out, REPLACE(mask4,  3));
+	// substract -1, so add 1 to indices for range #[1..4], All indices are now correct:
+	indices = _mm256_sub_epi8(indices, mask);
+
+	// Add offsets to input values:
+	__m256i out = _mm256_add_epi8(in, _mm256_shuffle_epi8(lut, indices));
 
 	return out;
 }
@@ -106,23 +99,18 @@ enc_translate (const __m256i in)
 static inline __m256i
 dec_reshuffle (__m256i in)
 {
-	// Shuffle bytes to 32-bit bigendian:
-	in = _mm256_bswap_epi32(in);
-
 	// Mask in a single byte per shift:
-	__m256i mask = _mm256_set1_epi32(0x3F000000);
+	const __m256i maskB2 = _mm256_set1_epi32(0x003F0000);
+	const __m256i maskB1 = _mm256_set1_epi32(0x00003F00);
 
 	// Pack bytes together:
-	__m256i out = _mm256_slli_epi32(_mm256_and_si256(in, mask), 2);
-	mask = _mm256_srli_epi32(mask, 8);
+	__m256i out = _mm256_srli_epi32(in, 16);
 
-	out = _mm256_or_si256(out, _mm256_slli_epi32(_mm256_and_si256(in, mask), 4));
-	mask = _mm256_srli_epi32(mask, 8);
+	out = _mm256_or_si256(out, _mm256_srli_epi32(_mm256_and_si256(in, maskB2), 2));
 
-	out = _mm256_or_si256(out, _mm256_slli_epi32(_mm256_and_si256(in, mask), 6));
-	mask = _mm256_srli_epi32(mask, 8);
+	out = _mm256_or_si256(out, _mm256_slli_epi32(_mm256_and_si256(in, maskB1), 12));
 
-	out = _mm256_or_si256(out, _mm256_slli_epi32(_mm256_and_si256(in, mask), 8));
+	out = _mm256_or_si256(out, _mm256_slli_epi32(in, 26));
 
 	// Pack bytes together within 32-bit words, discarding words 3 and 7:
 	out = _mm256_shuffle_epi8(out, _mm256_setr_epi8(
@@ -147,9 +135,9 @@ dec_reshuffle (__m256i in)
 BASE64_ENC_FUNCTION(avx2)
 {
 #ifdef __AVX2__
-	#include "enc/head.c"
-	#include "enc/avx2.c"
-	#include "enc/tail.c"
+	#include "../generic/enc_head.c"
+	#include "enc_loop.c"
+	#include "../generic/enc_tail.c"
 #else
 	BASE64_ENC_STUB
 #endif
@@ -158,9 +146,9 @@ BASE64_ENC_FUNCTION(avx2)
 BASE64_DEC_FUNCTION(avx2)
 {
 #ifdef __AVX2__
-	#include "dec/head.c"
-	#include "dec/avx2.c"
-	#include "dec/tail.c"
+	#include "../generic/dec_head.c"
+	#include "dec_loop.c"
+	#include "../generic/dec_tail.c"
 #else
 	BASE64_DEC_STUB
 #endif

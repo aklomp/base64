@@ -1,9 +1,9 @@
 # Fast Base64 stream encoder/decoder
 
 This is an implementation of a base64 stream encoding/decoding library in C99
-with SIMD (AVX2, NEON, AArch64/NEON, SSSE3) and [OpenMP](http://www.openmp.org)
-acceleration. It also contains wrapper functions to encode/decode simple
-length-delimited strings. This library aims to be:
+with SIMD (AVX2, NEON, AArch64/NEON, SSSE3, SSE4.1, SSE4.2, AVX) and
+[OpenMP](http://www.openmp.org) acceleration. It also contains wrapper functions
+to encode/decode simple length-delimited strings. This library aims to be:
 
 - FAST;
 - easy to use;
@@ -12,9 +12,10 @@ length-delimited strings. This library aims to be:
 On x86, the library does runtime feature detection. The first time it's called,
 the library will determine the appropriate encoding/decoding routines for the
 machine. It then remembers them for the lifetime of the program. If your
-processor supports AVX2 or SSSE3 instructions, the library will pick an
-optimized codec that lets it encode/decode 12 or 24 bytes at a time, which
-gives a speedup of four or more times compared to the "plain" bytewise codec.
+processor supports AVX2, SSSE3, SSE4.1, SSE4.2 or AVX instructions, the library
+will pick an optimized codec that lets it encode/decode 12 or 24 bytes at a
+time, which gives a speedup of four or more times compared to the "plain"
+bytewise codec.
 
 NEON support is hardcoded to on or off at compile time, because portable
 runtime feature detection is unavailable on ARM.
@@ -73,11 +74,12 @@ To compile just the "plain" library without SIMD codecs, type:
 make lib/libbase64.o
 ```
 
-Optional SIMD codecs can be included by specifying the `AVX2_CFLAGS`, `NEON32_CFLAGS`, `NEON64_CFLAGS` and/or `SSSE3_CFLAGS` environment variables.
+Optional SIMD codecs can be included by specifying the `AVX2_CFLAGS`, `NEON32_CFLAGS`, `NEON64_CFLAGS`,
+`SSSE3_CFLAGS`, `SSE41_CFLAGS`, `SSE42_CFLAGS` and/or `AVX_CFLAGS` environment variables.
 A typical build invocation on x86 looks like this:
 
 ```sh
-AVX2_CFLAGS=-mavx2 SSSE3_CFLAGS=-mssse3 make lib/libbase64.o
+AVX2_CFLAGS=-mavx2 SSSE3_CFLAGS=-mssse3 SSE41_CFLAGS=-msse4.1 SSE42_CFLAGS=-msse4.2 AVX_CFLAGS=-mavx make lib/libbase64.o
 ```
 
 ### AVX2
@@ -208,6 +210,9 @@ The following constants can be used:
 - `BASE64_FORCE_NEON64`
 - `BASE64_FORCE_PLAIN`
 - `BASE64_FORCE_SSSE3`
+- `BASE64_FORCE_SSE41`
+- `BASE64_FORCE_SSE42`
+- `BASE64_FORCE_AVX`
 
 Set `flags` to `0` for the default behavior, which is runtime feature detection on x86, a compile-time fixed codec on ARM, and the plain codec on other platforms.
 
@@ -412,26 +417,44 @@ make -C test benchmark <buildflags> && test/benchmark
 
 It will run an encoding and decoding benchmark for all of the compiled-in codecs.
 
-The table below contains some results on random machines. All numbers measured with a 10MB buffer in MB/sec, rounded to the nearest integer.
+The tables below contain some results on random machines. All numbers measured with a 10MB buffer in MB/sec, rounded to the nearest integer.
 
-| Processor                                 | Plain enc | Plain dec | SSSE3 enc | SSSE3 dec | AVX2 enc | AVX2 dec | NEON32 enc | NEON32 dec |
-|-------------------------------------------|----------:|----------:|----------:|----------:|---------:|---------:|-----------:|-----------:|
-| i7-4771 @ 3.5 GHz                         | 833       | 1111      | 3333      | 4444      | 4999     | 6666     | -          | -          |
-| i7-4770 @ 3.4 GHz DDR1600                 | 1831      | 1748      | 3570      | 3695      | 6539     | 6512     | -          | -          |
-| i7-4770 @ 3.4 GHz DDR1600 OPENMP 1 thread | 1779      | 1727      | 3419      | 3788      | 4589     | 5871     | -          | -          |
-| i7-4770 @ 3.4 GHz DDR1600 OPENMP 2 thread | 3367      | 3374      | 4784      | 6672      | 5120     | 7721     | -          | -          |
-| i7-4770 @ 3.4 GHz DDR1600 OPENMP 4 thread | 4834      | 6075      | 4906      | 8154      | 4839     | 6911     | -          | -          |
-| i7-4770 @ 3.4 GHz DDR1600 OPENMP 8 thread | 4696      | 6361      | 5227      | 7737      | 4813     | 7189     | -          | -          |
-| i5-4590S @ 3.0 GHz                        | 1721      | 1643      | 3255      | 3404      | 4124     | 5403     | -          | -          |
-| Xeon X5570 @ 2.93 GHz                     | 1097      | 1048      | 2077      | 2215      | -        | -        | -          | -          |
-| Pentium4 @ 3.4 GHz                        | 528       | 448       | -         | -         | -        | -        | -          | -          |
-| Atom N270                                 | 112       | 125       | 331       | 368       | -        | -        | -          | -          |
-| AMD E-450                                 | 370       | 332       | 405       | 366       | -        | -        | -          | -          |
-| PowerPC E6500 @ 1.8GHz                    | 270       | 265       | -         | -         | -        | -        | -          | -          |
-| Raspberry PI B+ V1.2                      | 46        | 40        | -         | -         | -        | -        | -          | -          |
-| Raspberry PI 2 B V1.1                     | 104       | 88        | -         | -         | -        | -        | 158        | 116        |
-| Intel Edison @ 500 MHz                    | 79        | 92        | 152       | 172       | -        | -        | -          | -          |
-| Intel Edison @ 500 MHz OPENMP 2 thread    | 158       | 184       | 300       | 343       | -        | -        | -          | -          |
+\*: Update needed
+
+x86 processors
+
+| Processor                                 | Plain enc | Plain dec | SSSE3 enc | SSSE3 dec | SSE4.1 enc | SSE4.1 dec| SSE4.2 enc | SSE4.2 dec| AVX enc | AVX dec | AVX2 enc | AVX2 dec |
+|-------------------------------------------|----------:|----------:|----------:|----------:|-----------:|----------:|-----------:|----------:|--------:|--------:|---------:|---------:|
+| i7-4771 @ 3.5 GHz                         | 833       | 1111      | 3333\*    | 4444\*    | TBD        | TBD       | TBD        | TBD       | TBD     | TBD     | 4999\*   | 6666\*   |
+| i7-4770 @ 3.4 GHz DDR1600                 | 1831      | 1748      | 3570\*    | 3695\*    | TBD        | TBD       | TBD        | TBD       | TBD     | TBD     | 6539\*   | 6512\*   |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 1 thread | 1779      | 1727      | 3419\*    | 3788\*    | TBD        | TBD       | TBD        | TBD       | TBD     | TBD     | 4589\*   | 5871\*   |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 2 thread | 3367      | 3374      | 4784\*    | 6672\*    | TBD        | TBD       | TBD        | TBD       | TBD     | TBD     | 5120\*   | 7721\*   |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 4 thread | 4834      | 6075      | 4906\*    | 8154\*    | TBD        | TBD       | TBD        | TBD       | TBD     | TBD     | 4839\*   | 6911\*   |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 8 thread | 4696      | 6361      | 5227\*    | 7737\*    | TBD        | TBD       | TBD        | TBD       | TBD     | TBD     | 4813\*   | 7189\*   |
+| i7-4870HQ @ 2.5 GHz                       | 1471      | 1558      | 5599      | 3886      | 5882       | 3888      | 6202       | 5098      | 6524    | 5281    | 8113     | 7063     |
+| i5-4590S @ 3.0 GHz                        | 1721      | 1643      | 3255\*    | 3404\*    | TBD        | TBD       | TBD        | TBD       | TBD     | TBD     | 4124\*   | 5403\*   |
+| Xeon X5570 @ 2.93 GHz                     | 1097      | 1048      | 2077\*    | 2215\*    | TBD        | TBD       | TBD        | TBD       | -       | -       | -        | -        |
+| Pentium4 @ 3.4 GHz                        | 528       | 448       | -         | -         | -          | -         | -          | -         | -       | -       | -        | -        |
+| Atom N270                                 | 112       | 125       | 331\*     | 368\*     | -          | -         | -          | -         | -       | -       | -        | -        |
+| AMD E-450                                 | 370       | 332       | 405\*     | 366\*     | -          | -         | -          | -         | -       | -       | -        | -        |
+| Intel Edison @ 500 MHz                    | 79        | 92        | 152\*     | 172\*     | TBD        | TBD       | TBD        | TBD       | -       | -       | -        | -        |
+| Intel Edison @ 500 MHz OPENMP 2 thread    | 158       | 184       | 300\*     | 343\*     | TBD        | TBD       | TBD        | TBD       | -       | -       | -        | -        |
+
+ARM processors
+
+| Processor                                 | Plain enc | Plain dec | NEON32 enc | NEON32 dec | NEON64 enc | NEON64 dec |
+|-------------------------------------------|----------:|----------:|-----------:|-----------:|-----------:|-----------:|
+| Raspberry PI B+ V1.2                      | 46        | 40        | -          | -          | -          | -          |
+| Raspberry PI 2 B V1.1                     | 104       | 88        | 188        | 116\*      | -          | -          |
+| Apple iPhone SE armv7                     | 1056      | 722       | 2943       | 1573       | -          | -          |
+| Apple iPhone SE arm64                     | 1061      | 1237      | -          | -          | 4098       | 3983       |
+
+PowerPC processors
+
+| Processor                                 | Plain enc | Plain dec |
+|-------------------------------------------|----------:|----------:|
+| PowerPC E6500 @ 1.8GHz                    | 270       | 265       |
+
 
 Benchmarks on i7-4770 @ 3.4 GHz DDR1600 with varrying buffer sizes:
 ![Benchmarks](base64-benchmarks.png)
