@@ -423,22 +423,22 @@ The tables below contain some results on random machines. All numbers measured w
 
 x86 processors
 
-| Processor                                 | Plain enc | Plain dec | SSSE3 enc | SSSE3 dec | SSE4.1 enc | SSE4.1 dec| SSE4.2 enc | SSE4.2 dec| AVX enc | AVX dec | AVX2 enc | AVX2 dec |
-|-------------------------------------------|----------:|----------:|----------:|----------:|-----------:|----------:|-----------:|----------:|--------:|--------:|---------:|---------:|
-| i7-4771 @ 3.5 GHz                         | 833       | 1111\*    | 3333\*    | 4444\*    | TBD        | TBD       | TBD        | TBD       | TBD     | TBD     | 4999\*   | 6666\*   |
-| i7-4770 @ 3.4 GHz DDR1600                 | 1831      | 1748\*    | 3570\*    | 3695\*    | TBD        | TBD       | TBD        | TBD       | TBD     | TBD     | 6539\*   | 6512\*   |
-| i7-4770 @ 3.4 GHz DDR1600 OPENMP 1 thread | 1779      | 1727\*    | 3419\*    | 3788\*    | TBD        | TBD       | TBD        | TBD       | TBD     | TBD     | 4589\*   | 5871\*   |
-| i7-4770 @ 3.4 GHz DDR1600 OPENMP 2 thread | 3367      | 3374\*    | 4784\*    | 6672\*    | TBD        | TBD       | TBD        | TBD       | TBD     | TBD     | 5120\*   | 7721\*   |
-| i7-4770 @ 3.4 GHz DDR1600 OPENMP 4 thread | 4834      | 6075\*    | 4906\*    | 8154\*    | TBD        | TBD       | TBD        | TBD       | TBD     | TBD     | 4839\*   | 6911\*   |
-| i7-4770 @ 3.4 GHz DDR1600 OPENMP 8 thread | 4696      | 6361\*    | 5227\*    | 7737\*    | TBD        | TBD       | TBD        | TBD       | TBD     | TBD     | 4813\*   | 7189\*   |
-| i7-4870HQ @ 2.5 GHz                       | 1471      | 3066      | 5599      | 3886      | 5882       | 3888      | 6202       | 5098      | 6524    | 5281    | 8113     | 7063     |
-| i5-4590S @ 3.0 GHz                        | 1721      | 1643\*    | 3255\*    | 3404\*    | TBD        | TBD       | TBD        | TBD       | TBD     | TBD     | 4124\*   | 5403\*   |
-| Xeon X5570 @ 2.93 GHz                     | 1097      | 1048\*    | 2077\*    | 2215\*    | TBD        | TBD       | TBD        | TBD       | -       | -       | -        | -        |
-| Pentium4 @ 3.4 GHz                        | 528       | 448\*     | -         | -         | -          | -         | -          | -         | -       | -       | -        | -        |
-| Atom N270                                 | 112       | 125\*     | 331\*     | 368\*     | -          | -         | -          | -         | -       | -       | -        | -        |
-| AMD E-450                                 | 370       | 332\*     | 405\*     | 366\*     | -          | -         | -          | -         | -       | -       | -        | -        |
-| Intel Edison @ 500 MHz                    | 79        | 92\*      | 152\*     | 172\*     | TBD        | TBD       | TBD        | TBD       | -       | -       | -        | -        |
-| Intel Edison @ 500 MHz OPENMP 2 thread    | 158       | 184\*     | 300\*     | 343\*     | TBD        | TBD       | TBD        | TBD       | -       | -       | -        | -        |
+| Processor                                 | Plain enc | Plain dec | SSSE3 enc | SSSE3 dec | SSE4.2 enc | SSE4.2 dec| AVX enc | AVX dec | AVX2 enc | AVX2 dec |
+|-------------------------------------------|----------:|----------:|----------:|----------:|-----------:|----------:|--------:|--------:|---------:|---------:|
+| i7-4771 @ 3.5 GHz                         | 833       | 1111\*    | 3333\*    | 4444\*    | TBD        | TBD       | TBD     | TBD     | 4999\*   | 6666\*   |
+| i7-4770 @ 3.4 GHz DDR1600                 | 1831      | 1748\*    | 3570\*    | 3695\*    | TBD        | TBD       | TBD     | TBD     | 6539\*   | 6512\*   |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 1 thread | 1779      | 1727\*    | 3419\*    | 3788\*    | TBD        | TBD       | TBD     | TBD     | 4589\*   | 5871\*   |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 2 thread | 3367      | 3374\*    | 4784\*    | 6672\*    | TBD        | TBD       | TBD     | TBD     | 5120\*   | 7721\*   |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 4 thread | 4834      | 6075\*    | 4906\*    | 8154\*    | TBD        | TBD       | TBD     | TBD     | 4839\*   | 6911\*   |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 8 thread | 4696      | 6361\*    | 5227\*    | 7737\*    | TBD        | TBD       | TBD     | TBD     | 4813\*   | 7189\*   |
+| i7-4870HQ @ 2.5 GHz                       | 1471      | 3066      | 6721      | 3886      | 6701       | 5098      | 7015    | 5281    | 8328     | 7063     |
+| i5-4590S @ 3.0 GHz                        | 1721      | 1643\*    | 3255\*    | 3404\*    | TBD        | TBD       | TBD     | TBD     | 4124\*   | 5403\*   |
+| Xeon X5570 @ 2.93 GHz                     | 1097      | 1048\*    | 2077\*    | 2215\*    | TBD        | TBD       | -       | -       | -        | -        |
+| Pentium4 @ 3.4 GHz                        | 528       | 448\*     | -         | -         | -          | -         | -       | -       | -        | -        |
+| Atom N270                                 | 112       | 125\*     | 331\*     | 368\*     | -          | -         | -       | -       | -        | -        |
+| AMD E-450                                 | 370       | 332\*     | 405\*     | 366\*     | -          | -         | -       | -       | -        | -        |
+| Intel Edison @ 500 MHz                    | 79        | 92\*      | 152\*     | 172\*     | TBD        | TBD       | -       | -       | -        | -        |
+| Intel Edison @ 500 MHz OPENMP 2 thread    | 158       | 184\*     | 300\*     | 343\*     | TBD        | TBD       | -       | -       | -        | -        |
 
 ARM processors
 

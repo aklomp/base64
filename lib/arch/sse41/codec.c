@@ -10,10 +10,9 @@
 
 #include "../sse2/compare_macros.h"
 
-#include "../ssse3/_mm_bswap_epi32.c"
 #include "../ssse3/dec_reshuffle.c"
 #include "../ssse3/enc_translate.c"
-#include "enc_reshuffle.c"
+#include "../ssse3/enc_reshuffle.c"
 
 #endif	// __SSE4_1__
 
