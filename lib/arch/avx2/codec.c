@@ -127,35 +127,35 @@ enc_translate (const __m256i in)
 static inline __m256i
 dec_reshuffle (__m256i in)
 {
-	// Mask in a single byte per shift:
-	const __m256i maskB2 = _mm256_set1_epi32(0x003F0000);
-	const __m256i maskB1 = _mm256_set1_epi32(0x00003F00);
+	// in, lower lane, bits, upper case are most significant bits, lower case are least significant bits:
+	// 00llllll 00kkkkLL 00jjKKKK 00JJJJJJ
+	// 00iiiiii 00hhhhII 00ggHHHH 00GGGGGG
+	// 00ffffff 00eeeeFF 00ddEEEE 00DDDDDD
+	// 00cccccc 00bbbbCC 00aaBBBB 00AAAAAA
 
-	// Pack bytes together:
-	__m256i out = _mm256_srli_epi32(in, 16);
+	const __m256i merge_ab_and_bc = _mm256_maddubs_epi16(in, _mm256_set1_epi32(0x01400140));
+	// 0000kkkk LLllllll 0000JJJJ JJjjKKKK
+	// 0000hhhh IIiiiiii 0000GGGG GGggHHHH
+	// 0000eeee FFffffff 0000DDDD DDddEEEE
+	// 0000bbbb CCcccccc 0000AAAA AAaaBBBB
 
-	out = _mm256_or_si256(out, _mm256_srli_epi32(_mm256_and_si256(in, maskB2), 2));
+	__m256i out = _mm256_madd_epi16(merge_ab_and_bc, _mm256_set1_epi32(0x00011000));
+	// 00000000 JJJJJJjj KKKKkkkk LLllllll
+	// 00000000 GGGGGGgg HHHHhhhh IIiiiiii
+	// 00000000 DDDDDDdd EEEEeeee FFffffff
+	// 00000000 AAAAAAaa BBBBbbbb CCcccccc
 
-	out = _mm256_or_si256(out, _mm256_slli_epi32(_mm256_and_si256(in, maskB1), 12));
-
-	out = _mm256_or_si256(out, _mm256_slli_epi32(in, 26));
-
-	// Pack bytes together within 32-bit words, discarding words 3 and 7:
+	// Pack bytes together in each lane:
 	out = _mm256_shuffle_epi8(out, _mm256_setr_epi8(
-		 3,  2,  1,
-		 7,  6,  5,
-		11, 10,  9,
-		15, 14, 13,
-		-1, -1, -1, -1,
-		 3,  2,  1,
-		 7,  6,  5,
-		11, 10,  9,
-		15, 14, 13,
-		-1, -1, -1, -1));
+		2, 1, 0, 6, 5, 4, 10, 9, 8, 14, 13, 12, -1, -1, -1, -1,
+		2, 1, 0, 6, 5, 4, 10, 9, 8, 14, 13, 12, -1, -1, -1, -1));
+	// 00000000 00000000 00000000 00000000
+	// LLllllll KKKKkkkk JJJJJJjj IIiiiiii
+	// HHHHhhhh GGGGGGgg FFffffff EEEEeeee
+	// DDDDDDdd CCcccccc BBBBbbbb AAAAAAaa
 
-	// Pack 32-bit words together, squashing empty words 3 and 7:
-	return _mm256_permutevar8x32_epi32(out, _mm256_setr_epi32(
-		0, 1, 2, 4, 5, 6, -1, -1));
+	// Pack lanes
+	return _mm256_permutevar8x32_epi32(out, _mm256_setr_epi32(0, 1, 2, 4, 5, 6, -1, -1));
 }
 
 #endif	// __AVX2__

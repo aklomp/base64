@@ -31,7 +31,7 @@ BASE64_DEC_FUNCTION(sse42)
 {
 #ifdef __SSE4_2__
 	#include "../generic/dec_head.c"
-	#include "dec_loop.c"
+	#include "../ssse3/dec_loop.c"
 	#include "../generic/dec_tail.c"
 #else
 	BASE64_DEC_STUB
