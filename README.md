@@ -439,6 +439,8 @@ x86 processors
 | AMD E-450                                 | 370       | 332\*     | 405\*     | 366\*     | -          | -         | -       | -       | -        | -        |
 | Intel Edison @ 500 MHz                    | 79        | 92\*      | 152\*     | 172\*     | TBD        | TBD       | -       | -       | -        | -        |
 | Intel Edison @ 500 MHz OPENMP 2 thread    | 158       | 184\*     | 300\*     | 343\*     | TBD        | TBD       | -       | -       | -        | -        |
+| Intel Edison @ 500 MHz (x86-64)           | 97        | 146       | 197       | 207       | 197        | 145       | -       | -       | -        | -        |
+| Intel Edison @ 500 MHz (x86-64) 2 thread  | 193       | 288       | 389       | 410       | 389        | 289       | -       | -       | -        | -        |
 
 ARM processors
 
