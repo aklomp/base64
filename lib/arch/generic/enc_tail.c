@@ -6,6 +6,9 @@
 		st.bytes++;
 		outl += 1;
 
+		// Deliberate fallthrough:
+		BASE64_FALLTHROUGH
+
 	case 1:	if (srclen-- == 0) {
 			break;
 		}
@@ -13,6 +16,9 @@
 		st.carry = (*c++ << 2) & 0x3C;
 		st.bytes++;
 		outl += 1;
+
+		// Deliberate fallthrough:
+		BASE64_FALLTHROUGH
 
 	case 2:	if (srclen-- == 0) {
 			break;
