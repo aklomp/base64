@@ -5,7 +5,7 @@
 #include "../../../include/libbase64.h"
 #include "../../codecs.h"
 
-#ifdef __AVX2__
+#if HAVE_AVX2
 #include <immintrin.h>
 
 #define CMPGT(s,n)	_mm256_cmpgt_epi8((s), _mm256_set1_epi8(n))
@@ -158,11 +158,11 @@ dec_reshuffle (__m256i in)
 	return _mm256_permutevar8x32_epi32(out, _mm256_setr_epi32(0, 1, 2, 4, 5, 6, -1, -1));
 }
 
-#endif	// __AVX2__
+#endif	// HAVE_AVX2
 
 BASE64_ENC_FUNCTION(avx2)
 {
-#ifdef __AVX2__
+#if HAVE_AVX2
 	#include "../generic/enc_head.c"
 	#include "enc_loop.c"
 	#include "../generic/enc_tail.c"
@@ -173,7 +173,7 @@ BASE64_ENC_FUNCTION(avx2)
 
 BASE64_DEC_FUNCTION(avx2)
 {
-#ifdef __AVX2__
+#if HAVE_AVX2
 	#include "../generic/dec_head.c"
 	#include "dec_loop.c"
 	#include "../generic/dec_tail.c"

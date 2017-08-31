@@ -5,14 +5,12 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
-#ifdef __ARM_NEON__
-#include <arm_neon.h>
-#endif
 
 #include "../../../include/libbase64.h"
 #include "../../codecs.h"
 
-#if (defined(__aarch64__) && defined(__ARM_NEON__))
+#if (defined(__aarch64__) && defined(__ARM_NEON__) && HAVE_NEON64)
+#include <arm_neon.h>
 
 #define CMPGT(s,n)	vcgtq_u8((s), vdupq_n_u8(n))
 
@@ -90,7 +88,7 @@ static const uint8_t base64_dec_lut2[] =
 
 BASE64_ENC_FUNCTION(neon64)
 {
-#if (defined(__aarch64__) && defined(__ARM_NEON__))
+#if (defined(__aarch64__) && defined(__ARM_NEON__) && HAVE_NEON64)
 	const uint8x16x4_t tbl_enc = load_64byte_table(base64_table_enc);
 
 	#include "../generic/enc_head.c"
@@ -104,7 +102,7 @@ BASE64_ENC_FUNCTION(neon64)
 
 BASE64_DEC_FUNCTION(neon64)
 {
-#if (defined(__aarch64__) && defined(__ARM_NEON__))
+#if (defined(__aarch64__) && defined(__ARM_NEON__) && HAVE_NEON64)
 	const uint8x16x4_t tbl_dec1 = load_64byte_table(base64_dec_lut1);
 	const uint8x16x4_t tbl_dec2 = load_64byte_table(base64_dec_lut2);
 

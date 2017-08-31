@@ -5,7 +5,7 @@
 #include "../../../include/libbase64.h"
 #include "../../codecs.h"
 
-#ifdef __SSE4_1__
+#if HAVE_SSE41
 #include <smmintrin.h>
 
 #include "../sse2/compare_macros.h"
@@ -14,11 +14,11 @@
 #include "../ssse3/enc_translate.c"
 #include "../ssse3/enc_reshuffle.c"
 
-#endif	// __SSE4_1__
+#endif	// HAVE_SSE41
 
 BASE64_ENC_FUNCTION(sse41)
 {
-#ifdef __SSE4_1__
+#if HAVE_SSE41
 	#include "../generic/enc_head.c"
 	#include "../ssse3/enc_loop.c"
 	#include "../generic/enc_tail.c"
@@ -29,7 +29,7 @@ BASE64_ENC_FUNCTION(sse41)
 
 BASE64_DEC_FUNCTION(sse41)
 {
-#ifdef __SSE4_1__
+#if HAVE_SSE41
 	#include "../generic/dec_head.c"
 	#include "../ssse3/dec_loop.c"
 	#include "../generic/dec_tail.c"

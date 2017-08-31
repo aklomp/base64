@@ -5,14 +5,13 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
-#ifdef __ARM_NEON__
-#include <arm_neon.h>
-#endif
 
 #include "../../../include/libbase64.h"
 #include "../../codecs.h"
 
-#if (defined(__arm__) && defined(__ARM_NEON__))
+#if (defined(__arm__) && defined(__ARM_NEON__) && HAVE_NEON32)
+
+#include <arm_neon.h>
 
 #define CMPGT(s,n)	vcgtq_u8((s), vdupq_n_u8(n))
 #define CMPEQ(s,n)	vceqq_u8((s), vdupq_n_u8(n))
@@ -119,7 +118,7 @@ enc_translate (uint8x16x4_t in)
 
 BASE64_ENC_FUNCTION(neon32)
 {
-#if (defined(__arm__) && defined(__ARM_NEON__))
+#if (defined(__arm__) && defined(__ARM_NEON__) && HAVE_NEON32)
 	#include "../generic/enc_head.c"
 	#include "enc_loop.c"
 	#include "../generic/32/enc_loop.c"
@@ -131,7 +130,7 @@ BASE64_ENC_FUNCTION(neon32)
 
 BASE64_DEC_FUNCTION(neon32)
 {
-#if (defined(__arm__) && defined(__ARM_NEON__))
+#if (defined(__arm__) && defined(__ARM_NEON__) && HAVE_NEON32)
 	#include "../generic/dec_head.c"
 	#include "dec_loop.c"
 	#include "../generic/32/dec_loop.c"
