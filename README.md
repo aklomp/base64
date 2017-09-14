@@ -426,21 +426,21 @@ x86 processors
 | Processor                                 | Plain enc | Plain dec | SSSE3 enc | SSSE3 dec | AVX enc | AVX dec | AVX2 enc | AVX2 dec |
 |-------------------------------------------|----------:|----------:|----------:|----------:|--------:|--------:|---------:|---------:|
 | i7-4771 @ 3.5 GHz                         | 833       | 1111\*    | 3333\*    | 4444\*    | TBD     | TBD     | 4999\*   | 6666\*   |
-| i7-4770 @ 3.4 GHz DDR1600                 | 1790      | 3038      | 4899      | 4043\*    | 4796    | 5709\*  | 4681     | 6386\*   |
-| i7-4770 @ 3.4 GHz DDR1600 OPENMP 1 thread | 1784      | 3041      | 4945      | 4035\*    | 4776    | 5719\*  | 4661     | 6294\*   |
-| i7-4770 @ 3.4 GHz DDR1600 OPENMP 2 thread | 3401      | 5729      | 5489      | 7444\*    | 5003    | 8624\*  | 5105     | 8558\*   |
-| i7-4770 @ 3.4 GHz DDR1600 OPENMP 4 thread | 4884      | 7099      | 4917      | 7057\*    | 4799    | 7143\*  | 4902     | 7219\*   |
-| i7-4770 @ 3.4 GHz DDR1600 OPENMP 8 thread | 5212      | 8849      | 5284      | 9099\*    | 5289    | 9220\*  | 4849     | 9200\*   |
+| i7-4770 @ 3.4 GHz DDR1600                 | 1720      | 2948      | 4806      | 6383      | 4871    | 6842    | 4557     | 7285     |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 1 thread | 1740      | 3018      | 4810      | 6402      | 4814    | 6769    | 4732     | 7207     |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 2 thread | 3542      | 5960      | 5289      | 8456      | 4967    | 7993    | 4969     | 8048     |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 4 thread | 4838      | 7799      | 5135      | 7657      | 4891    | 7554    | 5803     | 7699     |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 8 thread | 5246      | 8954      | 5397      | 9033      | 5270    | 9061    | 4990     | 8158     |
 | i7-4870HQ @ 2.5 GHz                       | 1471      | 3066      | 6721      | 6962      | 7015    | 8267    | 8328     | 11576    |
 | i5-4590S @ 3.0 GHz                        | 1721      | 3004      | 4155      | 5724      | 4190    | 5999    | 4149     | 6212     |
 | Xeon X5570 @ 2.93 GHz                     | 1097      | 1048\*    | 2077\*    | 2215\*    | -       | -       | -        | -        |
 | Pentium4 @ 3.4 GHz                        | 528       | 448\*     | -         | -         | -       | -       | -        | -        |
 | Atom N270                                 | 112       | 208       | 447       | 417       | -       | -       | -        | -        |
 | AMD E-450                                 | 370       | 332\*     | 405\*     | 366\*     | -       | -       | -        | -        |
-| Intel Edison @ 500 MHz                    | 79        | 92\*      | 152\*     | 172\*     | -       | -       | -        | -        |
-| Intel Edison @ 500 MHz OPENMP 2 thread    | 158       | 184\*     | 300\*     | 343\*     | -       | -       | -        | -        |
-| Intel Edison @ 500 MHz (x86-64)           | 97        | 146       | 197       | 207\*     | -       | -       | -        | -        |
-| Intel Edison @ 500 MHz (x86-64) 2 thread  | 193       | 288       | 389       | 410\*     | -       | -       | -        | -        |
+| Intel Edison @ 500 MHz                    | 82        | 127       | 203       | 175       | -       | -       | -        | -        |
+| Intel Edison @ 500 MHz OPENMP 2 thread    | 164       | 249       | 401       | 349       | -       | -       | -        | -        |
+| Intel Edison @ 500 MHz (x86-64)           | 97        | 146       | 197       | 145     | -       | -       | -        | -        |
+| Intel Edison @ 500 MHz (x86-64) 2 thread  | 196       | 288       | 389       | 290       | -       | -       | -        | -        |
 
 ARM processors
 
@@ -458,12 +458,26 @@ PowerPC processors
 | PowerPC E6500 @ 1.8GHz                    | 270       | 265\*     |
 
 
-Benchmarks on i7-4770 @ 3.4 GHz DDR1600 with varrying buffer sizes:
-![Benchmarks](base64-benchmarks.png)
+## Performance analysis @0a698455
+### i7-4770 @ 3.4 GHz DDR1600
+On i7-4770 @ 3.4 GHz DDR1600 with varrying buffer sizes and threading (speed in MB/s):
 
-Note: optimal buffer size to take advantage of the cache is in the range of 100 kB to 1 MB, leading to 12x faster AVX encoding/decoding compared to Plain, or a throughput of 24/27GB/sec.
-Also note the performance degradation when the buffer size is less than 10 kB due to thread creation overhead.
-To prevent this from happening `lib_openmp.c` defines `OMP_THRESHOLD 20000`, requiring at least a 20000 byte buffer to enable multithreading.
+| ![Benchmarks](i7-decode-0.png) | ![Benchmarks](i7-encode-0.png) |
+|-|-|
+| With smaller buffer sizes the memory bandwidth constraint is lifted as the cache becomes more effective. We need to keep in mind that in real world applications, caching will not be effective as we normally would not be decoding the same buffer over and over. However the above graph allows us to examine the limits caused by CPU instructions and memory bandwidth.  |  |
+| We can see AVX2 is computationally the fasted decoding method followed by AVX. Then follow SSE41, SSE42 and SSSE3 that are simultaneously CPU and memory bandwidth constrained, followed by plain (CPU limited).| The same is roughly true when encoding, except that with smaller buffers we do see an improvement for AVX and SSE41, SSE42 and SSSE3 methods. This particular system would have benefitted from faster DDR memory. |
+| ![Benchmarks](i7-decode-4.png) | ![Benchmarks](i7-encode-4.png) |
+| Decoding with 4 threads shows that at 1MB buffer size AVX, SSE41, SSE42 and SSSE3 methods are indeed 4x faster. AVX2 already hits the cache bandwidth limit. | |
+| Note: Thread creation overhead is in the order of 1us time causing significant performance degradation when the buffer size is less than 10 kB. To prevent this from happening `lib_openmp.c` defines `OMP_THRESHOLD 20000`, requiring at least a 20000 byte buffer to enable multithreading. In the above graphs that shows as a flat line from 10kB - 1kB buffer size. | The cache limits for Decoding and Encoding are the same. It might be possible to tune the code to not cache the buffer but instead only cache read only tables.|
+| ![Benchmarks](i7-decode-10MB.png) | ![Benchmarks](i7-encode-10MB.png) |
+| For real world applications only the plain method benefits from multithreading on this system. | |
+
+### Intel Edison x86_32 @ 500 MHz
+| ![Benchmarks](eds-decode-1.png) | ![Benchmarks](eds-encode-1.png) |
+|-|-|
+| On the Edison there is no improvement with smaller cache sizes. This is actually correct are the Edison has no cache memory. | With both decode and encode there is no difference between SSE41, SSE42 and SSSE3 methods.                                                  |
+| ![Benchmarks](eds-decode-10MB.png) | ![Benchmarks](eds-encode-10MB.png) |
+| As with 2 threads all methods are 2x faster than with 1 thread we can see that all methods are CPU limited. This appears to be true also for smaller buffer sizes (not shown). This is likely due to the execution of instructions on Atom CPU's being much slower than on i7. Edison will benifit by changing OMP_THRESHOLD to 0. | For some unexplained reason on Edison encode is faster than decode.|
 
 ## License
 
