@@ -1,3 +1,4 @@
+#pragma once
 #include "config.h"
 
 // Function parameters for encoding functions:
