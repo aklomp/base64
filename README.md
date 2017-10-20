@@ -479,6 +479,13 @@ On i7-4770 @ 3.4 GHz DDR1600 with varrying buffer sizes and threading (speed in 
 | ![Benchmarks](eds-decode-10MB.png) | ![Benchmarks](eds-encode-10MB.png) |
 | As with 2 threads all methods are 2x faster than with 1 thread we can see that all methods are CPU limited. This appears to be true also for smaller buffer sizes (not shown). This is likely due to the execution of instructions on Atom CPU's being much slower than on i7. Edison will benifit by changing OMP_THRESHOLD to 0. | For some unexplained reason on Edison encode is faster than decode.|
 
+### Speed development / regressions
+Measured on 64 bits with 10MB buffer size.
+
+| ![Benchmarks](i7-speed-dev.png) | ![Benchmarks](eds-speed-dev.png) |
+|-|-|
+| On i7-4770 SSE and AVX encoding speeds have slightly regressed between commit @67ee3fd and @0a69845. Plain encode almost doubled between commit @fb336ed and @67ee3fd. SSE decode greatly increased for SSE decode while regressing for AVX2 between commit @67ee3fd and @0a69845  | On Edison SSE encoding speed increased between commit @fb336ed and @67ee3fd. However, SSE decoding speeds took a big hit betwen commit @67ee3fd and @0a69845 as it now the same speed a plain decoding. |
+
 ## License
 
 This repository is licensed under the
