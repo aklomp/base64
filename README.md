@@ -464,7 +464,7 @@ On i7-4770 @ 3.4 GHz DDR1600 with varrying buffer sizes and threading (speed in 
 
 | Threads| Decode | Encode |
 |:---:|:-----------------------------------------:|:-----------------------------------------:|
-| **0** | ![Benchmarks](i7-decode-0.png) | ![Benchmarks](i7-encode-0.png) |
+| **0** | ![Benchmarks](images/i7-decode-0.png) | ![Benchmarks](images/i7-encode-0.png) |
 
   * With smaller buffer sizes the memory bandwidth constraint is lifted as the cache becomes more effective. However, we need to keep in mind that in real world applications, caching will not be effective as we normally would not be decoding the same buffer over and over. The above graphs allows us to examine the limits caused by CPU instructions and memory bandwidth.
   * For decoding we can see AVX2 is computationally the fasted decoding method followed by AVX. Then follow SSE41, SSE42 and SSSE3 that are simultaneously CPU and memory bandwidth constrained, followed by plain (CPU limited).
@@ -472,7 +472,7 @@ On i7-4770 @ 3.4 GHz DDR1600 with varrying buffer sizes and threading (speed in 
 
 | Threads| Decode | Encode |
 |:---:|:-----------------------------------------:|:-----------------------------------------:|
-| **4** | ![Benchmarks](i7-decode-4.png) | ![Benchmarks](i7-encode-4.png) |
+| **4** | ![Benchmarks](images/i7-decode-4.png) | ![Benchmarks](images/i7-encode-4.png) |
 
   * Decoding with 4 threads shows that at 1MB buffer size AVX, SSE41, SSE42 and SSSE3 methods are indeed 4x faster. AVX2 already hits the cache bandwidth limit.
   * The cache limits for Decoding and Encoding are the same. It might be possible to tune the code to not cache the buffer but instead only cache read only tables.
@@ -481,21 +481,21 @@ On i7-4770 @ 3.4 GHz DDR1600 with varrying buffer sizes and threading (speed in 
 
 | Buffer | Decode | Encode |
 |:---:|:-----------------------------------------:|:-----------------------------------------:|
-| **10 MB** | <img src="i7-decode-10MB.png" width="450px"> | <img src="i7-encode-10MB.png" width="450px"> |
+| **10 MB** | ![Benchmarks](images/i7-decode-10MB.png) | ![Benchmarks](images/i7-encode-10MB.png) |
 
   * For real world applications only the plain method benefits from multithreading on this system.
 
 ### Intel Edison x86_32 @ 500 MHz
 | Threads| Decode | Encode |
 |:---|:-----------------------------------------:|:-----------------------------------------:|
-| **0** | ![Benchmarks](eds-decode-1.png) | ![Benchmarks](eds-encode-1.png) |
+| **0** | ![Benchmarks](images/eds-decode-1.png) | ![Benchmarks](images/eds-encode-1.png) |
 
   * On the Edison there is no improvement with smaller cache sizes. This is actually correct are the Edison has no cache memory.
   * With both decode and encode there is no difference between SSE41, SSE42 and SSSE3 methods.                                                  
 
 | Buffer| Decode | Encode |
 |:---:|:-----------------------------------------:|:-----------------------------------------:|
-|**10MB** |![Benchmarks](eds-decode-10MB.png) | ![Benchmarks](eds-encode-10MB.png) |
+|**10MB** |![Benchmarks](images/eds-decode-10MB.png) | ![Benchmarks](images/eds-encode-10MB.png) |
 
   * As with 2 threads all methods are 2x faster than with 1 thread we can see that all methods are CPU limited. This appears to be true also for smaller buffer sizes (not shown). This is likely due to the execution of instructions on Atom CPU's being much slower than on i7. Edison will benifit by changing OMP_THRESHOLD to 0.
   * For some unexplained reason on Edison encode is faster than decode (see regressions below).
@@ -505,7 +505,7 @@ Measured on 64 bits with 10MB buffer size.
 
 | i7-4770 | Edison |
 |:-----------------------------------------:|:-----------------------------------------:|
-| ![Benchmarks](i7-speed-dev.png) | ![Benchmarks](eds-speed-dev.png) |
+| ![Benchmarks](images/i7-speed-dev.png) | ![Benchmarks](images/eds-speed-dev.png) |
 
   * On i7-4770 SSE and AVX encoding speeds have slightly regressed between commit @67ee3fd and @0a69845. Plain encode almost doubled between commit @fb336ed and @67ee3fd. SSE decode greatly increased for SSE decode while regressing for AVX2 between commit @67ee3fd and @0a69845.
   * On Edison SSE encoding speed increased between commit @fb336ed and @67ee3fd. However, SSE decoding speeds took a big hit betwen commit @67ee3fd and @0a69845 as it now the same speed a plain decoding. 
