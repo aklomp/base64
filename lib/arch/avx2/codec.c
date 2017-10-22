@@ -8,12 +8,12 @@
 #if HAVE_AVX2
 #include <immintrin.h>
 
-#define CMPGT(s,n)	_mm256_cmpgt_epi8((s), _mm256_set1_epi8(n))
-#define CMPEQ(s,n)	_mm256_cmpeq_epi8((s), _mm256_set1_epi8(n))
-#define REPLACE(s,n)	_mm256_and_si256((s), _mm256_set1_epi8(n))
-#define RANGE(s,a,b)	_mm256_andnot_si256(CMPGT((s), (b)), CMPGT((s), (a) - 1))
+#define CMPGT256(s,n)	_mm256_cmpgt_epi8((s), _mm256_set1_epi8(n))
+#define CMPEQ256(s,n)	_mm256_cmpeq_epi8((s), _mm256_set1_epi8(n))
+#define REPLACE256(s,n)	_mm256_and_si256((s), _mm256_set1_epi8(n))
+#define RANGE256(s,a,b)	_mm256_andnot_si256(CMPGT256((s), (b)), CMPGT256((s), (a) - 1))
 
-static inline __m256i enc_reshuffle(const __m256i input) {
+static inline __m256i enc_reshuffle_256(const __m256i input) {
 	// translation from SSSE3 into AVX2 of procedure
 	// This one works with shifted (4 bytes) input in order to
 	// be able to work efficiently in the 2 128-bit lanes
@@ -95,7 +95,7 @@ static inline __m256i enc_reshuffle(const __m256i input) {
 }
 
 static inline __m256i
-enc_translate (const __m256i in)
+enc_translate_256 (const __m256i in)
 {
 	// LUT contains Absolute offset for all ranges:
 	const __m256i lut = _mm256_setr_epi8(65, 71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 0, 0,
@@ -113,7 +113,7 @@ enc_translate (const __m256i in)
 	__m256i indices = _mm256_subs_epu8(in, _mm256_set1_epi8(51));
 
 	// mask is 0xFF (-1) for range #[1..4] and 0x00 for range #0:
-	__m256i mask = CMPGT(in, 25);
+	__m256i mask = CMPGT256(in, 25);
 
 	// substract -1, so add 1 to indices for range #[1..4], All indices are now correct:
 	indices = _mm256_sub_epi8(indices, mask);
@@ -125,7 +125,7 @@ enc_translate (const __m256i in)
 }
 
 static inline __m256i
-dec_reshuffle (__m256i in)
+dec_reshuffle_256 (__m256i in)
 {
 	// in, lower lane, bits, upper case are most significant bits, lower case are least significant bits:
 	// 00llllll 00kkkkLL 00jjKKKK 00JJJJJJ

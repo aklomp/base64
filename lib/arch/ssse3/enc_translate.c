@@ -1,3 +1,4 @@
+#pragma once
 static inline __m128i
 enc_translate (const __m128i in)
 {

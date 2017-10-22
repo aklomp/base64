@@ -46,7 +46,7 @@ while (srclen >= 45)
 	str = _mm256_add_epi8(str, roll);
 
 	// Reshuffle the input to packed 12-byte output format:
-	str = dec_reshuffle(str);
+	str = dec_reshuffle_256(str);
 
 	// Store back:
 	_mm256_storeu_si256((__m256i *)o, str);
