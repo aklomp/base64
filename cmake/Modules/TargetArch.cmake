@@ -13,7 +13,7 @@
 
 function(detect_target_architecture OUTPUT_VARIABLE)
     try_compile(_IGNORED "${CMAKE_CURRENT_BINARY_DIR}"
-        "${CMAKE_SOURCE_DIR}/cmake/test-arch.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/test-arch.c"
         OUTPUT_VARIABLE _LOG
     )
 

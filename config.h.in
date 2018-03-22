@@ -1,0 +1,14 @@
+#ifndef BASE64_CONFIG_H
+#define BASE64_CONFIG_H
+
+#cmakedefine BASE64_USE_OpenMP
+#cmakedefine BASE64_WITH_SSSE3
+#cmakedefine BASE64_WITH_SSE41
+#cmakedefine BASE64_WITH_SSE42
+#cmakedefine BASE64_WITH_AVX
+#cmakedefine BASE64_WITH_AVX2
+#cmakedefine BASE64_WITH_NEON32
+#cmakedefine BASE64_WITH_NEON64
+#cmakedefine BASE64_WITH_FAST_UNALIGNED_ACCESS
+
+#endif // BASE64_CONFIG_H

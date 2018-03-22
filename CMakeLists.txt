@@ -10,21 +10,11 @@
 #     http://creativecommons.org/publicdomain/zero/1.0/
 #
 ########################################################################
-cmake_minimum_required(VERSION 2.8.12)
-project(base64)
-set(BASE64_VERSION 0.3.0)
+cmake_minimum_required(VERSION 3.1)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/Modules")
+project(base64 LANGUAGES C VERSION 0.3.0)
 
-if (CMAKE_C_COMPILER_ID STREQUAL "GNU"
-    OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
-    set(BASE64_GNU_C_COMPATIBLE 1)
-endif()
-if (CMAKE_C_COMPILER_ID STREQUAL "GNU"
-    OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
-    set(BASE64_GNU_CXX_COMPATIBLE 1)
-endif()
-
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 
 #######################################################################
 # platform detection
@@ -35,9 +25,11 @@ detect_target_architecture(_TARGET_ARCH)
 ########################################################################
 # Compilation options
 option(BASE64_INSTALL_TARGET "add an install target" ON)
-option(BASE64_BUILD_TESTS "add test projects" OFF)
+option(BASE64_BUILD_TESTS "add test projects" ON)
+option(BASE64_WITH_OPENMP "use openmp" OFF)
 
 if (_TARGET_ARCH STREQUAL "x86" OR _TARGET_ARCH STREQUAL "x64")
+    option(BASE64_WITH_FAST_UNALIGNED_ACCESS "vectorization: unaligned access enabled" ON)
     option(BASE64_WITH_SSSE3 "add SSSE 3 codepath" ON)
     option(BASE64_WITH_SSE41 "add SSE 4.1 codepath" ON)
     option(BASE64_WITH_SSE42 "add SSE 4.2 codepath" ON)
@@ -52,31 +44,14 @@ elseif (_TARGET_ARCH STREQUAL "arm64")
 
 endif()
 
-
 ###################################################################
 # OpenMP
-find_package(OpenMP)
-if (OPENMP_FOUND)
-    option(BASE64_USE_OpenMP "Utilize OpenMP to parallelize encoding and decoding." ON)
-endif()
-
-
-####################################################################
-# platform/compiler specific configuration
-if(MSVC)
-    # Force to always compile with W4
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-    if(${CMAKE_C_FLAGS} MATCHES "/W[0-4]")
-        string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-    else()
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
+if(BASE64_WITH_OPENMP)
+    find_package(OpenMP)
+    if (OPENMP_FOUND)
+        option(BASE64_USE_OpenMP "Utilize OpenMP to parallelize encoding and decoding." ON)
     endif()
 endif()
-if (BASE64_GNU_C_COMPATIBLE)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -Wall -Wextra -Wpedantic")
-    set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -r")
-endif()
-
 
 ########################################################################
 # library project
@@ -99,6 +74,44 @@ add_library(base64 STATIC
     lib/arch/neon64/codec.c
 )
 
+if (NOT BASE64_STANDALONE_PROJECT)
+    # export inlucde path if base64 added as subdirectory
+    target_include_directories(base64 INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    )
+endif()
+
+####################################################################
+# platform/compiler specific configuration
+set_target_properties(base64 PROPERTIES
+    C_STANDARD 99
+    C_STANDARD_REQUIRED YES
+    C_EXTENSIONS OFF
+)
+
+target_compile_options(base64 PRIVATE
+  $<$<C_COMPILER_ID:MSVC>:
+    /W4
+    /WX # All warnings as error
+    /we4013 # Error warning C4013: 'function' undefined; assuming extern returning int
+    /we4700 # Error warning C4700: uninitialized local variable
+    /we4715 # not all control paths return a value
+    /we4003 # not enough actual parameters for macro
+  >
+  $<$<NOT:$<C_COMPILER_ID:MSVC>>:
+    -Wall
+    -Wextra
+    -Wpedantic
+  >
+)
+
+target_compile_definitions(base64 PRIVATE
+  $<$<C_COMPILER_ID:MSVC>:
+    # remove unnecessary warnings about unchecked iterators
+    _SCL_SECURE_NO_WARNINGS
+  >
+)
+
 ########################################################################
 # SIMD settings
 include(TargetSIMDInstructionSet)
@@ -107,6 +120,7 @@ define_SIMD_compile_flags()
 if (_TARGET_ARCH STREQUAL "x86" OR _TARGET_ARCH STREQUAL "x64")
     macro(configure_codec _TYPE)
         if (BASE64_WITH_${_TYPE})
+            message(STATUS "Add codec: lib/arch/${_DIR}/codec.c")
             string(TOLOWER "${_TYPE}" _DIR)
             set_source_files_properties("lib/arch/${_DIR}/codec.c" PROPERTIES
                 COMPILE_FLAGS "${COMPILE_FLAGS_${_TYPE}}"
@@ -140,9 +154,12 @@ elseif (_TARGET_ARCH STREQUAL "arm")
 
 endif()
 
+configure_file(config.h.in ${CMAKE_CURRENT_BINARY_DIR}/libbase64_config.h @ONLY)
+
 target_compile_definitions(base64
     PRIVATE
-        CMD_DEFINED_CONFIG
+        BASE64_DIRECT_CONFIG=$<BOOL:${ON}>
+        HAVE_FAST_UNALIGNED_ACCESS=$<BOOL:${BASE64_WITH_FAST_UNALIGNED_ACCESS}>
         HAVE_SSSE3=$<BOOL:${BASE64_WITH_SSSE3}>
         HAVE_SSE41=$<BOOL:${BASE64_WITH_SSE41}>
         HAVE_SSE42=$<BOOL:${BASE64_WITH_SSE42}>
