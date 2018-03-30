@@ -27,7 +27,7 @@
 
 // x86 32-Bit
 #elif defined(__i386__) \
-    || defined(_M_X86)
+    || defined(_M_IX86)
 #error ##arch=x86##
 
 #else
