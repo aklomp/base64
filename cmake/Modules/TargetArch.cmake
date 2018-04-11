@@ -11,9 +11,12 @@
 #
 ########################################################################
 
+set(TARGET_ARCHITECTURE_TEST_FILE "${CMAKE_CURRENT_LIST_DIR}/../test-arch.c")
+
 function(detect_target_architecture OUTPUT_VARIABLE)
+    message(STATUS "${CMAKE_CURRENT_LIST_DIR}")
     try_compile(_IGNORED "${CMAKE_CURRENT_BINARY_DIR}"
-        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/test-arch.c"
+        "${TARGET_ARCHITECTURE_TEST_FILE}"
         OUTPUT_VARIABLE _LOG
     )
 

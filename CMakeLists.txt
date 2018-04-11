@@ -97,6 +97,7 @@ target_compile_options(base64 PRIVATE
     /we4700 # Error warning C4700: uninitialized local variable
     /we4715 # not all control paths return a value
     /we4003 # not enough actual parameters for macro
+    /wd4456 # disable warning C4456: declaration of 'xxx' hides previous local declaration
   >
   $<$<NOT:$<C_COMPILER_ID:MSVC>>:
     -Wall
@@ -154,25 +155,16 @@ elseif (_TARGET_ARCH STREQUAL "arm")
 
 endif()
 
-configure_file(config.h.in ${CMAKE_CURRENT_BINARY_DIR}/libbase64_config.h @ONLY)
-
-target_compile_definitions(base64
-    PRIVATE
-        BASE64_DIRECT_CONFIG=$<BOOL:${ON}>
-        HAVE_FAST_UNALIGNED_ACCESS=$<BOOL:${BASE64_WITH_FAST_UNALIGNED_ACCESS}>
-        HAVE_SSSE3=$<BOOL:${BASE64_WITH_SSSE3}>
-        HAVE_SSE41=$<BOOL:${BASE64_WITH_SSE41}>
-        HAVE_SSE42=$<BOOL:${BASE64_WITH_SSE42}>
-        HAVE_AVX=$<BOOL:${BASE64_WITH_AVX}>
-        HAVE_AVX2=$<BOOL:${BASE64_WITH_AVX2}>
-        HAVE_NEON32=$<BOOL:${BASE64_WITH_NEON32}>
-        HAVE_NEON64=$<BOOL:${BASE64_WITH_NEON64}>
-)
+configure_file("${CMAKE_CURRENT_LIST_DIR}/cmake/config.h.in" "${CMAKE_CURRENT_BINARY_DIR}/config.h" @ONLY)
+target_include_directories(base64 PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 
 ########################################################################
 # OpenMP Settings
 if (BASE64_USE_OpenMP)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    target_compile_options(base64
+        PRIVATE
+            ${OpenMP_C_FLAGS}
+    )
 endif()
 
 ########################################################################
