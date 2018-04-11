@@ -10,6 +10,9 @@
 		st.carry = q << 2;
 		st.bytes++;
 
+		// Deliberate fallthrough:
+		BASE64_FALLTHROUGH
+
 	case 1:	if (srclen-- == 0) {
 			ret = 1;
 			break;
@@ -23,6 +26,9 @@
 		st.carry = q << 4;
 		st.bytes++;
 		outl++;
+
+		// Deliberate fallthrough:
+		BASE64_FALLTHROUGH
 
 	case 2:	if (srclen-- == 0) {
 			ret = 1;
@@ -55,6 +61,9 @@
 		st.carry = q << 6;
 		st.bytes++;
 		outl++;
+
+		// Deliberate fallthrough:
+		BASE64_FALLTHROUGH
 
 	case 3:	if (srclen-- == 0) {
 			ret = 1;

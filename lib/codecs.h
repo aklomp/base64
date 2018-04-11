@@ -1,3 +1,5 @@
+#include "config.h"
+
 // Function parameters for encoding functions:
 #define BASE64_ENC_PARAMS			\
 	( struct base64_state	*state		\
@@ -108,10 +110,23 @@ struct codec
 // End-of-file when stream end has been reached or invalid input provided:
 #define BASE64_EOF 2
 
+// GCC 7 defaults to issuing a warning for fallthrough in switch statements,
+// unless the fallthrough cases are marked with an attribute. As we use
+// fallthrough deliberately, define an alias for the attribute:
+#if __GNUC__ >= 7
+  #define BASE64_FALLTHROUGH  __attribute__((fallthrough));
+#else
+  #define BASE64_FALLTHROUGH
+#endif
 
-void codec_choose (struct codec *, int flags);
+extern void codec_choose (struct codec *, int flags);
 
 // These tables are used by all codecs
 // for fallback plain encoding/decoding:
 extern const uint8_t base64_table_enc[];
 extern const uint8_t base64_table_dec[];
+
+extern const uint32_t base64_table_dec_d0[];
+extern const uint32_t base64_table_dec_d1[];
+extern const uint32_t base64_table_dec_d2[];
+extern const uint32_t base64_table_dec_d3[];

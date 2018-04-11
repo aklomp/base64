@@ -8,38 +8,42 @@ while (srclen >= 45)
 	// Load string:
 	__m256i str = _mm256_loadu_si256((__m256i *)c);
 
-	// The input consists of six character sets in the Base64 alphabet,
-	// which we need to map back to the 6-bit values they represent.
-	// There are three ranges, two singles, and then there's the rest.
-	//
-	//  #  From       To        Add  Characters
-	//  1  [43]       [62]      +19  +
-	//  2  [47]       [63]      +16  /
-	//  3  [48..57]   [52..61]   +4  0..9
-	//  4  [65..90]   [0..25]   -65  A..Z
-	//  5  [97..122]  [26..51]  -71  a..z
-	// (6) Everything else => invalid input
+	// see ssse3/dec_loop.c for an explanation of how the code works.
 
-	const __m256i set1 = CMPEQ(str, '+');
-	const __m256i set2 = CMPEQ(str, '/');
-	const __m256i set3 = RANGE(str, '0', '9');
-	const __m256i set4 = RANGE(str, 'A', 'Z');
-	const __m256i set5 = RANGE(str, 'a', 'z');
+	const __m256i lut_lo = _mm256_setr_epi8(
+		0x15, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
+		0x11, 0x11, 0x13, 0x1A, 0x1B, 0x1B, 0x1B, 0x1A,
+		0x15, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
+		0x11, 0x11, 0x13, 0x1A, 0x1B, 0x1B, 0x1B, 0x1A);
 
-	__m256i delta = REPLACE(set1, 19);
-	delta = _mm256_or_si256(delta, REPLACE(set2,  16));
-	delta = _mm256_or_si256(delta, REPLACE(set3,   4));
-	delta = _mm256_or_si256(delta, REPLACE(set4, -65));
-	delta = _mm256_or_si256(delta, REPLACE(set5, -71));
+	const __m256i lut_hi = _mm256_setr_epi8(
+		0x10, 0x10, 0x01, 0x02, 0x04, 0x08, 0x04, 0x08,
+		0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10,
+		0x10, 0x10, 0x01, 0x02, 0x04, 0x08, 0x04, 0x08,
+		0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10);
 
-	// Check for invalid input: if any of the delta values are zero,
-	// fall back on bytewise code to do error checking and reporting:
-	if (_mm256_movemask_epi8(CMPEQ(delta, 0))) {
+	const __m256i lut_roll = _mm256_setr_epi8(
+		0,  16,  19,   4, -65, -65, -71, -71,
+		0,   0,   0,   0,   0,   0,   0,   0,
+		0,  16,  19,   4, -65, -65, -71, -71,
+		0,   0,   0,   0,   0,   0,   0,   0);
+
+	const __m256i mask_2F = _mm256_set1_epi8(0x2f);
+
+	// lookup
+	const __m256i hi_nibbles  = _mm256_and_si256(_mm256_srli_epi32(str, 4), mask_2F);
+	const __m256i lo_nibbles  = _mm256_and_si256(str, mask_2F);
+	const __m256i hi          = _mm256_shuffle_epi8(lut_hi, hi_nibbles);
+	const __m256i lo          = _mm256_shuffle_epi8(lut_lo, lo_nibbles);
+	const __m256i eq_2F       = _mm256_cmpeq_epi8(str, mask_2F);
+	const __m256i roll        = _mm256_shuffle_epi8(lut_roll, _mm256_add_epi8(eq_2F, hi_nibbles));
+
+	if (!_mm256_testz_si256(lo, hi)) {
 		break;
 	}
 
 	// Now simply add the delta values to the input:
-	str = _mm256_add_epi8(str, delta);
+	str = _mm256_add_epi8(str, roll);
 
 	// Reshuffle the input to packed 12-byte output format:
 	str = dec_reshuffle(str);

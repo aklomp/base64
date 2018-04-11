@@ -1,45 +1,43 @@
-// If we have native uint32's, pick off 4 bytes at a time for as long as we
-// can, but make sure that we quit before seeing any == markers at the end of
-// the string. Also, because we write a zero at the end of the output, ensure
-// that there are at least 2 valid bytes of input data remaining to close the
-// gap. 4 + 2 + 2 = 8 bytes:
-while (srclen >= 8)
+// Read source 4 bytes at a time
+// Since we might be writing one byte more than needed,
+// we need to make sure there will still be some room
+// for one extra byte in o.
+// This will be the case if srclen > 0 when the loop
+// is exited
+while (srclen > 4)
 {
-	uint32_t str, res, dec;
+	union {
+		uint32_t asint;
+		uint8_t  aschar[4];
+	} x;
 
-	// Load string:
-	str = *(uint32_t *)c;
+	x.asint = base64_table_dec_d0[c[0]]
+	        | base64_table_dec_d1[c[1]]
+	        | base64_table_dec_d2[c[2]]
+	        | base64_table_dec_d3[c[3]];
 
-	// Shuffle bytes to 32-bit bigendian:
-	str = cpu_to_be32(str);
+#if BASE64_LITTLE_ENDIAN
+	// LUTs for little-endian set Most Significant Bit
+	// in case of invalid character
+	if (x.asint & 0x80000000U) break;
+#else
+	// LUTs for big-endian set Least Significant Bit
+	// in case of invalid character
+	if (x.asint & 1U) break;
+#endif
 
-	// Lookup each byte in the decoding table; if we encounter any
-	// "invalid" values, fall back on the bytewise code:
-	if ((dec = base64_table_dec[str >> 24]) > 63) {
-		break;
-	}
-	res = dec << 26;
-
-	if ((dec = base64_table_dec[(str >> 16) & 0xFF]) > 63) {
-		break;
-	}
-	res |= dec << 20;
-
-	if ((dec = base64_table_dec[(str >> 8) & 0xFF]) > 63) {
-		break;
-	}
-	res |= dec << 14;
-
-	if ((dec = base64_table_dec[str & 0xFF]) > 63) {
-		break;
-	}
-	res |= dec << 8;
-
-	// Reshuffle and repack into 3-byte output format:
-	res = be32_to_cpu(res);
-
-	// Store back:
-	*(uint32_t *)o = res;
+#if HAVE_FAST_UNALIGNED_ACCESS
+	// This might segfault or be too slow on
+	// some architectures, do this only if specified
+	// with HAVE_FAST_UNALIGNED_ACCESS macro
+	// We write one byte more than needed
+	*(uint32_t*)o = x.asint;
+#else
+	// Fallback, write bytes one by one
+	o[0] = x.aschar[0];
+	o[1] = x.aschar[1];
+	o[2] = x.aschar[2];
+#endif
 
 	c += 4;
 	o += 3;
