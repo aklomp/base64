@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 static uint8_t b64chars[64] = {
 	'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
@@ -71,7 +72,7 @@ void uint32_array_to_c_hex(const uint32_t* ary, size_t sz, const char* name)
 
 	printf("const uint32_t %s[%d] = {\n", name, (int)sz);
 	for (;;) {
-		printf("0x%08x", ary[i]);
+		printf("0x%08" PRIx32, ary[i]);
 		++i;
 		if (i == sz)
 			break;
