@@ -18,7 +18,7 @@ if (srclen >= 32) {
 		c += 24;
 		o += 32;
 		srclen -= 24;
-		if(srclen < 28) {
+		if (srclen < 28) {
 			break;
 		}
 		// Load at c-4, as required by enc_reshuffle

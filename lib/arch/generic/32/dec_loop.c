@@ -19,11 +19,15 @@ while (srclen > 4)
 #if BASE64_LITTLE_ENDIAN
 	// LUTs for little-endian set Most Significant Bit
 	// in case of invalid character
-	if (x.asint & 0x80000000U) break;
+	if (x.asint & 0x80000000U) {
+		break;
+	}
 #else
 	// LUTs for big-endian set Least Significant Bit
 	// in case of invalid character
-	if (x.asint & 1U) break;
+	if (x.asint & 1U) {
+		break;
+	}
 #endif
 
 #if HAVE_FAST_UNALIGNED_ACCESS
