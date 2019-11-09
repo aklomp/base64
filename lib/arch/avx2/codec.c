@@ -13,7 +13,9 @@
 #define REPLACE(s,n)	_mm256_and_si256((s), _mm256_set1_epi8(n))
 #define RANGE(s,a,b)	_mm256_andnot_si256(CMPGT((s), (b)), CMPGT((s), (a) - 1))
 
-static inline __m256i enc_reshuffle(const __m256i input) {
+static inline __m256i
+enc_reshuffle (const __m256i input)
+{
 	// translation from SSSE3 into AVX2 of procedure
 	// This one works with shifted (4 bytes) input in order to
 	// be able to work efficiently in the 2 128-bit lanes
@@ -125,7 +127,7 @@ enc_translate (const __m256i in)
 }
 
 static inline __m256i
-dec_reshuffle (__m256i in)
+dec_reshuffle (const __m256i in)
 {
 	// in, lower lane, bits, upper case are most significant bits, lower case are least significant bits:
 	// 00llllll 00kkkkLL 00jjKKKK 00JJJJJJ
