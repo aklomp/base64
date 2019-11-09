@@ -121,9 +121,7 @@ enc_translate (const __m256i in)
 	indices = _mm256_sub_epi8(indices, mask);
 
 	// Add offsets to input values:
-	__m256i out = _mm256_add_epi8(in, _mm256_shuffle_epi8(lut, indices));
-
-	return out;
+	return _mm256_add_epi8(in, _mm256_shuffle_epi8(lut, indices));
 }
 
 static inline __m256i

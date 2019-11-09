@@ -28,7 +28,5 @@ enc_translate (const __m128i in)
 	indices = _mm_sub_epi8(indices, mask);
 
 	// Add offsets to input values:
-	__m128i out = _mm_add_epi8(in, _mm_shuffle_epi8(lut, indices));
-
-	return out;
+	return _mm_add_epi8(in, _mm_shuffle_epi8(lut, indices));
 }
