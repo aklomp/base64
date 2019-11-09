@@ -20,3 +20,17 @@ jobs:
       arch: amd64
       compiler: clang
       script: test/ci/amd64.sh
+
+    - name: linux-arm64-gcc
+      os: linux
+      arch: arm64
+      compiler: gcc
+      env: NEON64_CFLAGS="-march=armv8-a"
+      script: test/ci/generic.sh
+
+    - name: linux-arm64-clang
+      os: linux
+      arch: arm64
+      compiler: clang
+      env: NEON64_CFLAGS="-march=armv8-a"
+      script: test/ci/generic.sh
