@@ -1,6 +1,9 @@
 language: c
 
 jobs:
+  allow_failures:
+    - os: osx
+
   include:
     - name: linux-amd64-gcc
       os: linux
@@ -34,3 +37,9 @@ jobs:
       compiler: clang
       env: NEON64_CFLAGS="-march=armv8-a"
       script: test/ci/generic.sh
+
+    - name: osx-amd64-clang
+      os: osx
+      arch: amd64
+      compiler: clang
+      script: test/ci/amd64.sh
