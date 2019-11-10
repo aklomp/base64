@@ -30,8 +30,8 @@ while (srclen >= 64)
 	uint8x16_t classified;
 
 	{
-		const uint8x16_t hi_nibbles  = vshrq_n_u8(str.val[0], 4);
-		const uint8x16_t lo_nibbles  = vandq_u8(str.val[0], mask_F);
+		const uint8x16_t hi_nibbles = vshrq_n_u8(str.val[0], 4);
+		const uint8x16_t lo_nibbles = vandq_u8(str.val[0], mask_F);
 		const uint8x16_t eq_2F = vceqq_u8(str.val[0], mask_2F);
 
 		const uint8x16_t hi = vqtbl1q_u8(lut_hi, hi_nibbles);
@@ -43,8 +43,8 @@ while (srclen >= 64)
 		str.val[0] = vaddq_u8(str.val[0], delta);
 	}
 	{
-		const uint8x16_t hi_nibbles  = vshrq_n_u8(str.val[1], 4);
-		const uint8x16_t lo_nibbles  = vandq_u8(str.val[1], mask_F);
+		const uint8x16_t hi_nibbles = vshrq_n_u8(str.val[1], 4);
+		const uint8x16_t lo_nibbles = vandq_u8(str.val[1], mask_F);
 		const uint8x16_t eq_2F = vceqq_u8(str.val[1], mask_2F);
 
 		const uint8x16_t hi = vqtbl1q_u8(lut_hi, hi_nibbles);
@@ -56,8 +56,8 @@ while (srclen >= 64)
 		str.val[1] = vaddq_u8(str.val[1], delta);
 	}
 	{
-		const uint8x16_t hi_nibbles  = vshrq_n_u8(str.val[2], 4);
-		const uint8x16_t lo_nibbles  = vandq_u8(str.val[2], mask_F);
+		const uint8x16_t hi_nibbles = vshrq_n_u8(str.val[2], 4);
+		const uint8x16_t lo_nibbles = vandq_u8(str.val[2], mask_F);
 		const uint8x16_t eq_2F = vceqq_u8(str.val[2], mask_2F);
 
 		const uint8x16_t hi = vqtbl1q_u8(lut_hi, hi_nibbles);
@@ -69,8 +69,8 @@ while (srclen >= 64)
 		str.val[2] = vaddq_u8(str.val[2], delta);
 	}
 	{
-		const uint8x16_t hi_nibbles  = vshrq_n_u8(str.val[3], 4);
-		const uint8x16_t lo_nibbles  = vandq_u8(str.val[3], mask_F);
+		const uint8x16_t hi_nibbles = vshrq_n_u8(str.val[3], 4);
+		const uint8x16_t lo_nibbles = vandq_u8(str.val[3], mask_F);
 		const uint8x16_t eq_2F = vceqq_u8(str.val[3], mask_2F);
 
 		const uint8x16_t hi = vqtbl1q_u8(lut_hi, hi_nibbles);

@@ -48,9 +48,9 @@ load_64byte_table (const uint8_t *p)
 //   6  [58..63]   [255]      #1  invalid input
 //   7  [64]       [255]      #2  invalid input
 //   8  [65..90]   [0..25]    #2  A..Z
-//   9  [91..96]   [255]      #2 invalid input
+//   9  [91..96]   [255]      #2  invalid input
 //  10  [97..122]  [26..51]   #2  a..z
-//  11  [123..126] [255]      #2 invalid input
+//  11  [123..126] [255]      #2  invalid input
 // (12) Everything else => invalid input
 
 // First LUT will use VTBL instruction (out of range indices are set to 0 in destination).
@@ -61,6 +61,7 @@ static const uint8_t base64_dec_lut1[] =
 	255U, 255U, 255U, 255U, 255U, 255U, 255U, 255U, 255U, 255U, 255U,  62U, 255U, 255U, 255U,  63U,
 	 52U,  53U,  54U,  55U,  56U,  57U,  58U,  59U,  60U,  61U, 255U, 255U, 255U, 255U, 255U, 255U
 };
+
 // Second LUT will use VTBX instruction (out of range indices will be unchanged in destination).
 // Input [64..126] will be mapped to index [1..63] in this LUT. Index 0 means that value comes from LUT #1.
 static const uint8_t base64_dec_lut2[] =

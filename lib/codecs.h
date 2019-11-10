@@ -60,18 +60,18 @@ struct codec
 
 // Define machine endianness. This is for GCC:
 #if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
-	#define BASE64_LITTLE_ENDIAN 1
+#  define BASE64_LITTLE_ENDIAN 1
 #else
-	#define BASE64_LITTLE_ENDIAN 0
+#  define BASE64_LITTLE_ENDIAN 0
 #endif
 
 // This is for Clang:
 #ifdef __LITTLE_ENDIAN__
-	#define BASE64_LITTLE_ENDIAN 1
+#  define BASE64_LITTLE_ENDIAN 1
 #endif
 
 #ifdef __BIG_ENDIAN__
-	#define BASE64_LITTLE_ENDIAN 0
+#  define BASE64_LITTLE_ENDIAN 0
 #endif
 
 // Endian conversion functions:
@@ -93,9 +93,9 @@ struct codec
 
 // detect word size
 #ifdef _INTEGRAL_MAX_BITS
-#define BASE64_WORDSIZE _INTEGRAL_MAX_BITS
+#  define BASE64_WORDSIZE _INTEGRAL_MAX_BITS
 #else
-#define BASE64_WORDSIZE __WORDSIZE
+#  define BASE64_WORDSIZE __WORDSIZE
 #endif
 
 // end-of-file definitions
@@ -108,9 +108,9 @@ struct codec
 // unless the fallthrough cases are marked with an attribute. As we use
 // fallthrough deliberately, define an alias for the attribute:
 #if __GNUC__ >= 7
-  #define BASE64_FALLTHROUGH  __attribute__((fallthrough));
+#  define BASE64_FALLTHROUGH  __attribute__((fallthrough));
 #else
-  #define BASE64_FALLTHROUGH
+#  define BASE64_FALLTHROUGH
 #endif
 
 extern void codec_choose (struct codec *, int flags);

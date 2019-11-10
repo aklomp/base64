@@ -31,12 +31,12 @@ while (srclen >= 45)
 	const __m256i mask_2F = _mm256_set1_epi8(0x2f);
 
 	// lookup
-	const __m256i hi_nibbles  = _mm256_and_si256(_mm256_srli_epi32(str, 4), mask_2F);
-	const __m256i lo_nibbles  = _mm256_and_si256(str, mask_2F);
-	const __m256i hi          = _mm256_shuffle_epi8(lut_hi, hi_nibbles);
-	const __m256i lo          = _mm256_shuffle_epi8(lut_lo, lo_nibbles);
-	const __m256i eq_2F       = _mm256_cmpeq_epi8(str, mask_2F);
-	const __m256i roll        = _mm256_shuffle_epi8(lut_roll, _mm256_add_epi8(eq_2F, hi_nibbles));
+	const __m256i hi_nibbles = _mm256_and_si256(_mm256_srli_epi32(str, 4), mask_2F);
+	const __m256i lo_nibbles = _mm256_and_si256(str, mask_2F);
+	const __m256i hi         = _mm256_shuffle_epi8(lut_hi, hi_nibbles);
+	const __m256i lo         = _mm256_shuffle_epi8(lut_lo, lo_nibbles);
+	const __m256i eq_2F      = _mm256_cmpeq_epi8(str, mask_2F);
+	const __m256i roll       = _mm256_shuffle_epi8(lut_roll, _mm256_add_epi8(eq_2F, hi_nibbles));
 
 	if (!_mm256_testz_si256(lo, hi)) {
 		break;

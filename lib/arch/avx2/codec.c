@@ -100,8 +100,9 @@ static inline __m256i
 enc_translate (const __m256i in)
 {
 	// LUT contains Absolute offset for all ranges:
-	const __m256i lut = _mm256_setr_epi8(65, 71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 0, 0,
-	                                     65, 71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 0, 0);
+	const __m256i lut = _mm256_setr_epi8(
+		65, 71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 0, 0,
+		65, 71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 0, 0);
 	// Translate values 0..63 to the Base64 alphabet. There are five sets:
 	// #  From      To         Abs    Index  Characters
 	// 0  [0..25]   [65..90]   +65        0  ABCDEFGHIJKLMNOPQRSTUVWXYZ

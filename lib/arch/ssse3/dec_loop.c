@@ -89,12 +89,12 @@ while (srclen >= 24)
 	const __m128i mask_2F = _mm_set1_epi8(0x2f);
 
 	// lookup
-	const __m128i hi_nibbles  = _mm_and_si128(_mm_srli_epi32(str, 4), mask_2F);
-	const __m128i lo_nibbles  = _mm_and_si128(str, mask_2F);
-	const __m128i hi          = _mm_shuffle_epi8(lut_hi, hi_nibbles);
-	const __m128i lo          = _mm_shuffle_epi8(lut_lo, lo_nibbles);
-	const __m128i eq_2F       = _mm_cmpeq_epi8(str, mask_2F);
-	const __m128i roll        = _mm_shuffle_epi8(lut_roll, _mm_add_epi8(eq_2F, hi_nibbles));
+	const __m128i hi_nibbles = _mm_and_si128(_mm_srli_epi32(str, 4), mask_2F);
+	const __m128i lo_nibbles = _mm_and_si128(str, mask_2F);
+	const __m128i hi         = _mm_shuffle_epi8(lut_hi, hi_nibbles);
+	const __m128i lo         = _mm_shuffle_epi8(lut_lo, lo_nibbles);
+	const __m128i eq_2F      = _mm_cmpeq_epi8(str, mask_2F);
+	const __m128i roll       = _mm_shuffle_epi8(lut_roll, _mm_add_epi8(eq_2F, hi_nibbles));
 
 	// Check for invalid input: if any "and" values from lo and hi are not zero,
 	// fall back on bytewise code to do error checking and reporting:
