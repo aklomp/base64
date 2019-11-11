@@ -98,7 +98,7 @@ while (srclen >= 24)
 
 	// Check for invalid input: if any "and" values from lo and hi are not zero,
 	// fall back on bytewise code to do error checking and reporting:
-	if (_mm_movemask_epi8(CMPGT(_mm_and_si128(lo, hi), 0)) != 0) {
+	if (_mm_movemask_epi8(_mm_cmpgt_epi8(_mm_and_si128(lo, hi), _mm_setzero_si128())) != 0) {
 		break;
 	}
 

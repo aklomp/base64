@@ -22,7 +22,7 @@ enc_translate (const __m128i in)
 	__m128i indices = _mm_subs_epu8(in, _mm_set1_epi8(51));
 
 	// mask is 0xFF (-1) for range #[1..4] and 0x00 for range #0:
-	__m128i mask = CMPGT(in, 25);
+	__m128i mask = _mm_cmpgt_epi8(in, _mm_set1_epi8(25));
 
 	// substract -1, so add 1 to indices for range #[1..4], All indices are now correct:
 	indices = _mm_sub_epi8(indices, mask);
