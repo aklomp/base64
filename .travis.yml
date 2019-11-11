@@ -33,6 +33,10 @@ jobs:
       compiler: clang
       script: test/ci/docker-arm32.sh
 
+    - name: linux-powerpc-gcc
+      compiler: gcc
+      script: test/ci/docker-powerpc.sh
+
     - name: linux-arm64-gcc
       os: linux
       arch: arm64
