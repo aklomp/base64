@@ -1,7 +1,7 @@
 static inline __m128i
 enc_reshuffle (__m128i in)
 {
-	// input, bytes MSB to LSB:
+	// Input, bytes MSB to LSB:
 	// 0 0 0 0 l k j i h g f e d c b a
 
 	in = _mm_shuffle_epi8(in, _mm_set_epi8(

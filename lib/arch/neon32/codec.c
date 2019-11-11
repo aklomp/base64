@@ -51,7 +51,7 @@ vqtbl1q_u8 (uint8x16_t lut, uint8x16_t indices)
 static inline uint8x16x4_t
 enc_translate (uint8x16x4_t in)
 {
-	// LUT contains Absolute offset for all ranges:
+	// A lookup table containing the absolute offsets for all ranges:
 	const uint8x16_t lut = {
 		 65U,  71U, 252U, 252U,
 		252U, 252U, 252U, 252U,
@@ -84,19 +84,20 @@ enc_translate (uint8x16x4_t in)
 	mask.val[2] = vcgtq_u8(in.val[2], vdupq_n_u8(25));
 	mask.val[3] = vcgtq_u8(in.val[3], vdupq_n_u8(25));
 
-	// substract -1, so add 1 to indices for range #[1..4], All indices are now correct:
+	// Subtract -1, so add 1 to indices for range #[1..4]. All indices are
+	// now correct:
 	indices.val[0] = vsubq_u8(indices.val[0], mask.val[0]);
 	indices.val[1] = vsubq_u8(indices.val[1], mask.val[1]);
 	indices.val[2] = vsubq_u8(indices.val[2], mask.val[2]);
 	indices.val[3] = vsubq_u8(indices.val[3], mask.val[3]);
 
-	// lookup delta values
+	// Lookup delta values:
 	delta.val[0] = vqtbl1q_u8(lut, indices.val[0]);
 	delta.val[1] = vqtbl1q_u8(lut, indices.val[1]);
 	delta.val[2] = vqtbl1q_u8(lut, indices.val[2]);
 	delta.val[3] = vqtbl1q_u8(lut, indices.val[3]);
 
-	// add delta values:
+	// Add delta values:
 	out.val[0] = vaddq_u8(in.val[0], delta.val[0]);
 	out.val[1] = vaddq_u8(in.val[1], delta.val[1]);
 	out.val[2] = vaddq_u8(in.val[2], delta.val[2]);

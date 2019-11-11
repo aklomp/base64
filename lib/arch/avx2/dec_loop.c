@@ -8,7 +8,7 @@ while (srclen >= 45)
 	// Load string:
 	__m256i str = _mm256_loadu_si256((__m256i *)c);
 
-	// see ssse3/dec_loop.c for an explanation of how the code works.
+	// See ssse3/dec_loop.c for an explanation of how the code works.
 
 	const __m256i lut_lo = _mm256_setr_epi8(
 		0x15, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,

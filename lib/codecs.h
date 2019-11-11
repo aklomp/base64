@@ -91,14 +91,14 @@ struct codec
 #  define BASE64_HTOBE64(x)	(x)
 #endif
 
-// detect word size
+// Detect word size:
 #ifdef _INTEGRAL_MAX_BITS
 #  define BASE64_WORDSIZE _INTEGRAL_MAX_BITS
 #else
 #  define BASE64_WORDSIZE __WORDSIZE
 #endif
 
-// end-of-file definitions
+// End-of-file definitions.
 // Almost end-of-file when waiting for the last '=' character:
 #define BASE64_AEOF 1
 // End-of-file when stream end has been reached or invalid input provided:
@@ -115,8 +115,7 @@ struct codec
 
 extern void codec_choose (struct codec *, int flags);
 
-// These tables are used by all codecs
-// for fallback plain encoding/decoding:
+// These tables are used by all codecs for fallback plain encoding/decoding:
 extern const uint8_t base64_table_enc[];
 extern const uint8_t base64_table_dec[];
 

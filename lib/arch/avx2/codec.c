@@ -11,11 +11,11 @@
 static inline __m256i
 enc_reshuffle (const __m256i input)
 {
-	// translation from SSSE3 into AVX2 of procedure
-	// This one works with shifted (4 bytes) input in order to
-	// be able to work efficiently in the 2 128-bit lanes
+	// Translation of the SSSE3 reshuffling algorithm to AVX2. This one
+	// works with shifted (4 bytes) input in order to be able to work
+	// efficiently in the two 128-bit lanes.
 
-	// input, bytes MSB to LSB:
+	// Input, bytes MSB to LSB:
 	// 0 0 0 0 x w v u t s r q p o n m
 	// l k j i h g f e d c b a 0 0 0 0
 
@@ -40,7 +40,8 @@ enc_reshuffle (const __m256i input)
 	// b c a b
 
 	const __m256i t0 = _mm256_and_si256(in, _mm256_set1_epi32(0x0fc0fc00));
-	// bits, upper case are most significant bits, lower case are least significant bits.
+	// bits, upper case are most significant bits, lower case are least
+	// significant bits.
 	// 0000wwww XX000000 VVVVVV00 00000000
 	// 0000tttt UU000000 SSSSSS00 00000000
 	// 0000qqqq RR000000 PPPPPP00 00000000
@@ -94,10 +95,11 @@ enc_reshuffle (const __m256i input)
 static inline __m256i
 enc_translate (const __m256i in)
 {
-	// LUT contains Absolute offset for all ranges:
+	// A lookup table containing the absolute offsets for all ranges:
 	const __m256i lut = _mm256_setr_epi8(
 		65, 71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 0, 0,
 		65, 71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 0, 0);
+
 	// Translate values 0..63 to the Base64 alphabet. There are five sets:
 	// #  From      To         Abs    Index  Characters
 	// 0  [0..25]   [65..90]   +65        0  ABCDEFGHIJKLMNOPQRSTUVWXYZ
@@ -106,14 +108,15 @@ enc_translate (const __m256i in)
 	// 3  [62]      [43]       -19       12  +
 	// 4  [63]      [47]       -16       13  /
 
-	// Create LUT indices from input:
-	// the index for range #0 is right, others are 1 less than expected:
+	// Create LUT indices from the input. The index for range #0 is right,
+	// others are 1 less than expected:
 	__m256i indices = _mm256_subs_epu8(in, _mm256_set1_epi8(51));
 
 	// mask is 0xFF (-1) for range #[1..4] and 0x00 for range #0:
 	const __m256i mask = _mm256_cmpgt_epi8(in, _mm256_set1_epi8(25));
 
-	// substract -1, so add 1 to indices for range #[1..4], All indices are now correct:
+	// Subtract -1, so add 1 to indices for range #[1..4]. All indices are
+	// now correct:
 	indices = _mm256_sub_epi8(indices, mask);
 
 	// Add offsets to input values:
@@ -123,7 +126,8 @@ enc_translate (const __m256i in)
 static inline __m256i
 dec_reshuffle (const __m256i in)
 {
-	// in, lower lane, bits, upper case are most significant bits, lower case are least significant bits:
+	// in, lower lane, bits, upper case are most significant bits, lower
+	// case are least significant bits:
 	// 00llllll 00kkkkLL 00jjKKKK 00JJJJJJ
 	// 00iiiiii 00hhhhII 00ggHHHH 00GGGGGG
 	// 00ffffff 00eeeeFF 00ddEEEE 00DDDDDD
@@ -150,7 +154,7 @@ dec_reshuffle (const __m256i in)
 	// HHHHhhhh GGGGGGgg FFffffff EEEEeeee
 	// DDDDDDdd CCcccccc BBBBbbbb AAAAAAaa
 
-	// Pack lanes
+	// Pack lanes:
 	return _mm256_permutevar8x32_epi32(out, _mm256_setr_epi32(0, 1, 2, 4, 5, 6, -1, -1));
 }
 

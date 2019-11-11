@@ -20,12 +20,13 @@ while (srclen >= 24)
 	//  5  [97..122]  [26..51]  -71  a..z
 	// (6) Everything else => invalid input
 
-	// We will use LUTS for character validation & offset computation
-	// Remember that 0x2X and 0x0X are the same index for _mm_shuffle_epi8,
-	// this allows to mask with 0x2F instead of 0x0F and thus save one constant declaration (register and/or memory access)
+	// We will use lookup tables for character validation and offset
+	// computation. Remember that 0x2X and 0x0X are the same index for
+	// _mm_shuffle_epi8, this allows to mask with 0x2F instead of 0x0F and
+	// thus save one constant declaration (register and/or memory access).
 
 	// For offsets:
-	// Perfect hash for lut = ((src>>4)&0x2F)+((src==0x2F)?0xFF:0x00)
+	// Perfect hash for lut = ((src >> 4) & 0x2F) + ((src == 0x2F) ? 0xFF : 0x00)
 	// 0000 = garbage
 	// 0001 = /
 	// 0010 = +
@@ -42,7 +43,7 @@ while (srclen >= 24)
 	// hi \ lo              0000 0001 0010 0011 0100 0101 0110 0111 1000 1001 1010 1011 1100 1101 1110 1111
 	//      LUT             0x15 0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x11 0x13 0x1A 0x1B 0x1B 0x1B 0x1A
 
-	// 0000 0X10 char        NUL  SOH  STX  ETX  EOT  ENQ  ACK  BEL   BS   HT   LF   VT   FF   CR   SO   SI
+	// 0000 0x10 char        NUL  SOH  STX  ETX  EOT  ENQ  ACK  BEL   BS   HT   LF   VT   FF   CR   SO   SI
 	//           andlut     0x10 0x10 0x10 0x10 0x10 0x10 0x10 0x10 0x10 0x10 0x10 0x10 0x10 0x10 0x10 0x10
 
 	// 0001 0x10 char        DLE  DC1  DC2  DC3  DC4  NAK  SYN  ETB  CAN   EM  SUB  ESC   FS   GS   RS   US
@@ -54,15 +55,15 @@ while (srclen >= 24)
 	// 0011 0x02 char          0    1    2    3    4    5    6    7    8    9    :    ;    <    =    >    ?
 	//           andlut     0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x02 0x02 0x02 0x02 0x02 0x02
 
-	// 0100 0x04 char          @    A    B    C    D    E    F    G    H    I    J    K    L    M    N    0
-	//           andlut     0x04 0x00 0x00 0x00 0X00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+	// 0100 0x04 char          @    A    B    C    D    E    F    G    H    I    J    K    L    M    N    O
+	//           andlut     0x04 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
 
 	// 0101 0x08 char          P    Q    R    S    T    U    V    W    X    Y    Z    [    \    ]    ^    _
 	//           andlut     0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x08 0x08 0x08 0x08 0x08
 
 	// 0110 0x04 char          `    a    b    c    d    e    f    g    h    i    j    k    l    m    n    o
-	//           andlut     0x04 0x00 0x00 0x00 0X00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
-	// 0111 0X08 char          p    q    r    s    t    u    v    w    x    y    z    {    |    }    ~
+	//           andlut     0x04 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+	// 0111 0x08 char          p    q    r    s    t    u    v    w    x    y    z    {    |    }    ~
 	//           andlut     0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x08 0x08 0x08 0x08 0x08
 
 	// 1000 0x10 andlut     0x10 0x10 0x10 0x10 0x10 0x10 0x10 0x10 0x10 0x10 0x10 0x10 0x10 0x10 0x10 0x10
@@ -96,8 +97,8 @@ while (srclen >= 24)
 	const __m128i eq_2F      = _mm_cmpeq_epi8(str, mask_2F);
 	const __m128i roll       = _mm_shuffle_epi8(lut_roll, _mm_add_epi8(eq_2F, hi_nibbles));
 
-	// Check for invalid input: if any "and" values from lo and hi are not zero,
-	// fall back on bytewise code to do error checking and reporting:
+	// Check for invalid input: if any "and" values from lo and hi are not
+	// zero, fall back on bytewise code to do error checking and reporting:
 	if (_mm_movemask_epi8(_mm_cmpgt_epi8(_mm_and_si128(lo, hi), _mm_setzero_si128())) != 0) {
 		break;
 	}

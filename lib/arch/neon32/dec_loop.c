@@ -8,7 +8,7 @@ while (srclen >= 64)
 	// Load 64 bytes and deinterleave:
 	uint8x16x4_t str = vld4q_u8((uint8_t *)c);
 
-	// see ssse3/dec_loop.c for an explanation of how the code works.
+	// See ssse3/dec_loop.c for an explanation of how the code works.
 
 	const uint8x16_t lut_lo = {
 		0x15, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
