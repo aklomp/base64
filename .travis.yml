@@ -51,6 +51,18 @@ jobs:
       env: NEON64_CFLAGS="-march=armv8-a"
       script: test/ci/generic.sh
 
+    - name: linux-s390x-gcc
+      os: linux
+      arch: s390x
+      compiler: gcc
+      script: test/ci/generic.sh
+
+    - name: linux-ppc64le-gcc
+      os: linux
+      arch: ppc64le
+      compiler: gcc
+      script: test/ci/generic.sh
+
     - name: osx-amd64-clang
       os: osx
       arch: amd64
