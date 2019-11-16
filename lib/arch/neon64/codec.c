@@ -1,7 +1,3 @@
-#if (defined(__ARM_NEON) && !defined(__ARM_NEON__))
-#define __ARM_NEON__
-#endif
-
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -9,7 +5,13 @@
 #include "../../../include/libbase64.h"
 #include "../../codecs.h"
 
-#if (defined(__aarch64__) && defined(__ARM_NEON__) && HAVE_NEON64)
+#ifdef __aarch64__
+#  if (defined(__ARM_NEON__) || defined(__ARM_NEON)) && HAVE_NEON64
+#    define BASE64_USE_NEON64
+#  endif
+#endif
+
+#ifdef BASE64_USE_NEON64
 #include <arm_neon.h>
 
 static inline uint8x16x4_t
@@ -79,7 +81,7 @@ static const uint8_t base64_dec_lut2[] =
 // Therefore, valid characters will be mapped to the valid [0..63] range and all invalid characters will be mapped
 // to values greater than 63.
 
-#endif
+#endif	// BASE64_USE_NEON64
 
 // Stride size is so large on these NEON 64-bit functions
 // (48 bytes encode, 64 bytes decode) that we inline the
@@ -87,7 +89,7 @@ static const uint8_t base64_dec_lut2[] =
 
 BASE64_ENC_FUNCTION(neon64)
 {
-#if (defined(__aarch64__) && defined(__ARM_NEON__) && HAVE_NEON64)
+#ifdef BASE64_USE_NEON64
 	const uint8x16x4_t tbl_enc = load_64byte_table(base64_table_enc);
 
 	#include "../generic/enc_head.c"
@@ -101,7 +103,7 @@ BASE64_ENC_FUNCTION(neon64)
 
 BASE64_DEC_FUNCTION(neon64)
 {
-#if (defined(__aarch64__) && defined(__ARM_NEON__) && HAVE_NEON64)
+#ifdef BASE64_USE_NEON64
 	const uint8x16x4_t tbl_dec1 = load_64byte_table(base64_dec_lut1);
 	const uint8x16x4_t tbl_dec2 = load_64byte_table(base64_dec_lut2);
 
