@@ -1,7 +1,3 @@
-#if (defined(__ARM_NEON) && !defined(__ARM_NEON__))
-#define __ARM_NEON__
-#endif
-
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -9,8 +5,13 @@
 #include "../../../include/libbase64.h"
 #include "../../codecs.h"
 
-#if (defined(__arm__) && defined(__ARM_NEON__) && HAVE_NEON32)
+#ifdef __arm__
+#  if (defined(__ARM_NEON__) || defined(__ARM_NEON)) && HAVE_NEON32
+#    define BASE64_USE_NEON32
+#  endif
+#endif
 
+#ifdef BASE64_USE_NEON32
 #include <arm_neon.h>
 
 static inline uint8x16x4_t
@@ -106,7 +107,7 @@ enc_translate (uint8x16x4_t in)
 	return out;
 }
 
-#endif
+#endif	// BASE64_USE_NEON32
 
 // Stride size is so large on these NEON 32-bit functions
 // (48 bytes encode, 32 bytes decode) that we inline the
@@ -114,7 +115,7 @@ enc_translate (uint8x16x4_t in)
 
 BASE64_ENC_FUNCTION(neon32)
 {
-#if (defined(__arm__) && defined(__ARM_NEON__) && HAVE_NEON32)
+#ifdef BASE64_USE_NEON32
 	#include "../generic/enc_head.c"
 	#include "enc_loop.c"
 	#include "../generic/32/enc_loop.c"
@@ -126,7 +127,7 @@ BASE64_ENC_FUNCTION(neon32)
 
 BASE64_DEC_FUNCTION(neon32)
 {
-#if (defined(__arm__) && defined(__ARM_NEON__) && HAVE_NEON32)
+#ifdef BASE64_USE_NEON32
 	#include "../generic/dec_head.c"
 	#include "dec_loop.c"
 	#include "../generic/32/dec_loop.c"
