@@ -39,7 +39,7 @@ enc_reshuffle (const __m256i input)
 	// e f d e
 	// b c a b
 
-	const __m256i t0 = _mm256_and_si256(in, _mm256_set1_epi32(0x0fc0fc00));
+	const __m256i t0 = _mm256_and_si256(in, _mm256_set1_epi32(0x0FC0FC00));
 	// bits, upper case are most significant bits, lower case are least
 	// significant bits.
 	// 0000wwww XX000000 VVVVVV00 00000000
@@ -61,7 +61,7 @@ enc_reshuffle (const __m256i input)
 	// 00000000 00eeeeFF 00000000 00DDDDDD
 	// 00000000 00bbbbCC 00000000 00AAAAAA
 
-	const __m256i t2 = _mm256_and_si256(in, _mm256_set1_epi32(0x003f03f0));
+	const __m256i t2 = _mm256_and_si256(in, _mm256_set1_epi32(0x003F03F0));
 	// 00000000 00xxxxxx 000000vv WWWW0000
 	// 00000000 00uuuuuu 000000ss TTTT0000
 	// 00000000 00rrrrrr 000000pp QQQQ0000

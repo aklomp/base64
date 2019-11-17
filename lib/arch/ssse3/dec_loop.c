@@ -87,7 +87,7 @@ while (srclen >= 24)
 		0,  16,  19,   4, -65, -65, -71, -71,
 		0,   0,   0,   0,   0,   0,   0,   0);
 
-	const __m128i mask_2F = _mm_set1_epi8(0x2f);
+	const __m128i mask_2F = _mm_set1_epi8(0x2F);
 
 	// lookup
 	const __m128i hi_nibbles = _mm_and_si128(_mm_srli_epi32(str, 4), mask_2F);

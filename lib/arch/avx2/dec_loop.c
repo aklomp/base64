@@ -28,7 +28,7 @@ while (srclen >= 45)
 		0,  16,  19,   4, -65, -65, -71, -71,
 		0,   0,   0,   0,   0,   0,   0,   0);
 
-	const __m256i mask_2F = _mm256_set1_epi8(0x2f);
+	const __m256i mask_2F = _mm256_set1_epi8(0x2F);
 
 	// lookup
 	const __m256i hi_nibbles = _mm256_and_si256(_mm256_srli_epi32(str, 4), mask_2F);
