@@ -12,8 +12,6 @@
 #if (defined(__aarch64__) && defined(__ARM_NEON__) && HAVE_NEON64)
 #include <arm_neon.h>
 
-#define CMPGT(s,n)	vcgtq_u8((s), vdupq_n_u8(n))
-
 static inline uint8x16x4_t
 load_64byte_table (const uint8_t *p)
 {

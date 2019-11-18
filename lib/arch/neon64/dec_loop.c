@@ -35,10 +35,11 @@ while (srclen >= 64)
 	str.val[3] = vorrq_u8(dec1.val[3], dec2.val[3]);
 
 	// Check for invalid input, any value larger than 63:
-	uint8x16_t classified = CMPGT(str.val[0], 63);
-	classified = vorrq_u8(classified, CMPGT(str.val[1], 63));
-	classified = vorrq_u8(classified, CMPGT(str.val[2], 63));
-	classified = vorrq_u8(classified, CMPGT(str.val[3], 63));
+	uint8x16_t classified
+		= vcgtq_u8(str.val[0], vdupq_n_u8(63))
+		| vcgtq_u8(str.val[1], vdupq_n_u8(63))
+		| vcgtq_u8(str.val[2], vdupq_n_u8(63))
+		| vcgtq_u8(str.val[3], vdupq_n_u8(63));
 
 	// check that all bits are zero:
 	if (vmaxvq_u8(classified) != 0U) {
