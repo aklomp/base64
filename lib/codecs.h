@@ -76,26 +76,20 @@ struct codec
 
 // Endian conversion functions:
 #if BASE64_LITTLE_ENDIAN
-	#if defined(_MSC_VER)
-		// Microsoft Visual C++:
-		#define cpu_to_be32(x)	_byteswap_ulong(x)
-		#define cpu_to_be64(x)	_byteswap_uint64(x)
-		#define be32_to_cpu(x)	_byteswap_ulong(x)
-		#define be64_to_cpu(x)	_byteswap_uint64(x)
-	#else
-		// GCC and Clang:
-		#define cpu_to_be32(x)	__builtin_bswap32(x)
-		#define cpu_to_be64(x)	__builtin_bswap64(x)
-		#define be32_to_cpu(x)	__builtin_bswap32(x)
-		#define be64_to_cpu(x)	__builtin_bswap64(x)
-	#endif
+#  ifdef _MSC_VER
+//   Microsoft Visual C++:
+#    define BASE64_HTOBE32(x)	_byteswap_ulong(x)
+#    define BASE64_HTOBE64(x)	_byteswap_uint64(x)
+#  else
+//   GCC and Clang:
+#    define BASE64_HTOBE32(x)	__builtin_bswap32(x)
+#    define BASE64_HTOBE64(x)	__builtin_bswap64(x)
+#  endif
 #else
-	// No conversion needed:
-	#define cpu_to_be32(x)	(x)
-	#define cpu_to_be64(x)	(x)
-	#define be32_to_cpu(x)	(x)
-	#define be64_to_cpu(x)	(x)
-#endif 
+// No conversion needed:
+#  define BASE64_HTOBE32(x)	(x)
+#  define BASE64_HTOBE64(x)	(x)
+#endif
 
 // detect word size
 #ifdef _INTEGRAL_MAX_BITS
