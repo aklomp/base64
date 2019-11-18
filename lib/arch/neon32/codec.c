@@ -13,8 +13,6 @@
 
 #include <arm_neon.h>
 
-#define CMPGT(s,n)	vcgtq_u8((s), vdupq_n_u8(n))
-
 static inline uint8x16x4_t
 enc_reshuffle (uint8x16x3_t in)
 {
@@ -81,10 +79,10 @@ enc_translate (uint8x16x4_t in)
 	indices.val[3] = vqsubq_u8(in.val[3], offset);
 
 	// mask is 0xFF (-1) for range #[1..4] and 0x00 for range #0:
-	mask.val[0] = CMPGT(in.val[0], 25);
-	mask.val[1] = CMPGT(in.val[1], 25);
-	mask.val[2] = CMPGT(in.val[2], 25);
-	mask.val[3] = CMPGT(in.val[3], 25);
+	mask.val[0] = vcgtq_u8(in.val[0], vdupq_n_u8(25));
+	mask.val[1] = vcgtq_u8(in.val[1], vdupq_n_u8(25));
+	mask.val[2] = vcgtq_u8(in.val[2], vdupq_n_u8(25));
+	mask.val[3] = vcgtq_u8(in.val[3], vdupq_n_u8(25));
 
 	// substract -1, so add 1 to indices for range #[1..4], All indices are now correct:
 	indices.val[0] = vsubq_u8(indices.val[0], mask.val[0]);
