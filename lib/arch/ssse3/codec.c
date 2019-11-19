@@ -8,8 +8,6 @@
 #if HAVE_SSSE3
 #include <tmmintrin.h>
 
-#include "../sse2/compare_macros.h"
-
 #include "dec_reshuffle.c"
 #include "enc_reshuffle.c"
 #include "enc_translate.c"

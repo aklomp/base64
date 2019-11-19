@@ -1,7 +1,7 @@
 static inline __m128i
 enc_reshuffle (__m128i in)
 {
-	// input, bytes MSB to LSB:
+	// Input, bytes MSB to LSB:
 	// 0 0 0 0 l k j i h g f e d c b a
 
 	in = _mm_shuffle_epi8(in, _mm_set_epi8(
@@ -15,7 +15,7 @@ enc_reshuffle (__m128i in)
 	// e f d e
 	// b c a b
 
-	const __m128i t0 = _mm_and_si128(in, _mm_set1_epi32(0x0fc0fc00));
+	const __m128i t0 = _mm_and_si128(in, _mm_set1_epi32(0x0FC0FC00));
 	// bits, upper case are most significant bits, lower case are least significant bits
 	// 0000kkkk LL000000 JJJJJJ00 00000000
 	// 0000hhhh II000000 GGGGGG00 00000000
@@ -28,7 +28,7 @@ enc_reshuffle (__m128i in)
 	// 00000000 00eeeeFF 00000000 00DDDDDD
 	// 00000000 00bbbbCC 00000000 00AAAAAA
 
-	const __m128i t2 = _mm_and_si128(in, _mm_set1_epi32(0x003f03f0));
+	const __m128i t2 = _mm_and_si128(in, _mm_set1_epi32(0x003F03F0));
 	// 00000000 00llllll 000000jj KKKK0000
 	// 00000000 00iiiiii 000000gg HHHH0000
 	// 00000000 00ffffff 000000dd EEEE0000

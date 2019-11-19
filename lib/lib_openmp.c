@@ -1,4 +1,4 @@
-// This code makes some assumptions on the implementation of 
+// This code makes some assumptions on the implementation of
 // base64_stream_encode_init(), base64_stream_encode() and base64_stream_decode().
 // Basically these assumptions boil down to that when breaking the src into
 // parts, out parts can be written without side effects.
@@ -23,7 +23,7 @@ base64_encode_openmp
 	size_t s;
 	size_t t;
 	size_t sum = 0, len, last_len;
-	struct base64_state state, initial_state;   
+	struct base64_state state, initial_state;
 	int num_threads, i;
 
 	// Request a number of threads but not necessarily get them:

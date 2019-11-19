@@ -8,8 +8,6 @@
 #if HAVE_SSE41
 #include <smmintrin.h>
 
-#include "../sse2/compare_macros.h"
-
 #include "../ssse3/dec_reshuffle.c"
 #include "../ssse3/enc_translate.c"
 #include "../ssse3/enc_reshuffle.c"

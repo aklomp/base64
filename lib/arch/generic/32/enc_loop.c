@@ -8,7 +8,7 @@ while (srclen >= 4)
 	// Reorder to 32-bit big-endian, if not already in that format. The
 	// workset must be in big-endian, otherwise the shifted bits do not
 	// carry over properly among adjacent bytes:
-	str = cpu_to_be32(str);
+	str = BASE64_HTOBE32(str);
 
 	// Shift input by 6 bytes each round and mask in only the lower 6 bits;
 	// look up the character in the Base64 encoding table and write it to
