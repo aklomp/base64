@@ -2,8 +2,10 @@
 // but ensure that there are at least 4 bytes available to avoid segfaulting:
 while (srclen >= 4)
 {
+	uint32_t str;
+
 	// Load string:
-	uint32_t str = *(uint32_t *)c;
+	memcpy(&str, c, sizeof (str));
 
 	// Reorder to 32-bit big-endian, if not already in that format. The
 	// workset must be in big-endian, otherwise the shifted bits do not

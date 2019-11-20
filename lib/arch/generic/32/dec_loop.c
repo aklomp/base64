@@ -6,12 +6,8 @@
 // is exited
 while (srclen > 4)
 {
-	union {
-		uint32_t asint;
-		uint8_t  aschar[4];
-	} x;
-
-	x.asint = base64_table_dec_d0[c[0]]
+	const uint32_t str
+		= base64_table_dec_d0[c[0]]
 	        | base64_table_dec_d1[c[1]]
 	        | base64_table_dec_d2[c[2]]
 	        | base64_table_dec_d3[c[3]];
@@ -19,29 +15,19 @@ while (srclen > 4)
 #if BASE64_LITTLE_ENDIAN
 	// LUTs for little-endian set Most Significant Bit
 	// in case of invalid character
-	if (x.asint & 0x80000000U) {
+	if (str & UINT32_C(0x80000000)) {
 		break;
 	}
 #else
 	// LUTs for big-endian set Least Significant Bit
 	// in case of invalid character
-	if (x.asint & 1U) {
+	if (str & UINT32_C(1)) {
 		break;
 	}
 #endif
 
-#if HAVE_FAST_UNALIGNED_ACCESS
-	// This might segfault or be too slow on
-	// some architectures, do this only if specified
-	// with HAVE_FAST_UNALIGNED_ACCESS macro
-	// We write one byte more than needed
-	*(uint32_t*)o = x.asint;
-#else
-	// Fallback, write bytes one by one
-	o[0] = x.aschar[0];
-	o[1] = x.aschar[1];
-	o[2] = x.aschar[2];
-#endif
+	// Store:
+	memcpy(o, &str, sizeof (str));
 
 	c += 4;
 	o += 3;
