@@ -14,8 +14,26 @@
 #ifdef BASE64_USE_NEON32
 #include <arm_neon.h>
 
+static inline uint8x16_t
+vqtbl1q_u8 (const uint8x16_t lut, const uint8x16_t indices)
+{
+	// NEON32 only supports 64-bit wide lookups in 128-bit tables. Emulate
+	// the NEON64 `vqtbl1q_u8` intrinsic to do 128-bit wide lookups.
+	uint8x8x2_t lut2;
+	uint8x8x2_t result;
+
+	lut2.val[0] = vget_low_u8(lut);
+	lut2.val[1] = vget_high_u8(lut);
+
+	result.val[0] = vtbl2_u8(lut2, vget_low_u8(indices));
+	result.val[1] = vtbl2_u8(lut2, vget_high_u8(indices));
+
+	return vcombine_u8(result.val[0], result.val[1]);
+}
+
 #include "enc_reshuffle.c"
 #include "enc_translate.c"
+#include "enc_loop.c"
 
 #endif	// BASE64_USE_NEON32
 
@@ -27,7 +45,7 @@ BASE64_ENC_FUNCTION(neon32)
 {
 #ifdef BASE64_USE_NEON32
 	#include "../generic/enc_head.c"
-	#include "enc_loop.c"
+	enc_loop_neon32(&c, &srclen, &o, &outl);
 	#include "../generic/32/enc_loop.c"
 	#include "../generic/enc_tail.c"
 #else

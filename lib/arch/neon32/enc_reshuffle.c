@@ -1,5 +1,5 @@
 static inline uint8x16x4_t
-enc_reshuffle (uint8x16x3_t in)
+enc_reshuffle (const uint8x16x3_t in)
 {
 	uint8x16x4_t out;
 
