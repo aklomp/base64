@@ -11,6 +11,7 @@
 #include "dec_reshuffle.c"
 #include "enc_reshuffle.c"
 #include "enc_translate.c"
+#include "enc_loop.c"
 
 #endif	// HAVE_SSSE3
 
@@ -18,7 +19,7 @@ BASE64_ENC_FUNCTION(ssse3)
 {
 #if HAVE_SSSE3
 	#include "../generic/enc_head.c"
-	#include "enc_loop.c"
+	enc_loop_ssse3(&c, &srclen, &o, &outl);
 	#include "../generic/enc_tail.c"
 #else
 	BASE64_ENC_STUB
