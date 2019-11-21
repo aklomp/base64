@@ -77,6 +77,7 @@ static const uint8_t base64_dec_lut2[] =
 // Therefore, valid characters will be mapped to the valid [0..63] range and all invalid characters will be mapped
 // to values greater than 63.
 
+#include "../generic/64/enc_loop.c"
 #include "enc_loop.c"
 
 #endif	// BASE64_USE_NEON64
@@ -90,7 +91,7 @@ BASE64_ENC_FUNCTION(neon64)
 #ifdef BASE64_USE_NEON64
 	#include "../generic/enc_head.c"
 	enc_loop_neon64(&c, &srclen, &o, &outl);
-	#include "../generic/64/enc_loop.c"
+	enc_loop_generic_64(&c, &srclen, &o, &outl);
 	#include "../generic/enc_tail.c"
 #else
 	BASE64_ENC_STUB
