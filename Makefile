@@ -56,6 +56,19 @@ ifdef OPENMP
   CFLAGS += -fopenmp
 endif
 
+# aggregation of all cflags
+FLAGS = AVX_CFLAGS=$(AVX_CFLAGS)\
+ AVX2_CFLAGS=$(AVX2_CFLAGS)\
+ SSSE3_CFLAGS=$(SSSE3_CFLAGS)\
+ SSE41_CFLAGS=$(SSE41_CFLAGS)\
+ SSE42_CFLAGS=$(SSE42_CFLAGS)\
+ NEON32_CFLAGS=$(NEON32_CFLAGS)\
+ NEON64_CFLAGS=$(NEON64_CFLAGS)\
+ OPENMP=$(OPENMP)
+
+# update the cache file only if FLAGS changed
+FLAGS_CACHE = .flags.cache
+RES := $(shell if [ ! -f $(FLAGS_CACHE) ] || [ "`cat $(FLAGS_CACHE)`" != "$(FLAGS)" ] ; then echo "$(FLAGS)" > $(FLAGS_CACHE) ; fi )
 
 .PHONY: all analyze clean
 
@@ -68,7 +81,8 @@ lib/libbase64.o: $(OBJS)
 	$(LD) -r -o $@ $^
 	$(OBJCOPY) --keep-global-symbols=lib/exports.txt $@
 
-lib/config.h:
+lib/config.h:	$(FLAGS_CACHE)
+	@echo "Generating $@"
 	@echo "#define HAVE_AVX2                  $(HAVE_AVX2)"                   > $@
 	@echo "#define HAVE_NEON32                $(HAVE_NEON32)"                >> $@
 	@echo "#define HAVE_NEON64                $(HAVE_NEON64)"                >> $@
