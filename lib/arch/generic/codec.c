@@ -5,7 +5,9 @@
 #include "../../../include/libbase64.h"
 #include "../../codecs.h"
 
-#if BASE64_WORDSIZE == 64
+#if BASE64_WORDSIZE == 32
+#  include "32/enc_loop.c"
+#elif BASE64_WORDSIZE == 64
 #  include "64/enc_loop.c"
 #endif
 
@@ -13,7 +15,7 @@ BASE64_ENC_FUNCTION(plain)
 {
 	#include "enc_head.c"
 #if BASE64_WORDSIZE == 32
-	#include "32/enc_loop.c"
+	enc_loop_generic_32(&c, &srclen, &o, &outl);
 #elif BASE64_WORDSIZE == 64
 	enc_loop_generic_64(&c, &srclen, &o, &outl);
 #endif
