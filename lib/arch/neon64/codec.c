@@ -90,8 +90,8 @@ BASE64_ENC_FUNCTION(neon64)
 {
 #ifdef BASE64_USE_NEON64
 	#include "../generic/enc_head.c"
-	enc_loop_neon64(&c, &srclen, &o, &outl);
-	enc_loop_generic_64(&c, &srclen, &o, &outl);
+	enc_loop_neon64(&s, &slen, &o, &olen);
+	enc_loop_generic_64(&s, &slen, &o, &olen);
 	#include "../generic/enc_tail.c"
 #else
 	BASE64_ENC_STUB

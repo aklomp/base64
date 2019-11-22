@@ -46,8 +46,8 @@ BASE64_ENC_FUNCTION(neon32)
 {
 #ifdef BASE64_USE_NEON32
 	#include "../generic/enc_head.c"
-	enc_loop_neon32(&c, &srclen, &o, &outl);
-	enc_loop_generic_32(&c, &srclen, &o, &outl);
+	enc_loop_neon32(&s, &slen, &o, &olen);
+	enc_loop_generic_32(&s, &slen, &o, &olen);
 	#include "../generic/enc_tail.c"
 #else
 	BASE64_ENC_STUB

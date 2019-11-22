@@ -15,9 +15,9 @@ BASE64_ENC_FUNCTION(plain)
 {
 	#include "enc_head.c"
 #if BASE64_WORDSIZE == 32
-	enc_loop_generic_32(&c, &srclen, &o, &outl);
+	enc_loop_generic_32(&s, &slen, &o, &olen);
 #elif BASE64_WORDSIZE == 64
-	enc_loop_generic_64(&c, &srclen, &o, &outl);
+	enc_loop_generic_64(&s, &slen, &o, &olen);
 #endif
 	#include "enc_tail.c"
 }

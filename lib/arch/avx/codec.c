@@ -19,7 +19,7 @@ BASE64_ENC_FUNCTION(avx)
 {
 #if HAVE_AVX
 	#include "../generic/enc_head.c"
-	enc_loop_ssse3(&c, &srclen, &o, &outl);
+	enc_loop_ssse3(&s, &slen, &o, &olen);
 	#include "../generic/enc_tail.c"
 #else
 	BASE64_ENC_STUB

@@ -19,7 +19,7 @@ BASE64_ENC_FUNCTION(ssse3)
 {
 #if HAVE_SSSE3
 	#include "../generic/enc_head.c"
-	enc_loop_ssse3(&c, &srclen, &o, &outl);
+	enc_loop_ssse3(&s, &slen, &o, &olen);
 	#include "../generic/enc_tail.c"
 #else
 	BASE64_ENC_STUB
