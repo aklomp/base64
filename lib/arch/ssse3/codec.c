@@ -9,6 +9,7 @@
 #include <tmmintrin.h>
 
 #include "dec_reshuffle.c"
+#include "dec_loop.c"
 #include "enc_reshuffle.c"
 #include "enc_translate.c"
 #include "enc_loop.c"
@@ -30,7 +31,7 @@ BASE64_DEC_FUNCTION(ssse3)
 {
 #if HAVE_SSSE3
 	#include "../generic/dec_head.c"
-	#include "dec_loop.c"
+	dec_loop_ssse3(&c, &srclen, &o, &outl);
 	#include "../generic/dec_tail.c"
 #else
 	BASE64_DEC_STUB
