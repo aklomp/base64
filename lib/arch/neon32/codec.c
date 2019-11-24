@@ -31,6 +31,7 @@ vqtbl1q_u8 (const uint8x16_t lut, const uint8x16_t indices)
 	return vcombine_u8(result.val[0], result.val[1]);
 }
 
+#include "../generic/32/dec_loop.c"
 #include "../generic/32/enc_loop.c"
 #include "dec_loop.c"
 #include "enc_reshuffle.c"
@@ -60,7 +61,7 @@ BASE64_DEC_FUNCTION(neon32)
 #ifdef BASE64_USE_NEON32
 	#include "../generic/dec_head.c"
 	dec_loop_neon32(&c, &srclen, &o, &outl);
-	#include "../generic/32/dec_loop.c"
+	dec_loop_generic_32(&c, &srclen, &o, &outl);
 	#include "../generic/dec_tail.c"
 #else
 	BASE64_DEC_STUB
