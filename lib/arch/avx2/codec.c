@@ -31,7 +31,7 @@ BASE64_DEC_FUNCTION(avx2)
 {
 #if HAVE_AVX2
 	#include "../generic/dec_head.c"
-	dec_loop_avx2(&c, &srclen, &o, &outl);
+	dec_loop_avx2(&s, &slen, &o, &olen);
 	#include "../generic/dec_tail.c"
 #else
 	BASE64_DEC_STUB

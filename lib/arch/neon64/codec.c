@@ -57,8 +57,8 @@ BASE64_DEC_FUNCTION(neon64)
 {
 #ifdef BASE64_USE_NEON64
 	#include "../generic/dec_head.c"
-	dec_loop_neon64(&c, &srclen, &o, &outl);
-	dec_loop_generic_32(&c, &srclen, &o, &outl);
+	dec_loop_neon64(&s, &slen, &o, &olen);
+	dec_loop_generic_32(&s, &slen, &o, &olen);
 	#include "../generic/dec_tail.c"
 #else
 	BASE64_DEC_STUB

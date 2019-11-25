@@ -31,7 +31,7 @@ BASE64_DEC_FUNCTION(sse42)
 {
 #if HAVE_SSE42
 	#include "../generic/dec_head.c"
-	dec_loop_ssse3(&c, &srclen, &o, &outl);
+	dec_loop_ssse3(&s, &slen, &o, &olen);
 	#include "../generic/dec_tail.c"
 #else
 	BASE64_DEC_STUB

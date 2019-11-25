@@ -30,7 +30,7 @@ BASE64_DEC_FUNCTION(plain)
 {
 	#include "dec_head.c"
 #if BASE64_WORDSIZE >= 32
-	dec_loop_generic_32(&c, &srclen, &o, &outl);
+	dec_loop_generic_32(&s, &slen, &o, &olen);
 #endif
 	#include "dec_tail.c"
 }
