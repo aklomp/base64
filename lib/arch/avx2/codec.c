@@ -11,6 +11,7 @@
 #include "dec_reshuffle.c"
 #include "enc_translate.c"
 #include "enc_reshuffle.c"
+#include "enc_loop.c"
 
 #endif	// HAVE_AVX2
 
@@ -18,7 +19,7 @@ BASE64_ENC_FUNCTION(avx2)
 {
 #if HAVE_AVX2
 	#include "../generic/enc_head.c"
-	#include "enc_loop.c"
+	enc_loop_avx2(&s, &slen, &o, &olen);
 	#include "../generic/enc_tail.c"
 #else
 	BASE64_ENC_STUB

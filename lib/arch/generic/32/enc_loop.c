@@ -1,26 +1,39 @@
-// If we have 32-bit ints, pick off 3 bytes at a time for as long as we can,
-// but ensure that there are at least 4 bytes available to avoid segfaulting:
-while (srclen >= 4)
+static inline void
+enc_loop_generic_32 (const uint8_t **s, size_t *slen, uint8_t **o, size_t *olen)
 {
-	uint32_t str;
+	if (*slen < 4) {
+		return;
+	}
 
-	// Load string:
-	memcpy(&str, c, sizeof (str));
+	// Process blocks of 3 bytes at a time. Because blocks are loaded 4
+	// bytes at a time, ensure that there will be at least one remaining
+	// byte after the last round, so that the final read will not pass
+	// beyond the bounds of the input buffer:
+	size_t rounds = (*slen - 1) / 3;
 
-	// Reorder to 32-bit big-endian, if not already in that format. The
-	// workset must be in big-endian, otherwise the shifted bits do not
-	// carry over properly among adjacent bytes:
-	str = BASE64_HTOBE32(str);
+	*slen -= rounds * 3;	// 3 bytes consumed per round
+	*olen += rounds * 4;	// 4 bytes produced per round
 
-	// Shift input by 6 bytes each round and mask in only the lower 6 bits;
-	// look up the character in the Base64 encoding table and write it to
-	// the output location:
-	*o++ = base64_table_enc[(str >> 26) & 0x3F];
-	*o++ = base64_table_enc[(str >> 20) & 0x3F];
-	*o++ = base64_table_enc[(str >> 14) & 0x3F];
-	*o++ = base64_table_enc[(str >>  8) & 0x3F];
+	do {
+		uint32_t src;
 
-	c += 3;		// 3 bytes of input
-	outl += 4;	// 4 bytes of output
-	srclen -= 3;
+		// Load input:
+		memcpy(&src, *s, sizeof (src));
+
+		// Reorder to 32-bit big-endian, if not already in that format.
+		// The workset must be in big-endian, otherwise the shifted
+		// bits do not carry over properly among adjacent bytes:
+		src = BASE64_HTOBE32(src);
+
+		// Shift input by 6 bytes each round and mask in only the lower
+		// 6 bits; look up the character in the Base64 encoding table
+		// and write it to the output location:
+		*(*o)++ = base64_table_enc[(src >> 26) & 0x3F];
+		*(*o)++ = base64_table_enc[(src >> 20) & 0x3F];
+		*(*o)++ = base64_table_enc[(src >> 14) & 0x3F];
+		*(*o)++ = base64_table_enc[(src >>  8) & 0x3F];
+
+		*s += 3;
+
+	} while (--rounds > 0);
 }

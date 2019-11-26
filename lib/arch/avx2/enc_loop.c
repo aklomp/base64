@@ -1,12 +1,24 @@
-// If we have AVX2 support, pick off 24 bytes at a time for as long as we can.
-// But because we read 32 bytes at a time, ensure we have enough room to do a
-// full 32-byte read without segfaulting:
+static inline void
+enc_loop_avx2 (const uint8_t **s, size_t *slen, uint8_t **o, size_t *olen)
+{
+	if (*slen < 32) {
+		return;
+	}
 
-if (srclen >= 32) {
-	const uint8_t *const o_orig = o;
+	// Process blocks of 24 bytes at a time. Because blocks are loaded 32
+	// bytes at a time an offset of -4, ensure that there will be at least
+	// 4 remaining bytes after the last round, so that the final read will
+	// not pass beyond the bounds of the input buffer:
+	size_t rounds = (*slen - 4) / 24;
 
-	// First load is done at c-0 not to get a segfault:
-	__m256i inputvector = _mm256_loadu_si256((__m256i *)(c - 0));
+	*slen -= rounds * 24;   // 24 bytes consumed per round
+	*olen += rounds * 32;   // 32 bytes produced per round
+
+	// First load is done at s - 0 to not get a segfault:
+	__m256i inputvector = _mm256_loadu_si256((__m256i *) *s);
+
+	// Subsequent loads will be done at s - 4, set pointer for next round:
+	*s += 20;
 
 	// Shift by 4 bytes, as required by enc_reshuffle:
 	inputvector = _mm256_permutevar8x32_epi32(inputvector, _mm256_setr_epi32(0, 0, 1, 2, 3, 4, 5, 6));
@@ -16,17 +28,18 @@ if (srclen >= 32) {
 		// Reshuffle, translate, store:
 		inputvector = enc_reshuffle(inputvector);
 		inputvector = enc_translate(inputvector);
-		_mm256_storeu_si256((__m256i *)o, inputvector);
+		_mm256_storeu_si256((__m256i *) *o, inputvector);
+		*o += 32;
 
-		c += 24;
-		o += 32;
-		srclen -= 24;
-		if (srclen < 28) {
+		if (--rounds == 0) {
 			break;
 		}
 
-		// Load at c-4, as required by enc_reshuffle:
-		inputvector = _mm256_loadu_si256((__m256i *)(c - 4));
+		// Load for the next round:
+		inputvector = _mm256_loadu_si256((__m256i *) *s);
+		*s += 24;
 	}
-	outl += (size_t)(o - o_orig);
+
+	// Add the offset back:
+	*s += 4;
 }

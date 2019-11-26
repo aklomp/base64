@@ -1,22 +1,34 @@
-// If we have SSSE3 support, pick off 12 bytes at a time for as long as we can.
-// But because we read 16 bytes at a time, ensure we have enough room to do a
-// full 16-byte read without segfaulting:
-while (srclen >= 16)
+static inline void
+enc_loop_ssse3 (const uint8_t **s, size_t *slen, uint8_t **o, size_t *olen)
 {
-	// Load string:
-	__m128i str = _mm_loadu_si128((__m128i *)c);
+	if (*slen < 16) {
+		return;
+	}
 
-	// Reshuffle:
-	str = enc_reshuffle(str);
+	// Process blocks of 12 bytes at a time. Because blocks are loaded 16
+	// bytes at a time, ensure that there will be at least 4 remaining
+	// bytes after the last round, so that the final read will not pass
+	// beyond the bounds of the input buffer:
+	size_t rounds = (*slen - 4) / 12;
 
-	// Translate reshuffled bytes to the Base64 alphabet:
-	str = enc_translate(str);
+	*slen -= rounds * 12;	// 12 bytes consumed per round
+	*olen += rounds * 16;	// 16 bytes produced per round
 
-	// Store:
-	_mm_storeu_si128((__m128i *)o, str);
+	do {
+		// Load string:
+		__m128i str = _mm_loadu_si128((__m128i *) *s);
 
-	c += 12;	// 3 * 4 bytes of input
-	o += 16;	// 4 * 4 bytes of output
-	outl += 16;
-	srclen -= 12;
+		// Reshuffle:
+		str = enc_reshuffle(str);
+
+		// Translate reshuffled bytes to the Base64 alphabet:
+		str = enc_translate(str);
+
+		// Store:
+		_mm_storeu_si128((__m128i *) *o, str);
+
+		*s += 12;
+		*o += 16;
+
+	} while (--rounds > 0);
 }

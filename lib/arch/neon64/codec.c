@@ -30,10 +30,6 @@ load_64byte_table (const uint8_t *p)
 #endif
 }
 
-// Encoding
-// Use a 64-byte lookup to do the encoding.
-// Reuse existing base64_table_enc table.
-
 // Decoding
 // The input consists of five valid character sets in the Base64 alphabet,
 // which we need to map back to the 6-bit values they represent.
@@ -81,6 +77,9 @@ static const uint8_t base64_dec_lut2[] =
 // Therefore, valid characters will be mapped to the valid [0..63] range and all invalid characters will be mapped
 // to values greater than 63.
 
+#include "../generic/64/enc_loop.c"
+#include "enc_loop.c"
+
 #endif	// BASE64_USE_NEON64
 
 // Stride size is so large on these NEON 64-bit functions
@@ -90,11 +89,9 @@ static const uint8_t base64_dec_lut2[] =
 BASE64_ENC_FUNCTION(neon64)
 {
 #ifdef BASE64_USE_NEON64
-	const uint8x16x4_t tbl_enc = load_64byte_table(base64_table_enc);
-
 	#include "../generic/enc_head.c"
-	#include "enc_loop.c"
-	#include "../generic/64/enc_loop.c"
+	enc_loop_neon64(&s, &slen, &o, &olen);
+	enc_loop_generic_64(&s, &slen, &o, &olen);
 	#include "../generic/enc_tail.c"
 #else
 	BASE64_ENC_STUB

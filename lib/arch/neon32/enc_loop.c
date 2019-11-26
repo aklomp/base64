@@ -1,23 +1,26 @@
-// If we have ARM NEON support, pick off 48 bytes at a time:
-while (srclen >= 48)
+static inline void
+enc_loop_neon32 (const uint8_t **s, size_t *slen, uint8_t **o, size_t *olen)
 {
-	uint8x16x3_t str;
-	uint8x16x4_t res;
+	size_t rounds = *slen / 48;
 
-	// Load 48 bytes and deinterleave:
-	str = vld3q_u8((uint8_t *)c);
+	*slen -= rounds * 48;	// 48 bytes consumed per round
+	*olen += rounds * 64;	// 64 bytes produced per round
 
-	// Reshuffle:
-	res = enc_reshuffle(str);
+	while (rounds-- > 0) {
 
-	// Translate reshuffled bytes to the Base64 alphabet:
-	res = enc_translate(res);
+		// Load 48 bytes and deinterleave:
+		uint8x16x3_t src = vld3q_u8(*s);
 
-	// Interleave and store result:
-	vst4q_u8((uint8_t *)o, res);
+		// Reshuffle:
+		uint8x16x4_t out = enc_reshuffle(src);
 
-	c += 48;	// 3 * 16 bytes of input
-	o += 64;	// 4 * 16 bytes of output
-	outl += 64;
-	srclen -= 48;
+		// Translate reshuffled bytes to the Base64 alphabet:
+		out = enc_translate(out);
+
+		// Interleave and store output:
+		vst4q_u8(*o, out);
+
+		*s += 48;
+		*o += 64;
+	}
 }

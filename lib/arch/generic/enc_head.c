@@ -1,10 +1,11 @@
 // Assume that *out is large enough to contain the output.
 // Theoretically it should be 4/3 the length of src.
-const uint8_t *c = (const uint8_t *)src;
-uint8_t *o = (uint8_t *)out;
+const uint8_t *s = (const uint8_t *) src;
+uint8_t *o = (uint8_t *) out;
 
 // Use local temporaries to avoid cache thrashing:
-size_t outl = 0;
+size_t olen = 0;
+size_t slen = srclen;
 struct base64_state st;
 st.bytes = state->bytes;
 st.carry = state->carry;
