@@ -1,14 +1,18 @@
-// If we have AVX2 support, pick off 32 bytes at a time for as long as we can,
-// but make sure that we quit before seeing any == markers at the end of the
-// string. Also, because we write 8 zeroes at the end of the output, ensure
-// that there are at least 11 valid bytes of input data remaining to close the
-// gap. 32 + 2 + 11 = 45 bytes:
-while (srclen >= 45)
+static inline void
+dec_loop_avx2 (const uint8_t **s, size_t *slen, uint8_t **o, size_t *olen)
 {
-	// Load string:
-	__m256i str = _mm256_loadu_si256((__m256i *)c);
+	if (*slen < 45) {
+		return;
+	}
 
-	// See ssse3/dec_loop.c for an explanation of how the code works.
+	// Process blocks of 32 bytes per round. Because 8 extra zero bytes are
+	// written after the output, ensure that there will be at least 13
+	// bytes of input data left to cover the gap. (11 data bytes and up to
+	// two end-of-string markers.)
+	size_t rounds = (*slen - 13) / 32;
+
+	*slen -= rounds * 32;	// 32 bytes consumed per round
+	*olen += rounds * 24;	// 24 bytes produced per round
 
 	const __m256i lut_lo = _mm256_setr_epi8(
 		0x15, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
@@ -30,29 +34,38 @@ while (srclen >= 45)
 
 	const __m256i mask_2F = _mm256_set1_epi8(0x2F);
 
-	// lookup
-	const __m256i hi_nibbles = _mm256_and_si256(_mm256_srli_epi32(str, 4), mask_2F);
-	const __m256i lo_nibbles = _mm256_and_si256(str, mask_2F);
-	const __m256i hi         = _mm256_shuffle_epi8(lut_hi, hi_nibbles);
-	const __m256i lo         = _mm256_shuffle_epi8(lut_lo, lo_nibbles);
-	const __m256i eq_2F      = _mm256_cmpeq_epi8(str, mask_2F);
-	const __m256i roll       = _mm256_shuffle_epi8(lut_roll, _mm256_add_epi8(eq_2F, hi_nibbles));
+	do {
+		// Load input:
+		__m256i str = _mm256_loadu_si256((__m256i *) *s);
 
-	if (!_mm256_testz_si256(lo, hi)) {
-		break;
-	}
+		// See the SSSE3 decoder for an explanation of the algorithm.
+		const __m256i hi_nibbles = _mm256_and_si256(_mm256_srli_epi32(str, 4), mask_2F);
+		const __m256i lo_nibbles = _mm256_and_si256(str, mask_2F);
+		const __m256i hi         = _mm256_shuffle_epi8(lut_hi, hi_nibbles);
+		const __m256i lo         = _mm256_shuffle_epi8(lut_lo, lo_nibbles);
 
-	// Now simply add the delta values to the input:
-	str = _mm256_add_epi8(str, roll);
+		if (!_mm256_testz_si256(lo, hi)) {
+			break;
+		}
 
-	// Reshuffle the input to packed 12-byte output format:
-	str = dec_reshuffle(str);
+		const __m256i eq_2F = _mm256_cmpeq_epi8(str, mask_2F);
+		const __m256i roll  = _mm256_shuffle_epi8(lut_roll, _mm256_add_epi8(eq_2F, hi_nibbles));
 
-	// Store back:
-	_mm256_storeu_si256((__m256i *)o, str);
+		// Now simply add the delta values to the input:
+		str = _mm256_add_epi8(str, roll);
 
-	c += 32;
-	o += 24;
-	outl += 24;
-	srclen -= 32;
+		// Reshuffle the input to packed 12-byte output format:
+		str = dec_reshuffle(str);
+
+		// Store the output:
+		_mm256_storeu_si256((__m256i *) *o, str);
+
+		*s += 32;
+		*o += 24;
+
+	} while (--rounds > 0);
+
+	// Adjust for any rounds that were skipped:
+	*slen += rounds * 32;
+	*olen -= rounds * 24;
 }

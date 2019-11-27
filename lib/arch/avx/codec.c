@@ -9,6 +9,7 @@
 #include <immintrin.h>
 
 #include "../ssse3/dec_reshuffle.c"
+#include "../ssse3/dec_loop.c"
 #include "../ssse3/enc_translate.c"
 #include "../ssse3/enc_reshuffle.c"
 #include "../ssse3/enc_loop.c"
@@ -30,7 +31,7 @@ BASE64_DEC_FUNCTION(avx)
 {
 #if HAVE_AVX
 	#include "../generic/dec_head.c"
-	#include "../ssse3/dec_loop.c"
+	dec_loop_ssse3(&s, &slen, &o, &olen);
 	#include "../generic/dec_tail.c"
 #else
 	BASE64_DEC_STUB

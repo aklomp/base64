@@ -11,6 +11,10 @@
 #  include "64/enc_loop.c"
 #endif
 
+#if BASE64_WORDSIZE >= 32
+#  include "32/dec_loop.c"
+#endif
+
 BASE64_ENC_FUNCTION(plain)
 {
 	#include "enc_head.c"
@@ -26,7 +30,7 @@ BASE64_DEC_FUNCTION(plain)
 {
 	#include "dec_head.c"
 #if BASE64_WORDSIZE >= 32
-	#include "32/dec_loop.c"
+	dec_loop_generic_32(&s, &slen, &o, &olen);
 #endif
 	#include "dec_tail.c"
 }
