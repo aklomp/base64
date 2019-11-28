@@ -1,5 +1,5 @@
 static inline uint8x16x4_t
-enc_translate (uint8x16x4_t in)
+enc_translate (const uint8x16x4_t in)
 {
 	// A lookup table containing the absolute offsets for all ranges:
 	const uint8x16_t lut = {
