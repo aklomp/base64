@@ -1,4 +1,28 @@
 static inline void
+enc_loop_generic_32_inner (const uint8_t **s, uint8_t **o)
+{
+	uint32_t src;
+
+	// Load input:
+	memcpy(&src, *s, sizeof (src));
+
+	// Reorder to 32-bit big-endian, if not already in that format. The
+	// workset must be in big-endian, otherwise the shifted bits do not
+	// carry over properly among adjacent bytes:
+	src = BASE64_HTOBE32(src);
+
+	// Shift input by 6 bytes each round and mask in only the lower 6 bits;
+	// look up the character in the Base64 encoding table and write it to
+	// the output location:
+	*(*o)++ = base64_table_enc[(src >> 26) & 0x3F];
+	*(*o)++ = base64_table_enc[(src >> 20) & 0x3F];
+	*(*o)++ = base64_table_enc[(src >> 14) & 0x3F];
+	*(*o)++ = base64_table_enc[(src >>  8) & 0x3F];
+
+	*s += 3;
+}
+
+static inline void
 enc_loop_generic_32 (const uint8_t **s, size_t *slen, uint8_t **o, size_t *olen)
 {
 	if (*slen < 4) {
@@ -15,25 +39,34 @@ enc_loop_generic_32 (const uint8_t **s, size_t *slen, uint8_t **o, size_t *olen)
 	*olen += rounds * 4;	// 4 bytes produced per round
 
 	do {
-		uint32_t src;
+		if (rounds >= 8) {
+			enc_loop_generic_32_inner(s, o);
+			enc_loop_generic_32_inner(s, o);
+			enc_loop_generic_32_inner(s, o);
+			enc_loop_generic_32_inner(s, o);
+			enc_loop_generic_32_inner(s, o);
+			enc_loop_generic_32_inner(s, o);
+			enc_loop_generic_32_inner(s, o);
+			enc_loop_generic_32_inner(s, o);
+			rounds -= 8;
+			continue;
+		}
+		if (rounds >= 4) {
+			enc_loop_generic_32_inner(s, o);
+			enc_loop_generic_32_inner(s, o);
+			enc_loop_generic_32_inner(s, o);
+			enc_loop_generic_32_inner(s, o);
+			rounds -= 4;
+			continue;
+		}
+		if (rounds >= 2) {
+			enc_loop_generic_32_inner(s, o);
+			enc_loop_generic_32_inner(s, o);
+			rounds -= 2;
+			continue;
+		}
+		enc_loop_generic_32_inner(s, o);
+		break;
 
-		// Load input:
-		memcpy(&src, *s, sizeof (src));
-
-		// Reorder to 32-bit big-endian, if not already in that format.
-		// The workset must be in big-endian, otherwise the shifted
-		// bits do not carry over properly among adjacent bytes:
-		src = BASE64_HTOBE32(src);
-
-		// Shift input by 6 bytes each round and mask in only the lower
-		// 6 bits; look up the character in the Base64 encoding table
-		// and write it to the output location:
-		*(*o)++ = base64_table_enc[(src >> 26) & 0x3F];
-		*(*o)++ = base64_table_enc[(src >> 20) & 0x3F];
-		*(*o)++ = base64_table_enc[(src >> 14) & 0x3F];
-		*(*o)++ = base64_table_enc[(src >>  8) & 0x3F];
-
-		*s += 3;
-
-	} while (--rounds > 0);
+	} while (rounds > 0);
 }
