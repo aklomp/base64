@@ -1,22 +1,11 @@
 static inline void
 enc_loop_neon64_inner (const uint8_t **s, uint8_t **o, const uint8x16x4_t *tbl_enc)
 {
-	uint8x16x4_t out;
-
 	// Load 48 bytes and deinterleave:
-	const uint8x16x3_t src = vld3q_u8(*s);
+	uint8x16x3_t src = vld3q_u8(*s);
 
 	// Divide bits of three input bytes over four output bytes:
-	out.val[0] = vshrq_n_u8(src.val[0], 2);
-	out.val[1] = vshrq_n_u8(src.val[1], 4) | vshlq_n_u8(src.val[0], 4);
-	out.val[2] = vshrq_n_u8(src.val[2], 6) | vshlq_n_u8(src.val[1], 2);
-	out.val[3] = src.val[2];
-
-	// Clear top two bits:
-	out.val[0] &= vdupq_n_u8(0x3F);
-	out.val[1] &= vdupq_n_u8(0x3F);
-	out.val[2] &= vdupq_n_u8(0x3F);
-	out.val[3] &= vdupq_n_u8(0x3F);
+	uint8x16x4_t out = enc_reshuffle(src);
 
 	// The bits have now been shifted to the right locations;
 	// translate their values 0..63 to the Base64 alphabet.
