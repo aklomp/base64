@@ -449,7 +449,7 @@ ARM processors
 | Processor                                 | Plain enc | Plain dec | NEON32 enc | NEON32 dec | NEON64 enc | NEON64 dec |
 |-------------------------------------------|----------:|----------:|-----------:|-----------:|-----------:|-----------:|
 | Raspberry PI B+ V1.2                      | 46\*      | 40\*      | -          | -          | -          | -          |
-| Raspberry PI 2 B V1.1                     | 87        | 141       | 192        | 225        | -          | -          |
+| Raspberry PI 2 B V1.1                     | 87        | 141       | 282        | 225        | -          | -          |
 | Apple iPhone SE armv7                     | 1056\*    | 895\*     | 2943\*     | 2618\*     | -          | -          |
 | Apple iPhone SE arm64                     | 1061\*    | 1239\*    | -          | -          | 4098\*     | 3983\*     |
 
