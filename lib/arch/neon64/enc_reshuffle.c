@@ -12,16 +12,16 @@ enc_reshuffle (const uint8x16x3_t in)
 	// inline assembly is well pipelined to avoid data dependencies.
 
 	__asm__ (
-		"vshr.u8 %q[o0], %q[i0], #2    \n\t"
-		"vshr.u8 %q[o1], %q[i1], #2    \n\t"
-		"vshr.u8 %q[o2], %q[i2], #4    \n\t"
-		"vsli.8  %q[o1], %q[i0], #6    \n\t"
-		"vsli.8  %q[o2], %q[i1], #4    \n\t"
-		"vshl.u8 %q[o3], %q[i2], #2    \n\t"
+		"ushr %[o0].16b, %[i0].16b, #2    \n\t"
+		"ushr %[o1].16b, %[i1].16b, #2    \n\t"
+		"ushr %[o2].16b, %[i2].16b, #4    \n\t"
+		"sli  %[o1].16b, %[i0].16b, #6    \n\t"
+		"sli  %[o2].16b, %[i1].16b, #4    \n\t"
+		"shl  %[o3].16b, %[i2].16b, #2    \n\t"
 
-		"vshr.u8 %q[o1], %q[o1], #2    \n\t"
-		"vshr.u8 %q[o2], %q[o2], #2    \n\t"
-		"vshr.u8 %q[o3], %q[o3], #2    \n\t"
+		"ushr %[o1].16b, %[o1].16b, #2    \n\t"
+		"ushr %[o2].16b, %[o2].16b, #2    \n\t"
+		"ushr %[o3].16b, %[o3].16b, #2    \n\t"
 
 		// Outputs:
 		: [o0] "=&w" (out.val[0]),
