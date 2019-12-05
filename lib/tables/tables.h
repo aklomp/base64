@@ -15,6 +15,9 @@ extern const uint32_t base64_table_dec_32bit_d0[];
 extern const uint32_t base64_table_dec_32bit_d1[];
 extern const uint32_t base64_table_dec_32bit_d2[];
 extern const uint32_t base64_table_dec_32bit_d3[];
+
+// This table is used by the 32 and 64-bit generic encoders:
+extern const uint16_t base64_table_enc_12bit[];
 #endif
 
 #endif	// BASE64_TABLES_H

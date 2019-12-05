@@ -36,4 +36,5 @@ base64_table_dec_8bit[] =
 
 #if BASE64_WORDSIZE >= 32
 #  include "table_dec_32bit.h"
+#  include "table_enc_12bit.h"
 #endif
