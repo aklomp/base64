@@ -11,19 +11,20 @@ enc_loop_generic_64_inner (const uint8_t **s, uint8_t **o)
 	// carry over properly among adjacent bytes:
 	src = BASE64_HTOBE64(src);
 
-	// Shift input by 6 bytes each round and mask in only the lower 6 bits;
-	// look up the character in the Base64 encoding table and write it to
-	// the output location:
-	*(*o)++ = base64_table_enc_6bit[(src >> 58) & 0x3F];
-	*(*o)++ = base64_table_enc_6bit[(src >> 52) & 0x3F];
-	*(*o)++ = base64_table_enc_6bit[(src >> 46) & 0x3F];
-	*(*o)++ = base64_table_enc_6bit[(src >> 40) & 0x3F];
-	*(*o)++ = base64_table_enc_6bit[(src >> 34) & 0x3F];
-	*(*o)++ = base64_table_enc_6bit[(src >> 28) & 0x3F];
-	*(*o)++ = base64_table_enc_6bit[(src >> 22) & 0x3F];
-	*(*o)++ = base64_table_enc_6bit[(src >> 16) & 0x3F];
+	// Four indices for the 12-bit lookup table:
+	const size_t index0 = (src >> 52) & 0xFFFU;
+	const size_t index1 = (src >> 40) & 0xFFFU;
+	const size_t index2 = (src >> 28) & 0xFFFU;
+	const size_t index3 = (src >> 16) & 0xFFFU;
+
+	// Table lookup and store:
+	memcpy(*o + 0, base64_table_enc_12bit + index0, 2);
+	memcpy(*o + 2, base64_table_enc_12bit + index1, 2);
+	memcpy(*o + 4, base64_table_enc_12bit + index2, 2);
+	memcpy(*o + 6, base64_table_enc_12bit + index3, 2);
 
 	*s += 6;
+	*o += 8;
 }
 
 static inline void
