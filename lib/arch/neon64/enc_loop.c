@@ -31,7 +31,7 @@ enc_loop_neon64 (const uint8_t **s, size_t *slen, uint8_t **o, size_t *olen)
 	*olen += rounds * 64;	// 64 bytes produced per round
 
 	// Load the encoding table:
-	const uint8x16x4_t tbl_enc = load_64byte_table(base64_table_enc);
+	const uint8x16x4_t tbl_enc = load_64byte_table(base64_table_enc_6bit);
 
 	while (rounds > 0) {
 		if (rounds >= 8) {

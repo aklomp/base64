@@ -2,6 +2,7 @@
 #include <stddef.h>
 
 #include "../include/libbase64.h"
+#include "config.h"
 
 // Function parameters for encoding functions:
 #define BASE64_ENC_PARAMS			\
@@ -62,12 +63,3 @@ struct codec
 };
 
 extern void codec_choose (struct codec *, int flags);
-
-// These tables are used by all codecs for fallback plain encoding/decoding:
-extern const uint8_t base64_table_enc[];
-extern const uint8_t base64_table_dec[];
-
-extern const uint32_t base64_table_dec_d0[];
-extern const uint32_t base64_table_dec_d1[];
-extern const uint32_t base64_table_dec_d2[];
-extern const uint32_t base64_table_dec_d3[];

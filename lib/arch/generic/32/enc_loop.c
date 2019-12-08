@@ -14,10 +14,10 @@ enc_loop_generic_32_inner (const uint8_t **s, uint8_t **o)
 	// Shift input by 6 bytes each round and mask in only the lower 6 bits;
 	// look up the character in the Base64 encoding table and write it to
 	// the output location:
-	*(*o)++ = base64_table_enc[(src >> 26) & 0x3F];
-	*(*o)++ = base64_table_enc[(src >> 20) & 0x3F];
-	*(*o)++ = base64_table_enc[(src >> 14) & 0x3F];
-	*(*o)++ = base64_table_enc[(src >>  8) & 0x3F];
+	*(*o)++ = base64_table_enc_6bit[(src >> 26) & 0x3F];
+	*(*o)++ = base64_table_enc_6bit[(src >> 20) & 0x3F];
+	*(*o)++ = base64_table_enc_6bit[(src >> 14) & 0x3F];
+	*(*o)++ = base64_table_enc_6bit[(src >>  8) & 0x3F];
 
 	*s += 3;
 }

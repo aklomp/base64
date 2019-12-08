@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "../../../include/libbase64.h"
+#include "../../tables/tables.h"
 #include "../../codecs.h"
 #include "../../config.h"
 #include "../../env.h"

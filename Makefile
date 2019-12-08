@@ -13,7 +13,8 @@ OBJS = \
   lib/arch/sse42/codec.o \
   lib/arch/avx/codec.o \
   lib/lib.o \
-  lib/codec_choose.o
+  lib/codec_choose.o \
+  lib/tables/tables.o
 
 HAVE_AVX2   = 0
 HAVE_NEON32 = 0
@@ -71,13 +72,7 @@ lib/config.h:
 	@echo "#define HAVE_SSE42  $(HAVE_SSE42)"  >> $@
 	@echo "#define HAVE_AVX    $(HAVE_AVX)"    >> $@
 
-lib/tables.h: lib/table_generator.c
-	$(CC) $(CFLAGS) -o lib/table_generator $^
-	./lib/table_generator > $@
-
 $(OBJS): lib/config.h
-
-lib/lib.o: lib/tables.h
 
 lib/arch/avx2/codec.o:   CFLAGS += $(AVX2_CFLAGS)
 lib/arch/neon32/codec.o: CFLAGS += $(NEON32_CFLAGS)
@@ -94,4 +89,4 @@ analyze: clean
 	scan-build --use-analyzer=`which clang` --status-bugs make
 
 clean:
-	rm -f bin/base64 bin/base64.o lib/libbase64.o lib/table_generator.o lib/table_generator lib/config.h $(OBJS)
+	rm -f bin/base64 bin/base64.o lib/libbase64.o lib/config.h $(OBJS)

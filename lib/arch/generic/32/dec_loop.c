@@ -2,10 +2,10 @@ static inline int
 dec_loop_generic_32_inner (const uint8_t **s, uint8_t **o, size_t *rounds)
 {
 	const uint32_t str
-		= base64_table_dec_d0[(*s)[0]]
-		| base64_table_dec_d1[(*s)[1]]
-		| base64_table_dec_d2[(*s)[2]]
-		| base64_table_dec_d3[(*s)[3]];
+		= base64_table_dec_32bit_d0[(*s)[0]]
+		| base64_table_dec_32bit_d1[(*s)[1]]
+		| base64_table_dec_32bit_d2[(*s)[2]]
+		| base64_table_dec_32bit_d3[(*s)[3]];
 
 #if BASE64_LITTLE_ENDIAN
 
