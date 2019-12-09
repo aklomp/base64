@@ -4,6 +4,8 @@
 
 #include "../../../include/libbase64.h"
 #include "../../codecs.h"
+#include "../../config.h"
+#include "../../env.h"
 
 #if HAVE_AVX2
 #include <immintrin.h>

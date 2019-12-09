@@ -4,6 +4,8 @@
 
 #include "../../../include/libbase64.h"
 #include "../../codecs.h"
+#include "../../config.h"
+#include "../../env.h"
 
 #ifdef __aarch64__
 #  if (defined(__ARM_NEON__) || defined(__ARM_NEON)) && HAVE_NEON64

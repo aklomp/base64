@@ -6,6 +6,7 @@
 
 #include "../include/libbase64.h"
 #include "codecs.h"
+#include "env.h"
 #include "tables.h"
 
 // These static function pointers are initialized once when the library is

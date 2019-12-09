@@ -4,6 +4,8 @@
 
 #include "../../../include/libbase64.h"
 #include "../../codecs.h"
+#include "../../config.h"
+#include "../../env.h"
 
 #if BASE64_WORDSIZE == 32
 #  include "32/enc_loop.c"
