@@ -19,7 +19,7 @@ if (st.eof) {
 	if (slen && (st.eof == BASE64_AEOF)) {
 		state->bytes = 0;
 		state->eof = BASE64_EOF;
-		ret = ((base64_table_dec[*s++] == 254) && (slen == 1)) ? 1 : 0;
+		ret = ((base64_table_dec_8bit[*s++] == 254) && (slen == 1)) ? 1 : 0;
 	}
 	return ret;
 }

@@ -1,5 +1,7 @@
-#ifndef _LIBBASE64_H
-#define _LIBBASE64_H
+#ifndef LIBBASE64_H
+#define LIBBASE64_H
+
+#include <stddef.h>	/* size_t */
 
 #ifdef __cplusplus
 extern "C" {
@@ -107,4 +109,4 @@ int base64_stream_decode
 }
 #endif
 
-#endif /* _LIBBASE64_H */
+#endif /* LIBBASE64_H */
