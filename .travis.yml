@@ -4,6 +4,7 @@ services: docker
 jobs:
   allow_failures:
     - os: osx
+    - arch: ppc64le
 
   include:
     - name: linux-amd64-gcc
