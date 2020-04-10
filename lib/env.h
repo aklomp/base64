@@ -20,6 +20,11 @@
 #  define BASE64_LITTLE_ENDIAN 0
 #endif
 
+// MSVC++ needs intrin.h for _byteswap_uint64 (issue #68):
+#if BASE64_LITTLE_ENDIAN && defined(_MSC_VER)
+#  include <intrin.h>
+#endif
+
 // Endian conversion functions:
 #if BASE64_LITTLE_ENDIAN
 #  ifdef _MSC_VER
