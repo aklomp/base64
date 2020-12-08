@@ -58,6 +58,7 @@ add_library(base64 STATIC
     # library files
     lib/lib.c
     lib/codec_choose.c
+    lib/tables/tables.c
     include/libbase64.h
 
     # codec implementations
