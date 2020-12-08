@@ -1,4 +1,4 @@
-# Written in 2016 by Henrik Steffen Gaﬂmann henrik@gassmann.onl
+# Written in 2016 by Henrik Steffen Ga√ümann henrik@gassmann.onl
 #
 # To the extent possible under law, the author(s) have dedicated all
 # copyright and related and neighboring rights to this software to the
@@ -18,7 +18,7 @@ function(add_base64_test TEST_NAME)
     endforeach()
     
     add_executable(${TEST_NAME} ${SRC_FILES})
-    target_link_libraries(${TEST_NAME} base64)
+    target_link_libraries(${TEST_NAME} PRIVATE base64)
     
     add_test(NAME ${TEST_NAME}
         COMMAND ${TEST_NAME}
@@ -35,3 +35,6 @@ add_base64_test(benchmark
     codec_supported.c
     benchmark.c
 )
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_link_libraries(benchmark PRIVATE rt)
+endif()
