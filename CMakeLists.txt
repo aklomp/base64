@@ -29,7 +29,6 @@ option(BASE64_BUILD_TESTS "add test projects" ON)
 option(BASE64_WITH_OPENMP "use openmp" OFF)
 
 if (_TARGET_ARCH STREQUAL "x86" OR _TARGET_ARCH STREQUAL "x64")
-    option(BASE64_WITH_FAST_UNALIGNED_ACCESS "vectorization: unaligned access enabled" ON)
     option(BASE64_WITH_SSSE3 "add SSSE 3 codepath" ON)
     option(BASE64_WITH_SSE41 "add SSE 4.1 codepath" ON)
     option(BASE64_WITH_SSE42 "add SSE 4.2 codepath" ON)
