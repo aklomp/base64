@@ -73,6 +73,7 @@ lib/config.h:
 	@echo "#define HAVE_AVX    $(HAVE_AVX)"    >> $@
 
 $(OBJS): lib/config.h
+$(OBJS): CFLAGS += -Ilib
 
 lib/arch/avx2/codec.o:   CFLAGS += $(AVX2_CFLAGS)
 lib/arch/neon32/codec.o: CFLAGS += $(NEON32_CFLAGS)
