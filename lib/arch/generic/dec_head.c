@@ -1,10 +1,11 @@
 int ret = 0;
-const uint8_t *c = (const uint8_t *)src;
-uint8_t *o = (uint8_t *)out;
+const uint8_t *s = (const uint8_t *) src;
+uint8_t *o = (uint8_t *) out;
 uint8_t q;
 
 // Use local temporaries to avoid cache thrashing:
-size_t outl = 0;
+size_t olen = 0;
+size_t slen = srclen;
 struct base64_state st;
 st.eof = state->eof;
 st.bytes = state->bytes;
@@ -15,10 +16,10 @@ if (st.eof) {
 	*outlen = 0;
 	ret = 0;
 	// If there was a trailing '=' to check, check it:
-	if (srclen && (st.eof == BASE64_AEOF)) {
+	if (slen && (st.eof == BASE64_AEOF)) {
 		state->bytes = 0;
 		state->eof = BASE64_EOF;
-		ret = ((base64_table_dec[*c++] == 254) && (srclen == 1)) ? 1 : 0;
+		ret = ((base64_table_dec_8bit[*s++] == 254) && (slen == 1)) ? 1 : 0;
 	}
 	return ret;
 }

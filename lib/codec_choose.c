@@ -5,6 +5,8 @@
 
 #include "../include/libbase64.h"
 #include "codecs.h"
+#include "config.h"
+#include "env.h"
 
 #if (__x86_64__ || __i386__ || _M_X86 || _M_X64)
   #define BASE64_X86

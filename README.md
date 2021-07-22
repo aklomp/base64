@@ -1,5 +1,7 @@
 # Fast Base64 stream encoder/decoder
 
+[![Build Status](https://travis-ci.org/aklomp/base64.png?branch=master)](https://travis-ci.org/aklomp/base64)
+
 This is an implementation of a base64 stream encoding/decoding library in C99
 with SIMD (AVX2, NEON, AArch64/NEON, SSSE3, SSE4.1, SSE4.2, AVX) and
 [OpenMP](http://www.openmp.org) acceleration. It also contains wrapper functions
@@ -403,9 +405,9 @@ written to standard output.
 
 ## Tests
 
-See `tests/` for a small test suite. Testing is automated with [Travis CI](https://travis-ci.org/aklomp/base64):
-
-[![Build Status](https://travis-ci.org/aklomp/base64.png?branch=master)](https://travis-ci.org/aklomp/base64)
+See `tests/` for a small test suite. Testing is automated with [Travis
+CI](https://travis-ci.org/aklomp/base64), which builds and tests the code
+across various architectures.
 
 ## Benchmarks
 
@@ -425,37 +427,37 @@ x86 processors
 
 | Processor                                 | Plain enc | Plain dec | SSSE3 enc | SSSE3 dec | AVX enc | AVX dec | AVX2 enc | AVX2 dec |
 |-------------------------------------------|----------:|----------:|----------:|----------:|--------:|--------:|---------:|---------:|
-| i7-4771 @ 3.5 GHz                         | 833       | 1111\*    | 3333\*    | 4444\*    | TBD     | TBD     | 4999\*   | 6666\*   |
-| i7-4770 @ 3.4 GHz DDR1600                 | 1790      | 3038      | 4899      | 4043\*    | 4796    | 5709\*  | 4681     | 6386\*   |
-| i7-4770 @ 3.4 GHz DDR1600 OPENMP 1 thread | 1784      | 3041      | 4945      | 4035\*    | 4776    | 5719\*  | 4661     | 6294\*   |
-| i7-4770 @ 3.4 GHz DDR1600 OPENMP 2 thread | 3401      | 5729      | 5489      | 7444\*    | 5003    | 8624\*  | 5105     | 8558\*   |
-| i7-4770 @ 3.4 GHz DDR1600 OPENMP 4 thread | 4884      | 7099      | 4917      | 7057\*    | 4799    | 7143\*  | 4902     | 7219\*   |
-| i7-4770 @ 3.4 GHz DDR1600 OPENMP 8 thread | 5212      | 8849      | 5284      | 9099\*    | 5289    | 9220\*  | 4849     | 9200\*   |
-| i7-4870HQ @ 2.5 GHz                       | 1471      | 3066      | 6721      | 6962      | 7015    | 8267    | 8328     | 11576    |
-| i5-4590S @ 3.0 GHz                        | 1721      | 3004      | 4155      | 5724      | 4190    | 5999    | 4149     | 6212     |
-| Xeon X5570 @ 2.93 GHz                     | 1097      | 1048\*    | 2077\*    | 2215\*    | -       | -       | -        | -        |
-| Pentium4 @ 3.4 GHz                        | 528       | 448\*     | -         | -         | -       | -       | -        | -        |
-| Atom N270                                 | 112       | 208       | 447       | 417       | -       | -       | -        | -        |
-| AMD E-450                                 | 370       | 332\*     | 405\*     | 366\*     | -       | -       | -        | -        |
-| Intel Edison @ 500 MHz                    | 79        | 92\*      | 152\*     | 172\*     | -       | -       | -        | -        |
-| Intel Edison @ 500 MHz OPENMP 2 thread    | 158       | 184\*     | 300\*     | 343\*     | -       | -       | -        | -        |
-| Intel Edison @ 500 MHz (x86-64)           | 97        | 146       | 197       | 207\*     | -       | -       | -        | -        |
-| Intel Edison @ 500 MHz (x86-64) 2 thread  | 193       | 288       | 389       | 410\*     | -       | -       | -        | -        |
+| i7-4771 @ 3.5 GHz                         | 833\*     | 1111\*    | 3333\*    | 4444\*    | TBD     | TBD     | 4999\*   | 6666\*   |
+| i7-4770 @ 3.4 GHz DDR1600                 | 1790\*    | 3038\*    | 4899\*    | 4043\*    | 4796\*  | 5709\*  | 4681\*   | 6386\*   |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 1 thread | 1784\*    | 3041\*    | 4945\*    | 4035\*    | 4776\*  | 5719\*  | 4661\*   | 6294\*   |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 2 thread | 3401\*    | 5729\*    | 5489\*    | 7444\*    | 5003\*  | 8624\*  | 5105\*   | 8558\*   |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 4 thread | 4884\*    | 7099\*    | 4917\*    | 7057\*    | 4799\*  | 7143\*  | 4902\*   | 7219\*   |
+| i7-4770 @ 3.4 GHz DDR1600 OPENMP 8 thread | 5212\*    | 8849\*    | 5284\*    | 9099\*    | 5289\*  | 9220\*  | 4849\*   | 9200\*   |
+| i7-4870HQ @ 2.5 GHz                       | 1471\*    | 3066\*    | 6721\*    | 6962\*    | 7015\*  | 8267\*  | 8328\*   | 11576\*  |
+| i5-4590S @ 3.0 GHz                        | 3356      | 3197      | 4363      | 6104      | 4243    | 6233    | 4160     | 6344     |
+| Xeon X5570 @ 2.93 GHz                     | 2161      | 1508      | 3160      | 3915      | -       | -       | -        | -        |
+| Pentium4 @ 3.4 GHz                        | 896       | 740       | -         | -         | -       | -       | -        | -        |
+| Atom N270                                 | 243       | 266       | 508       | 387       | -       | -       | -        | -        |
+| AMD E-450                                 | 645       | 564       | 625       | 634       | -       | -       | -        | -        |
+| Intel Edison @ 500 MHz                    | 79\*      | 92\*      | 152\*     | 172\*     | -       | -       | -        | -        |
+| Intel Edison @ 500 MHz OPENMP 2 thread    | 158\*     | 184\*     | 300\*     | 343\*     | -       | -       | -        | -        |
+| Intel Edison @ 500 MHz (x86-64)           | 97\*      | 146\*     | 197\*     | 207\*     | -       | -       | -        | -        |
+| Intel Edison @ 500 MHz (x86-64) 2 thread  | 193\*     | 288\*     | 389\*     | 410\*     | -       | -       | -        | -        |
 
 ARM processors
 
 | Processor                                 | Plain enc | Plain dec | NEON32 enc | NEON32 dec | NEON64 enc | NEON64 dec |
 |-------------------------------------------|----------:|----------:|-----------:|-----------:|-----------:|-----------:|
-| Raspberry PI B+ V1.2                      | 46        | 40\*      | -          | -          | -          | -          |
-| Raspberry PI 2 B V1.1                     | 104       | 88\*      | 188        | 116\*      | -          | -          |
-| Apple iPhone SE armv7                     | 1056      | 895       | 2943       | 2618       | -          | -          |
-| Apple iPhone SE arm64                     | 1061      | 1239      | -          | -          | 4098       | 3983       |
+| Raspberry PI B+ V1.2                      | 46\*      | 40\*      | -          | -          | -          | -          |
+| Raspberry PI 2 B V1.1                     | 85        | 141       | 282        | 225        | -          | -          |
+| Apple iPhone SE armv7                     | 1056\*    | 895\*     | 2943\*     | 2618\*     | -          | -          |
+| Apple iPhone SE arm64                     | 1061\*    | 1239\*    | -          | -          | 4098\*     | 3983\*     |
 
 PowerPC processors
 
 | Processor                                 | Plain enc | Plain dec |
 |-------------------------------------------|----------:|----------:|
-| PowerPC E6500 @ 1.8GHz                    | 270       | 265\*     |
+| PowerPC E6500 @ 1.8GHz                    | 270\*     | 265\*     |
 
 
 Benchmarks on i7-4770 @ 3.4 GHz DDR1600 with varrying buffer sizes:

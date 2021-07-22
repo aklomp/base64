@@ -9,7 +9,7 @@
 
 /* SPECIAL DECODE TABLES FOR LITTLE ENDIAN (INTEL) CPUS */
 
-const uint32_t base64_table_dec_d0[256] = {
+const uint32_t base64_table_dec_32bit_d0[256] = {
 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
@@ -56,7 +56,7 @@ const uint32_t base64_table_dec_d0[256] = {
 };
 
 
-const uint32_t base64_table_dec_d1[256] = {
+const uint32_t base64_table_dec_32bit_d1[256] = {
 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
@@ -103,7 +103,7 @@ const uint32_t base64_table_dec_d1[256] = {
 };
 
 
-const uint32_t base64_table_dec_d2[256] = {
+const uint32_t base64_table_dec_32bit_d2[256] = {
 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
@@ -150,7 +150,7 @@ const uint32_t base64_table_dec_d2[256] = {
 };
 
 
-const uint32_t base64_table_dec_d3[256] = {
+const uint32_t base64_table_dec_32bit_d3[256] = {
 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
@@ -202,7 +202,7 @@ const uint32_t base64_table_dec_d3[256] = {
 
 /* SPECIAL DECODE TABLES FOR BIG ENDIAN (IBM/MOTOROLA/SUN) CPUS */
 
-const uint32_t base64_table_dec_d0[256] = {
+const uint32_t base64_table_dec_32bit_d0[256] = {
 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
@@ -249,7 +249,7 @@ const uint32_t base64_table_dec_d0[256] = {
 };
 
 
-const uint32_t base64_table_dec_d1[256] = {
+const uint32_t base64_table_dec_32bit_d1[256] = {
 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
@@ -296,7 +296,7 @@ const uint32_t base64_table_dec_d1[256] = {
 };
 
 
-const uint32_t base64_table_dec_d2[256] = {
+const uint32_t base64_table_dec_32bit_d2[256] = {
 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
@@ -343,7 +343,7 @@ const uint32_t base64_table_dec_d2[256] = {
 };
 
 
-const uint32_t base64_table_dec_d3[256] = {
+const uint32_t base64_table_dec_32bit_d3[256] = {
 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,

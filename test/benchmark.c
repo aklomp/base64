@@ -1,4 +1,12 @@
-#define _POSIX_C_SOURCE 199309L		// for clock_gettime()
+// For clock_gettime(2):
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 199309L
+#endif
+
+// For CLOCK_REALTIME on FreeBSD:
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE   600
+#endif
 
 #include <stdbool.h>
 #include <sys/types.h>
