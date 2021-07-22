@@ -14,6 +14,7 @@ cmake_minimum_required(VERSION 3.1)
 
 project(base64 LANGUAGES C VERSION 0.3.0)
 
+include(CMakeDependentOption)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 
 #######################################################################
@@ -27,6 +28,7 @@ detect_target_architecture(_TARGET_ARCH)
 option(BASE64_INSTALL_TARGET "add an install target" ON)
 option(BASE64_BUILD_TESTS "add test projects" ON)
 option(BASE64_WITH_OPENMP "use openmp" OFF)
+cmake_dependent_option(BASE64_REGENERATE_TABLES "regenerate the codec tables" OFF "NOT CMAKE_CROSSCOMPILING" OFF)
 
 if (_TARGET_ARCH STREQUAL "x86" OR _TARGET_ARCH STREQUAL "x64")
     option(BASE64_WITH_SSSE3 "add SSSE 3 codepath" ON)
@@ -55,10 +57,13 @@ endif()
 ########################################################################
 # Regenerate headers
 
-if(NOT CMAKE_CROSSCOMPILING)
+if (BASE64_REGENERATE_TABLES)
     # Generate tables in build folder and copy to source tree.
     # Don't add the tables in the source tree to the outputs, to avoid `make clean` removing them.
-    add_subdirectory(lib/tables)
+    add_executable(table_generator
+        lib/tables/table_generator.c
+    )
+
     add_custom_command(OUTPUT table_dec_32bit.h
         COMMAND table_generator > table_dec_32bit.h
         COMMAND "${CMAKE_COMMAND}" -E copy table_dec_32bit.h "${CMAKE_CURRENT_SOURCE_DIR}/lib/tables/table_dec_32bit.h"
@@ -83,8 +88,6 @@ add_library(base64 STATIC
     include/libbase64.h
 
     lib/tables/tables.c
-    table_enc_12bit.h
-    table_dec_32bit.h
 
     # codec implementations
     lib/arch/generic/codec.c
