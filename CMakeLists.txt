@@ -12,7 +12,7 @@
 ########################################################################
 cmake_minimum_required(VERSION 3.1)
 
-project(base64 LANGUAGES C VERSION 0.3.0)
+project(base64 LANGUAGES C VERSION 0.4.0)
 
 include(GNUInstallDirs)
 include(CMakeDependentOption)
