@@ -31,10 +31,13 @@ add_base64_test(test_base64
     test_base64.c
 )
 
-add_base64_test(benchmark
-    codec_supported.c
-    benchmark.c
-)
+if (NOT WIN32)
+    add_base64_test(benchmark
+        codec_supported.c
+        benchmark.c
+    )
+endif()
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(benchmark PRIVATE rt)
 endif()

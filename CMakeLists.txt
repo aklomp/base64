@@ -14,6 +14,7 @@ cmake_minimum_required(VERSION 3.1)
 
 project(base64 LANGUAGES C VERSION 0.3.0)
 
+include(GNUInstallDirs)
 include(CMakeDependentOption)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 
@@ -30,7 +31,6 @@ find_package(OpenMP)
 
 ########################################################################
 # Compilation options
-option(BASE64_INSTALL_TARGET "add an install target" ON)
 option(BASE64_BUILD_TESTS "add test projects" ON)
 cmake_dependent_option(BASE64_WITH_OPENMP "use openmp" OFF "OPENMP_FOUND" OFF)
 cmake_dependent_option(BASE64_REGENERATE_TABLES "regenerate the codec tables" OFF "NOT CMAKE_CROSSCOMPILING" OFF)
@@ -99,12 +99,13 @@ add_library(base64 STATIC
     lib/arch/neon64/codec.c
 )
 
-if (NOT BASE64_STANDALONE_PROJECT)
-    # export inlucde path if base64 added as subdirectory
-    target_include_directories(base64 INTERFACE
+target_include_directories(base64
+    PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    )
-endif()
+        $<INSTALL_INTERFACE:include>
+    PRIVATE
+        "${CMAKE_CURRENT_BINARY_DIR}"
+)
 
 ####################################################################
 # platform/compiler specific configuration
@@ -181,7 +182,6 @@ elseif (_TARGET_ARCH STREQUAL "arm")
 endif()
 
 configure_file("${CMAKE_CURRENT_LIST_DIR}/cmake/config.h.in" "${CMAKE_CURRENT_BINARY_DIR}/config.h" @ONLY)
-target_include_directories(base64 PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 
 ########################################################################
 # OpenMP Settings
@@ -199,29 +199,29 @@ if (BASE64_BUILD_TESTS)
 endif()
 
 ########################################################################
-# install target
-if (BASE64_INSTALL_TARGET)
-    install(TARGETS base64 EXPORT base64-targets
-        RUNTIME DESTINATION bin/$<CONFIG>
-        LIBRARY DESTINATION lib/$<CONFIG>
-        ARCHIVE DESTINATION lib/$<CONFIG>
-        INCLUDES DESTINATION include
-    )
-    install(FILES include/libbase64.h DESTINATION include)
+# cmake install
+install(DIRECTORY include/ TYPE INCLUDE)
+install(TARGETS base64 EXPORT base64-targets)
 
-    include(CMakePackageConfigHelpers)
-    write_basic_package_version_file(
-        "${CMAKE_CURRENT_BINARY_DIR}/base64-config-version.cmake"
-        VERSION ${BASE64_VERSION}
-        COMPATIBILITY ExactVersion
-    )
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/base64-config-version.cmake" DESTINATION cmake)
+include(CMakePackageConfigHelpers)
+configure_package_config_file(cmake/base64-config.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/base64-config.cmake"
 
-    configure_file(cmake/base64-config.cmake
+    INSTALL_DESTINATION "${CMAKE_INSTALL_DATADIR}/base64"
+)
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/base64-config-version.cmake"
+    VERSION ${BASE64_VERSION}
+    COMPATIBILITY ExactVersion
+)
+
+install(FILES
         "${CMAKE_CURRENT_BINARY_DIR}/base64-config.cmake"
-        COPYONLY
-    )
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/base64-config.cmake" DESTINATION cmake)
+        "${CMAKE_CURRENT_BINARY_DIR}/base64-config-version.cmake"
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/base64"
+)
 
-    install(EXPORT base64-targets DESTINATION cmake)
-endif()
+install(EXPORT base64-targets
+    NAMESPACE aklomp::
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/base64"
+)
