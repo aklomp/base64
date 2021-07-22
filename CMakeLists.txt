@@ -16,6 +16,7 @@ project(base64 LANGUAGES C VERSION 0.3.0)
 
 include(GNUInstallDirs)
 include(CMakeDependentOption)
+include(FeatureSummary)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 
 #######################################################################
@@ -27,28 +28,38 @@ detect_target_architecture(_TARGET_ARCH)
 ###################################################################
 # optional/conditional dependencies
 find_package(OpenMP)
+set_package_properties(OpenMP PROPERTIES
+    TYPE OPTIONAL
+    PURPOSE "Allows to utilize openmp"
+)
 
 
 ########################################################################
 # Compilation options
 option(BASE64_BUILD_TESTS "add test projects" ON)
 cmake_dependent_option(BASE64_WITH_OPENMP "use openmp" OFF "OPENMP_FOUND" OFF)
+add_feature_info("OpenMP codec" BASE64_WITH_OPENMP "spreads codec work accross multiple threads")
 cmake_dependent_option(BASE64_REGENERATE_TABLES "regenerate the codec tables" OFF "NOT CMAKE_CROSSCOMPILING" OFF)
 
-if (_TARGET_ARCH STREQUAL "x86" OR _TARGET_ARCH STREQUAL "x64")
-    option(BASE64_WITH_SSSE3 "add SSSE 3 codepath" ON)
-    option(BASE64_WITH_SSE41 "add SSE 4.1 codepath" ON)
-    option(BASE64_WITH_SSE42 "add SSE 4.2 codepath" ON)
-    option(BASE64_WITH_AVX "add AVX codepath" ON)
-    option(BASE64_WITH_AVX2 "add AVX 2 codepath" ON)
+set(_IS_X86 "\"${_TARGET_ARCH}\" STREQUAL \"x86\" OR \"${_TARGET_ARCH}\" STREQUAL \"x64\"")
+cmake_dependent_option(BASE64_WITH_SSSE3 "add SSSE 3 codepath" ON ${_IS_X86} OFF)
+add_feature_info(SSSE3 BASE64_WITH_SSSE3 "add SSSE 3 codepath")
+cmake_dependent_option(BASE64_WITH_SSE41 "add SSE 4.1 codepath" ON ${_IS_X86} OFF)
+add_feature_info(SSE4.1 BASE64_WITH_SSE41 "add SSE 4.1 codepath")
+cmake_dependent_option(BASE64_WITH_SSE42 "add SSE 4.2 codepath" ON ${_IS_X86} OFF)
+add_feature_info(SSE4.2 BASE64_WITH_SSE42 "add SSE 4.2 codepath")
+cmake_dependent_option(BASE64_WITH_AVX "add AVX codepath" ON ${_IS_X86} OFF)
+add_feature_info(AVX BASE64_WITH_AVX "add AVX codepath")
+cmake_dependent_option(BASE64_WITH_AVX2 "add AVX 2 codepath" ON ${_IS_X86} OFF)
+add_feature_info(AVX2 BASE64_WITH_AVX2 "add AVX2 codepath")
 
-elseif (_TARGET_ARCH STREQUAL "arm")
-    option(BASE64_WITH_NEON32 "add NEON32 codepath" OFF)
+set(_IS_ARM "\"${_TARGET_ARCH}\" STREQUAL \"arm\"")
+cmake_dependent_option(BASE64_WITH_NEON32 "add NEON32 codepath" OFF ${_IS_ARM} OFF)
+add_feature_info(NEON32 BASE64_WITH_NEON32 "add NEON32 codepath")
 
-elseif (_TARGET_ARCH STREQUAL "arm64")
-    option(BASE64_WITH_NEON64 "add NEON64 codepath" ON)
-
-endif()
+set(_IS_ARM64 "\"${_TARGET_ARCH}\" STREQUAL \"arm64\"")
+cmake_dependent_option(BASE64_WITH_NEON64 "add NEON64 codepath" ON ${_IS_ARM64} OFF)
+add_feature_info(NEON64 BASE64_WITH_NEON64 "add NEON64 codepath")
 
 
 ########################################################################
@@ -225,3 +236,6 @@ install(EXPORT base64-targets
     NAMESPACE aklomp::
     DESTINATION "${CMAKE_INSTALL_DATADIR}/base64"
 )
+
+########################################################################
+feature_summary(WHAT PACKAGES_FOUND PACKAGES_NOT_FOUND ENABLED_FEATURES DISABLED_FEATURES)
