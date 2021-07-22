@@ -1,4 +1,4 @@
-# Written in 2016-2017 by Henrik Steffen Gaßmann henrik@gassmann.onl
+# Written in 2016-2017, 2021 by Henrik Steffen Gaßmann henrik@gassmann.onl
 #
 # To the extent possible under law, the author(s) have dedicated all
 # copyright and related and neighboring rights to this software to the
@@ -61,6 +61,8 @@ set(_IS_ARM64 "\"${_TARGET_ARCH}\" STREQUAL \"arm64\"")
 cmake_dependent_option(BASE64_WITH_NEON64 "add NEON64 codepath" ON ${_IS_ARM64} OFF)
 add_feature_info(NEON64 BASE64_WITH_NEON64 "add NEON64 codepath")
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
 ########################################################################
 # Regenerate headers
@@ -89,7 +91,7 @@ endif()
 
 ########################################################################
 # library project
-add_library(base64 STATIC
+add_library(base64
     # library files
     lib/lib.c
     lib/codec_choose.c
@@ -124,7 +126,27 @@ set_target_properties(base64 PROPERTIES
     C_STANDARD 99
     C_STANDARD_REQUIRED YES
     C_EXTENSIONS OFF
+    VERSION ${PROJECT_VERSION}
+    SOVERSION ${PROJECT_VERSION_MAJOR}
 )
+
+#generate_export_header(base64)
+# the following definitions and those in libbase64.h have been
+# kept forward compatible in case we ever switch to generate_export_header
+if (BUILD_SHARED_LIBS)
+    set_target_properties(base64 PROPERTIES
+        C_VISIBILITY_PRESET hidden
+    )
+    target_compile_definitions(base64 
+        PRIVATE
+            BASE64_EXPORTS
+    )
+else()
+    target_compile_definitions(base64
+        PUBLIC
+            BASE64_STATIC_DEFINE
+    )
+endif()
 
 target_compile_options(base64 PRIVATE
   $<$<C_COMPILER_ID:MSVC>:
