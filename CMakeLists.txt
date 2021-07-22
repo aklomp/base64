@@ -23,11 +23,16 @@ include(TargetArch)
 detect_target_architecture(_TARGET_ARCH)
 
 
+###################################################################
+# optional/conditional dependencies
+find_package(OpenMP)
+
+
 ########################################################################
 # Compilation options
 option(BASE64_INSTALL_TARGET "add an install target" ON)
 option(BASE64_BUILD_TESTS "add test projects" ON)
-option(BASE64_WITH_OPENMP "use openmp" OFF)
+cmake_dependent_option(BASE64_WITH_OPENMP "use openmp" OFF "OPENMP_FOUND" OFF)
 cmake_dependent_option(BASE64_REGENERATE_TABLES "regenerate the codec tables" OFF "NOT CMAKE_CROSSCOMPILING" OFF)
 
 if (_TARGET_ARCH STREQUAL "x86" OR _TARGET_ARCH STREQUAL "x64")
@@ -45,14 +50,6 @@ elseif (_TARGET_ARCH STREQUAL "arm64")
 
 endif()
 
-###################################################################
-# OpenMP
-if(BASE64_WITH_OPENMP)
-    find_package(OpenMP)
-    if (OPENMP_FOUND)
-        option(BASE64_USE_OpenMP "Utilize OpenMP to parallelize encoding and decoding." ON)
-    endif()
-endif()
 
 ########################################################################
 # Regenerate headers
@@ -188,7 +185,7 @@ target_include_directories(base64 PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 
 ########################################################################
 # OpenMP Settings
-if (BASE64_USE_OpenMP)
+if (BASE64_WITH_OpenMP)
     target_compile_options(base64
         PRIVATE
             ${OpenMP_C_FLAGS}
