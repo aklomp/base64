@@ -20,11 +20,11 @@
 #define BASE64_SYMBOL_PRIVATE
 #endif
 
-#if defined(BASE64_STATIC_DEFINE)	 
+#if defined(BASE64_STATIC_DEFINE)
 #define BASE64_EXPORT
 #define BASE64_NO_EXPORT
 
-#else	   
+#else
 #if defined(BASE64_EXPORTS) // defined if we are building the shared library
 #define BASE64_EXPORT BASE64_SYMBOL_EXPORT
 

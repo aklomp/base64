@@ -129,6 +129,7 @@ set_target_properties(base64 PROPERTIES
     C_STANDARD 99
     C_STANDARD_REQUIRED YES
     C_EXTENSIONS OFF
+    DEFINE_SYMBOL BASE64_EXPORTS
     VERSION ${PROJECT_VERSION}
     SOVERSION ${PROJECT_VERSION_MAJOR}
 )
@@ -139,10 +140,6 @@ set_target_properties(base64 PROPERTIES
 if (BUILD_SHARED_LIBS)
     set_target_properties(base64 PROPERTIES
         C_VISIBILITY_PRESET hidden
-    )
-    target_compile_definitions(base64 
-        PRIVATE
-            BASE64_EXPORTS
     )
 else()
     target_compile_definitions(base64
