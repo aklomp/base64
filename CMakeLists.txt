@@ -240,7 +240,7 @@ include(CMakePackageConfigHelpers)
 configure_package_config_file(cmake/base64-config.cmake.in
     "${CMAKE_CURRENT_BINARY_DIR}/base64-config.cmake"
 
-    INSTALL_DESTINATION "${CMAKE_INSTALL_DATADIR}/base64"
+    INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
 )
 write_basic_package_version_file(
     "${CMAKE_CURRENT_BINARY_DIR}/base64-config-version.cmake"
@@ -251,12 +251,12 @@ write_basic_package_version_file(
 install(FILES
         "${CMAKE_CURRENT_BINARY_DIR}/base64-config.cmake"
         "${CMAKE_CURRENT_BINARY_DIR}/base64-config-version.cmake"
-    DESTINATION "${CMAKE_INSTALL_DATADIR}/base64"
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
 )
 
 install(EXPORT base64-targets
     NAMESPACE aklomp::
-    DESTINATION "${CMAKE_INSTALL_DATADIR}/base64"
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
 )
 
 ########################################################################
