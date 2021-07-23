@@ -74,14 +74,14 @@ if (BASE64_REGENERATE_TABLES)
         lib/tables/table_generator.c
     )
 
-    add_custom_command(OUTPUT table_dec_32bit.h
+    add_custom_command(OUTPUT table_dec_32bit.h "${CMAKE_CURRENT_SOURCE_DIR}/lib/tables/table_dec_32bit.h"
         COMMAND table_generator > table_dec_32bit.h
         COMMAND "${CMAKE_COMMAND}" -E copy table_dec_32bit.h "${CMAKE_CURRENT_SOURCE_DIR}/lib/tables/table_dec_32bit.h"
         DEPENDS table_generator
     )
     set(Python_ADDITIONAL_VERSIONS 3)
     find_package(PythonInterp REQUIRED)
-    add_custom_command(OUTPUT table_enc_12bit.h
+    add_custom_command(OUTPUT table_enc_12bit.h "${CMAKE_CURRENT_SOURCE_DIR}/lib/tables/table_enc_12bit.h"
         COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/lib/tables/table_enc_12bit.py" > table_enc_12bit.h
         COMMAND "${CMAKE_COMMAND}" -E copy table_enc_12bit.h "${CMAKE_CURRENT_SOURCE_DIR}/lib/tables/table_enc_12bit.h"
         DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/lib/tables/table_enc_12bit.py"
@@ -98,6 +98,9 @@ add_library(base64
     include/libbase64.h
 
     lib/tables/tables.c
+    # Add generated headers explicitly to target, to insert them in the dependency tree
+    lib/tables/table_dec_32bit.h
+    lib/tables/table_enc_12bit.h
 
     # codec implementations
     lib/arch/generic/codec.c
