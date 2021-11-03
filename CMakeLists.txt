@@ -245,7 +245,7 @@ configure_package_config_file(cmake/base64-config.cmake.in
 write_basic_package_version_file(
     "${CMAKE_CURRENT_BINARY_DIR}/base64-config-version.cmake"
     VERSION ${BASE64_VERSION}
-    COMPATIBILITY ExactVersion
+    COMPATIBILITY SameMajorVersion
 )
 
 install(FILES
