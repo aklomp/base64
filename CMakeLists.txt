@@ -36,6 +36,7 @@ set_package_properties(OpenMP PROPERTIES
 
 ########################################################################
 # Compilation options
+option(BASE64_WERROR "Treat warnings as error" ON)
 option(BASE64_BUILD_TESTS "add test projects" ON)
 cmake_dependent_option(BASE64_WITH_OPENMP "use openmp" OFF "OPENMP_FOUND" OFF)
 add_feature_info("OpenMP codec" BASE64_WITH_OPENMP "spreads codec work accross multiple threads")
@@ -151,7 +152,6 @@ endif()
 target_compile_options(base64 PRIVATE
   $<$<C_COMPILER_ID:MSVC>:
     /W4
-    /WX # All warnings as error
     /we4013 # Error warning C4013: 'function' undefined; assuming extern returning int
     /we4700 # Error warning C4700: uninitialized local variable
     /we4715 # not all control paths return a value
@@ -163,6 +163,7 @@ target_compile_options(base64 PRIVATE
     -Wextra
     -Wpedantic
   >
+  $<$<BOOL:${BASE64_WERROR}>:$<IF:$<C_COMPILER_ID:MSVC>,/WX,-Werror>>
 )
 
 target_compile_definitions(base64 PRIVATE
