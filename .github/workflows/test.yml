@@ -28,3 +28,17 @@ jobs:
         uses: actions/checkout@v2
       - name: Run tests
         run: ./test/ci/amd64.sh
+  test-alpine:
+    name: alpine-amd64-gcc
+    runs-on: ubuntu-20.04
+    container:
+      image: alpine:3.12
+      env:
+        CC: gcc
+    steps:
+      - name: Install deps
+        run: apk add --update bash build-base git
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Run tests
+        run: ./test/ci/amd64.sh
