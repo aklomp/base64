@@ -1,0 +1,45 @@
+name: Test
+
+on: [push, pull_request]
+
+jobs:
+  makefile-test:
+    name: makefile-${{ matrix.runner }}-amd64-${{ matrix.compiler }} ${{ ((matrix.openmp == 1) && '+openmp') || '' }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: ["ubuntu-18.04"]
+        compiler: ["gcc", "clang"]
+        openmp: ["0", "1"]
+        include:
+          - runner: "macos-11"
+            compiler: "clang"
+            openmp: "0"
+    env:
+      OPENMP: ${{ matrix.openmp }}
+      OMP_NUM_THREADS: ${{ ((matrix.openmp == 1) && '2') || '0' }}
+      CC: ${{ matrix.compiler }}
+      OBJCOPY: ${{ (startsWith(matrix.runner, 'macos') && 'echo') || 'objcopy' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Run tests
+        run: ./test/ci/amd64.sh
+
+  cmake-test:
+    name: cmake-${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: ["ubuntu-18.04", "macos-11", "windows-2019"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: CMake Configure
+        run: cmake -B out -DCMAKE_BUILD_TYPE=Release ${{ runner.os == 'macOS' && '-DBASE64_WITH_AVX2=OFF' || '' }}
+      - name: CMake Build
+        run: cmake --build out --config Release --verbose
+      - name: CTest
+        run: ctest --test-dir out -VV --build-config Release
