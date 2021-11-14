@@ -3,29 +3,9 @@ services: docker
 
 jobs:
   allow_failures:
-    - os: osx
     - arch: ppc64le
 
   include:
-    - name: linux-amd64-gcc
-      os: linux
-      arch: amd64
-      compiler: gcc
-      script: test/ci/amd64.sh
-
-    - name: linux-amd64-gcc +openmp
-      os: linux
-      arch: amd64
-      compiler: gcc
-      env: OPENMP=1 OMP_NUM_THREADS=4
-      script: test/ci/amd64.sh
-
-    - name: linux-amd64-clang
-      os: linux
-      arch: amd64
-      compiler: clang
-      script: test/ci/amd64.sh
-
     - name: linux-arm32-gcc
       compiler: gcc
       script: test/ci/docker-arm32.sh
@@ -63,9 +43,3 @@ jobs:
       arch: ppc64le
       compiler: gcc
       script: test/ci/generic.sh
-
-    - name: osx-amd64-clang
-      os: osx
-      arch: amd64
-      compiler: clang
-      script: test/ci/amd64.sh

@@ -1,0 +1,30 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: ${{ matrix.runner }}-amd64-${{ matrix.compiler }} ${{ ((matrix.openmp == 1) && '+openmp') || '' }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: ["ubuntu-20.04"]
+        compiler: ["gcc", "clang"]
+        openmp: ["0", "1"]
+        include:
+          - runner: "macos-11"
+            compiler: "clang"
+            openmp: "0"
+    env:
+      OPENMP: ${{ matrix.openmp }}
+      OMP_NUM_THREADS: ${{ ((matrix.openmp == 1) && '4') || '0' }}
+      CC: ${{ matrix.compiler }}
+      OBJCOPY: ${{ (startsWith(matrix.runner, 'macos') && 'echo') || 'objcopy' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Run tests
+        run: ./test/ci/amd64.sh
