@@ -224,6 +224,7 @@ if (BASE64_WITH_OpenMP)
         PRIVATE
             ${OpenMP_C_FLAGS}
     )
+    target_link_libraries(base64 OpenMP::OpenMP_C)
 endif()
 
 ########################################################################
