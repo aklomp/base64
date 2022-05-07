@@ -234,6 +234,10 @@ if (BASE64_BUILD_TESTS)
 endif()
 
 ########################################################################
+# base64
+add_subdirectory(bin)
+
+########################################################################
 # cmake install
 install(DIRECTORY include/ TYPE INCLUDE)
 install(TARGETS base64 EXPORT base64-targets)
