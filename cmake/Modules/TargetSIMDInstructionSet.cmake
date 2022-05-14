@@ -14,7 +14,7 @@
 ########################################################################
 # compiler flags definition
 macro(define_SIMD_compile_flags)
-    if (CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
+    if (CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "AppleClang")
         # x86
         set(COMPILE_FLAGS_SSSE3 "-mssse3")
         set(COMPILE_FLAGS_SSE41 "-msse4.1")
