@@ -42,7 +42,7 @@ set_package_properties(OpenMP PROPERTIES
 ########################################################################
 # Compilation options
 option(BASE64_WERROR "Treat warnings as error" ON)
-option(BASE64_BUILD_TESTS "add test projects" ON)
+option(BASE64_BUILD_TESTS "add test projects" OFF)
 cmake_dependent_option(BASE64_WITH_OpenMP "use OpenMP" OFF "OpenMP_FOUND" OFF)
 add_feature_info("OpenMP codec" BASE64_WITH_OpenMP "spreads codec work accross multiple threads")
 cmake_dependent_option(BASE64_REGENERATE_TABLES "regenerate the codec tables" OFF "NOT CMAKE_CROSSCOMPILING" OFF)
