@@ -14,13 +14,14 @@ cmake_minimum_required(VERSION 3.10.2)
 
 # new dependent option syntax. We are already compliant
 if (POLICY CMP0127)
-    cmake_policy(SET CMP0127 NEW) 
+    cmake_policy(SET CMP0127 NEW)
 endif()
 
 project(base64 LANGUAGES C VERSION 0.4.0)
 
 include(GNUInstallDirs)
 include(CMakeDependentOption)
+include(CheckIncludeFile)
 include(FeatureSummary)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 
@@ -29,6 +30,9 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 include(TargetArch)
 detect_target_architecture(_TARGET_ARCH)
 
+check_include_file(getopt.h HAVE_GETOPT_H)
+cmake_dependent_option(BASE64_BUILD_CLI "Build the cli for encoding and decoding" ON "HAVE_GETOPT_H" OFF)
+add_feature_info(CLI BASE64_BUILD_CLI "enables the CLI executable for encoding and decoding")
 
 ###################################################################
 # optional/conditional dependencies
@@ -235,12 +239,23 @@ endif()
 
 ########################################################################
 # base64
-add_subdirectory(bin)
+if (BASE64_BUILD_CLI)
+    add_executable(base64-bin
+        bin/base64.c
+    )
+    target_link_libraries(base64-bin PRIVATE base64)
+    set_target_properties(base64-bin PROPERTIES
+        OUTPUT_NAME base64
+    )
+endif()
 
 ########################################################################
 # cmake install
 install(DIRECTORY include/ TYPE INCLUDE)
-install(TARGETS base64 EXPORT base64-targets)
+install(TARGETS base64 EXPORT base64-targets DESTINATION ${CMAKE_INSTALL_LIBDIR})
+if (BASE64_BUILD_CLI)
+    install(TARGETS base64-bin EXPORT base64-targets DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
 
 include(CMakePackageConfigHelpers)
 configure_package_config_file(cmake/base64-config.cmake.in

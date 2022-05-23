@@ -23,7 +23,7 @@ function(add_base64_test TEST_NAME)
     add_test(NAME ${TEST_NAME}
         COMMAND ${TEST_NAME}
     )
-    install(TARGETS ${TEST_NAME} DESTINATION bin)
+    install(TARGETS ${TEST_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
 endfunction()
 
 
