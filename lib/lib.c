@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 #ifdef _OPENMP
@@ -74,7 +75,7 @@ base64_stream_decode_init (struct base64_state *state, int flags)
 	state->eof = 0;
 	state->bytes = 0;
 	state->carry = 0;
-	state->flags = flags;
+	state->flags = flags & ~BASE64_CHECK_SUPPORT;
 }
 
 int
@@ -143,6 +144,14 @@ base64_decode
 {
 	int ret;
 	struct base64_state state;
+	bool check;
+
+	check = flags & BASE64_CHECK_SUPPORT;
+	if (check) {
+	    	base64_stream_decode_init(&state, flags);
+		if (codec.dec == NULL) return -1;
+		flags = 0;
+	}
 
 	#ifdef _OPENMP
 	if (srclen >= OMP_THRESHOLD) {
