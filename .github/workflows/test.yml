@@ -43,3 +43,38 @@ jobs:
         run: cmake --build out --config Release --verbose
       - name: CTest
         run: ctest --test-dir out -VV --build-config Release
+
+  alpine-makefile-test:
+    name: makefile-alpine-amd64-gcc
+    runs-on: ubuntu-latest
+    container:
+      image: alpine:3.12
+      env:
+        CC: gcc
+    steps:
+      - name: Install deps
+        run: apk add --update bash build-base git
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Run tests
+        run: ./test/ci/amd64.sh
+
+  alpine-cmake-test:
+    name: cmake-alpine-amd64-gcc
+    runs-on: ubuntu-latest
+    container:
+      image: alpine:3.12
+      env:
+        CC: gcc
+    steps:
+      - name: Install deps
+        run: apk add --update bash build-base cmake git
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: CMake Configure
+        run: cmake -B out -DCMAKE_BUILD_TYPE=Release ${{ runner.os == 'macOS' && '-DBASE64_WITH_AVX2=OFF' || '' }}
+      - name: CMake Build
+        run: cmake --build out --config Release --verbose
+      - name: CTest
+        run: ctest -VV --build-config Release
+        working-directory: ./out
