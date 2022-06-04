@@ -10,12 +10,18 @@
 #     http://creativecommons.org/publicdomain/zero/1.0/
 #
 ########################################################################
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.10.2)
+
+# new dependent option syntax. We are already compliant
+if (POLICY CMP0127)
+    cmake_policy(SET CMP0127 NEW)
+endif()
 
 project(base64 LANGUAGES C VERSION 0.4.0)
 
 include(GNUInstallDirs)
 include(CMakeDependentOption)
+include(CheckIncludeFile)
 include(FeatureSummary)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 
@@ -24,6 +30,9 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 include(TargetArch)
 detect_target_architecture(_TARGET_ARCH)
 
+check_include_file(getopt.h HAVE_GETOPT_H)
+cmake_dependent_option(BASE64_BUILD_CLI "Build the cli for encoding and decoding" ON "HAVE_GETOPT_H" OFF)
+add_feature_info(CLI BASE64_BUILD_CLI "enables the CLI executable for encoding and decoding")
 
 ###################################################################
 # optional/conditional dependencies
@@ -37,12 +46,12 @@ set_package_properties(OpenMP PROPERTIES
 ########################################################################
 # Compilation options
 option(BASE64_WERROR "Treat warnings as error" ON)
-option(BASE64_BUILD_TESTS "add test projects" ON)
+option(BASE64_BUILD_TESTS "add test projects" OFF)
 cmake_dependent_option(BASE64_WITH_OpenMP "use OpenMP" OFF "OpenMP_FOUND" OFF)
 add_feature_info("OpenMP codec" BASE64_WITH_OpenMP "spreads codec work accross multiple threads")
 cmake_dependent_option(BASE64_REGENERATE_TABLES "regenerate the codec tables" OFF "NOT CMAKE_CROSSCOMPILING" OFF)
 
-set(_IS_X86 "\"${_TARGET_ARCH}\" STREQUAL \"x86\" OR \"${_TARGET_ARCH}\" STREQUAL \"x64\"")
+set(_IS_X86 "_TARGET_ARCH STREQUAL \"x86\" OR _TARGET_ARCH STREQUAL \"x64\"")
 cmake_dependent_option(BASE64_WITH_SSSE3 "add SSSE 3 codepath" ON ${_IS_X86} OFF)
 add_feature_info(SSSE3 BASE64_WITH_SSSE3 "add SSSE 3 codepath")
 cmake_dependent_option(BASE64_WITH_SSE41 "add SSE 4.1 codepath" ON ${_IS_X86} OFF)
@@ -54,11 +63,11 @@ add_feature_info(AVX BASE64_WITH_AVX "add AVX codepath")
 cmake_dependent_option(BASE64_WITH_AVX2 "add AVX 2 codepath" ON ${_IS_X86} OFF)
 add_feature_info(AVX2 BASE64_WITH_AVX2 "add AVX2 codepath")
 
-set(_IS_ARM "\"${_TARGET_ARCH}\" STREQUAL \"arm\"")
+set(_IS_ARM "_TARGET_ARCH STREQUAL \"arm\"")
 cmake_dependent_option(BASE64_WITH_NEON32 "add NEON32 codepath" OFF ${_IS_ARM} OFF)
 add_feature_info(NEON32 BASE64_WITH_NEON32 "add NEON32 codepath")
 
-set(_IS_ARM64 "\"${_TARGET_ARCH}\" STREQUAL \"arm64\"")
+set(_IS_ARM64 "_TARGET_ARCH STREQUAL \"arm64\"")
 cmake_dependent_option(BASE64_WITH_NEON64 "add NEON64 codepath" ON ${_IS_ARM64} OFF)
 add_feature_info(NEON64 BASE64_WITH_NEON64 "add NEON64 codepath")
 
@@ -181,7 +190,6 @@ define_SIMD_compile_flags()
 if (_TARGET_ARCH STREQUAL "x86" OR _TARGET_ARCH STREQUAL "x64")
     macro(configure_codec _TYPE)
         if (BASE64_WITH_${_TYPE})
-            message(STATUS "Add codec: lib/arch/${_DIR}/codec.c")
             string(TOLOWER "${_TYPE}" _DIR)
             set_source_files_properties("lib/arch/${_DIR}/codec.c" PROPERTIES
                 COMPILE_FLAGS "${COMPILE_FLAGS_${_TYPE}}"
@@ -220,10 +228,7 @@ configure_file("${CMAKE_CURRENT_LIST_DIR}/cmake/config.h.in" "${CMAKE_CURRENT_BI
 ########################################################################
 # OpenMP Settings
 if (BASE64_WITH_OpenMP)
-    target_compile_options(base64
-        PRIVATE
-            ${OpenMP_C_FLAGS}
-    )
+    target_link_libraries(base64 PRIVATE OpenMP::OpenMP_C)
 endif()
 
 ########################################################################
@@ -233,9 +238,24 @@ if (BASE64_BUILD_TESTS)
 endif()
 
 ########################################################################
+# base64
+if (BASE64_BUILD_CLI)
+    add_executable(base64-bin
+        bin/base64.c
+    )
+    target_link_libraries(base64-bin PRIVATE base64)
+    set_target_properties(base64-bin PROPERTIES
+        OUTPUT_NAME base64
+    )
+endif()
+
+########################################################################
 # cmake install
 install(DIRECTORY include/ TYPE INCLUDE)
-install(TARGETS base64 EXPORT base64-targets)
+install(TARGETS base64 EXPORT base64-targets DESTINATION ${CMAKE_INSTALL_LIBDIR})
+if (BASE64_BUILD_CLI)
+    install(TARGETS base64-bin EXPORT base64-targets DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
 
 include(CMakePackageConfigHelpers)
 configure_package_config_file(cmake/base64-config.cmake.in

@@ -16,13 +16,14 @@ function(add_base64_test TEST_NAME)
     foreach(SRC_FILE ${ARGN})
         list(APPEND SRC_FILES "${SRC_FILE}")
     endforeach()
-    
+
     add_executable(${TEST_NAME} ${SRC_FILES})
     target_link_libraries(${TEST_NAME} PRIVATE base64)
-    
+
     add_test(NAME ${TEST_NAME}
         COMMAND ${TEST_NAME}
     )
+    install(TARGETS ${TEST_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
 endfunction()
 
 
@@ -41,3 +42,4 @@ endif()
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(benchmark PRIVATE rt)
 endif()
+
