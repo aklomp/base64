@@ -38,11 +38,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: CMake Configure
-        run: cmake -B out -DCMAKE_BUILD_TYPE=Release ${{ runner.os == 'macOS' && '-DBASE64_WITH_AVX2=OFF' || '' }}
+        run: >
+          cmake
+          -B out
+          -Werror=dev
+          -DBASE64_BUILD_TESTS=ON
+          ${{ runner.os != 'Windows' && '-DCMAKE_BUILD_TYPE=Release' || '' }}
+          ${{ runner.os == 'macOS' && '-DBASE64_WITH_AVX2=OFF' || '' }}
       - name: CMake Build
         run: cmake --build out --config Release --verbose
       - name: CTest
-        run: ctest --test-dir out -VV --build-config Release
+        run: ctest --no-tests=error --test-dir out -VV --build-config Release
 
   alpine-makefile-test:
     name: makefile-alpine-amd64-gcc
@@ -72,9 +78,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: CMake Configure
-        run: cmake -B out -DCMAKE_BUILD_TYPE=Release ${{ runner.os == 'macOS' && '-DBASE64_WITH_AVX2=OFF' || '' }}
+        run: cmake -B out -Werror=dev -DBASE64_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release
       - name: CMake Build
         run: cmake --build out --config Release --verbose
       - name: CTest
-        run: ctest -VV --build-config Release
+        run: ctest --no-tests=error -VV --build-config Release
         working-directory: ./out
