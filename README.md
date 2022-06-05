@@ -1,6 +1,6 @@
 # Fast Base64 stream encoder/decoder
 
-[![Build Status](https://travis-ci.org/aklomp/base64.png?branch=master)](https://travis-ci.org/aklomp/base64)
+[![Build Status](https://github.com/aklomp/base64/actions/workflows/test.yml/badge.svg)](https://github.com/aklomp/base64/actions/workflows/test.yml)
 
 This is an implementation of a base64 stream encoding/decoding library in C99
 with SIMD (AVX2, NEON, AArch64/NEON, SSSE3, SSE4.1, SSE4.2, AVX) and
@@ -405,9 +405,9 @@ written to standard output.
 
 ## Tests
 
-See `tests/` for a small test suite. Testing is automated with [Travis
-CI](https://travis-ci.org/aklomp/base64), which builds and tests the code
-across various architectures.
+See `tests/` for a small test suite. Testing is automated with
+[GitHub Actions](https://github.com/aklomp/base64/actions), which builds and
+tests the code across various architectures.
 
 ## Benchmarks
 
