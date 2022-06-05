@@ -221,53 +221,78 @@ x86_avx2_codec_runnable (const unsigned int max_level)
 static bool
 codec_choose_forced (struct codec *codec, int flags)
 {
-	// If the user wants to use a certain codec,
-	// always allow it, even if the codec is a no-op.
-	// For testing purposes.
-
+	// If the user wants to use a certain codec, always allow it, even if
+	// the codec is a no-op. For testing purposes. But do not run codecs
+	// that do not have runtime support.
 	if (!(flags & 0xFF)) {
 		return false;
 	}
-	if (flags & BASE64_FORCE_AVX2) {
-		codec->enc = base64_stream_encode_avx2;
-		codec->dec = base64_stream_decode_avx2;
-		return true;
+
+	// Get the max CPUID level (a no-op on non-x86 platforms).
+	const unsigned int max_level = x86_cpuid_max_level();
+
+	if (flags & (BASE64_FORCE_AVX | BASE64_FORCE_AVX2)) {
+		if (x86_avx_os_support(max_level)) {
+			if (flags & BASE64_FORCE_AVX2) {
+				if (x86_avx2_codec_runnable(max_level)) {
+					codec->enc = base64_stream_encode_avx2;
+					codec->dec = base64_stream_decode_avx2;
+					return true;
+				}
+			}
+
+			if (flags & BASE64_FORCE_AVX) {
+				if (x86_avx_codec_runnable(max_level)) {
+					codec->enc = base64_stream_encode_avx;
+					codec->dec = base64_stream_decode_avx;
+					return true;
+				}
+			}
+		}
 	}
+
 	if (flags & BASE64_FORCE_NEON32) {
 		codec->enc = base64_stream_encode_neon32;
 		codec->dec = base64_stream_decode_neon32;
 		return true;
 	}
+
 	if (flags & BASE64_FORCE_NEON64) {
 		codec->enc = base64_stream_encode_neon64;
 		codec->dec = base64_stream_decode_neon64;
 		return true;
 	}
+
 	if (flags & BASE64_FORCE_PLAIN) {
 		codec->enc = base64_stream_encode_plain;
 		codec->dec = base64_stream_decode_plain;
 		return true;
 	}
+
 	if (flags & BASE64_FORCE_SSSE3) {
-		codec->enc = base64_stream_encode_ssse3;
-		codec->dec = base64_stream_decode_ssse3;
-		return true;
+		if (x86_ssse3_codec_runnable(max_level)) {
+			codec->enc = base64_stream_encode_ssse3;
+			codec->dec = base64_stream_decode_ssse3;
+			return true;
+		}
 	}
+
 	if (flags & BASE64_FORCE_SSE41) {
-		codec->enc = base64_stream_encode_sse41;
-		codec->dec = base64_stream_decode_sse41;
-		return true;
+		if (x86_sse41_codec_runnable(max_level)) {
+			codec->enc = base64_stream_encode_sse41;
+			codec->dec = base64_stream_decode_sse41;
+			return true;
+		}
 	}
+
 	if (flags & BASE64_FORCE_SSE42) {
-		codec->enc = base64_stream_encode_sse42;
-		codec->dec = base64_stream_decode_sse42;
-		return true;
+		if (x86_sse42_codec_runnable(max_level)) {
+			codec->enc = base64_stream_encode_sse42;
+			codec->dec = base64_stream_decode_sse42;
+			return true;
+		}
 	}
-	if (flags & BASE64_FORCE_AVX) {
-		codec->enc = base64_stream_encode_avx;
-		codec->dec = base64_stream_decode_avx;
-		return true;
-	}
+
 	return false;
 }
 
