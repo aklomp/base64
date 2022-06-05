@@ -120,6 +120,24 @@ x86_ssse3_codec_runnable (const unsigned int max_level)
 #endif
 }
 
+// x86: SSE4.1: runtime check whether the codec is compiled in and compatible.
+static inline bool
+x86_sse41_codec_runnable (const unsigned int max_level)
+{
+	if (max_level < 1U) {
+		return false;
+	}
+
+#if defined (BASE64_X86_SIMD) && HAVE_SSE41
+	uint32_t eax, ebx, ecx, edx;
+
+	__cpuid(1, eax, ebx, ecx, edx);
+	return ecx & bit_SSE41;
+#else
+	return false;
+#endif
+}
+
 static bool
 codec_choose_forced (struct codec *codec, int flags)
 {
@@ -260,17 +278,11 @@ codec_choose_x86 (struct codec *codec)
 	}
 	#endif
 
-	#if HAVE_SSE41
-	// Check for SSE41 support:
-	if (max_level >= 1) {
-		__cpuid(1, eax, ebx, ecx, edx);
-		if (ecx & bit_SSE41) {
-			codec->enc = base64_stream_encode_sse41;
-			codec->dec = base64_stream_decode_sse41;
-			return true;
-		}
+	if (x86_sse41_codec_runnable(max_level)) {
+		codec->enc = base64_stream_encode_sse41;
+		codec->dec = base64_stream_decode_sse41;
+		return true;
 	}
-	#endif
 
 	if (x86_ssse3_codec_runnable(max_level)) {
 		codec->enc = base64_stream_encode_ssse3;
