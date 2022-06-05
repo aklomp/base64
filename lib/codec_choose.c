@@ -102,6 +102,24 @@ x86_cpuid_max_level (void)
 #endif
 }
 
+// x86: SSSE3: runtime check whether the codec is compiled in and compatible.
+static inline bool
+x86_ssse3_codec_runnable (const unsigned int max_level)
+{
+	if (max_level < 1U) {
+		return false;
+	}
+
+#if defined (BASE64_X86_SIMD) && HAVE_SSSE3
+	uint32_t eax, ebx, ecx, edx;
+
+	__cpuid(1, eax, ebx, ecx, edx);
+	return ecx & bit_SSSE3;
+#else
+	return false;
+#endif
+}
+
 static bool
 codec_choose_forced (struct codec *codec, int flags)
 {
@@ -254,17 +272,11 @@ codec_choose_x86 (struct codec *codec)
 	}
 	#endif
 
-	#if HAVE_SSSE3
-	// Check for SSSE3 support:
-	if (max_level >= 1) {
-		__cpuid(1, eax, ebx, ecx, edx);
-		if (ecx & bit_SSSE3) {
-			codec->enc = base64_stream_encode_ssse3;
-			codec->dec = base64_stream_decode_ssse3;
-			return true;
-		}
+	if (x86_ssse3_codec_runnable(max_level)) {
+		codec->enc = base64_stream_encode_ssse3;
+		codec->dec = base64_stream_decode_ssse3;
+		return true;
 	}
-	#endif
 
 #else
 	(void)codec;
