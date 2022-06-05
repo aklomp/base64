@@ -156,6 +156,68 @@ x86_sse42_codec_runnable (const unsigned int max_level)
 #endif
 }
 
+// x86: AVX/AVX2: runtime check whether the OS supports AVX context switches.
+// Checking for OS support for AVX context switches requires 2 things:
+// 1) CPUID indicates that the OS uses XSAVE and XRSTORE instructions (allowing
+//    saving YMM registers on context switch).
+// 2) XGETBV indicates the AVX registers will be saved and restored on context
+//    switch.
+static inline bool
+x86_avx_os_support (const unsigned int max_level)
+{
+	if (max_level < 1U) {
+		return false;
+	}
+
+#if defined (BASE64_X86_SIMD) && (HAVE_AVX || HAVE_AVX2)
+	uint32_t eax, ebx, ecx, edx;
+
+	__cpuid_count(1, 0, eax, ebx, ecx, edx);
+	if (ecx & bit_XSAVE_XRSTORE) {
+		const uint64_t xcr_mask = _xgetbv(_XCR_XFEATURE_ENABLED_MASK);
+
+		return xcr_mask & _XCR_XMM_AND_YMM_STATE_ENABLED_BY_OS;
+	}
+#endif
+	return false;
+}
+
+// x86: AVX: runtime check whether the codec is compiled in and compatible.
+static inline bool
+x86_avx_codec_runnable (const unsigned int max_level)
+{
+	if (max_level < 1U) {
+		return false;
+	}
+
+#if defined (BASE64_X86_SIMD) && HAVE_AVX
+	uint32_t eax, ebx, ecx, edx;
+
+	__cpuid_count(1, 0, eax, ebx, ecx, edx);
+	return ecx & bit_AVX;
+#else
+	return false;
+#endif
+}
+
+// x86: AVX2: runtime check whether the codec is compiled in and compatible.
+static inline bool
+x86_avx2_codec_runnable (const unsigned int max_level)
+{
+	if (max_level < 7U) {
+		return false;
+	}
+
+#if defined (BASE64_X86_SIMD) && HAVE_AVX2
+	uint32_t eax, ebx, ecx, edx;
+
+	__cpuid_count(7, 0, eax, ebx, ecx, edx);
+	return ebx & bit_AVX2;
+#else
+	return false;
+#endif
+}
+
 static bool
 codec_choose_forced (struct codec *codec, int flags)
 {
@@ -238,51 +300,21 @@ static bool
 codec_choose_x86 (struct codec *codec)
 {
 #ifdef BASE64_X86_SIMD
-
-	unsigned int eax, ebx = 0, ecx = 0, edx;
-
-	// Get the max CPUID level.
 	const unsigned int max_level = x86_cpuid_max_level();
 
-	#if HAVE_AVX2 || HAVE_AVX
-	// Check for AVX/AVX2 support:
-	// Checking for AVX requires 3 things:
-	// 1) CPUID indicates that the OS uses XSAVE and XRSTORE instructions
-	//    (allowing saving YMM registers on context switch)
-	// 2) CPUID indicates support for AVX
-	// 3) XGETBV indicates the AVX registers will be saved and restored on
-	//    context switch
-	//
-	// Note that XGETBV is only available on 686 or later CPUs, so the
-	// instruction needs to be conditionally run.
-	if (max_level >= 1) {
-		__cpuid_count(1, 0, eax, ebx, ecx, edx);
-		if (ecx & bit_XSAVE_XRSTORE) {
-			uint64_t xcr_mask;
-			xcr_mask = _xgetbv(_XCR_XFEATURE_ENABLED_MASK);
-			if (xcr_mask & _XCR_XMM_AND_YMM_STATE_ENABLED_BY_OS) {
-				#if HAVE_AVX2
-				if (max_level >= 7) {
-					__cpuid_count(7, 0, eax, ebx, ecx, edx);
-					if (ebx & bit_AVX2) {
-						codec->enc = base64_stream_encode_avx2;
-						codec->dec = base64_stream_decode_avx2;
-						return true;
-					}
-				}
-				#endif
-				#if HAVE_AVX
-				__cpuid_count(1, 0, eax, ebx, ecx, edx);
-				if (ecx & bit_AVX) {
-					codec->enc = base64_stream_encode_avx;
-					codec->dec = base64_stream_decode_avx;
-					return true;
-				}
-				#endif
-			}
+	if (x86_avx_os_support(max_level)) {
+		if (x86_avx2_codec_runnable(max_level)) {
+			codec->enc = base64_stream_encode_avx2;
+			codec->dec = base64_stream_decode_avx2;
+			return true;
+		}
+
+		if (x86_avx_codec_runnable(max_level)) {
+			codec->enc = base64_stream_encode_avx;
+			codec->dec = base64_stream_decode_avx;
+			return true;
 		}
 	}
-	#endif
 
 	if (x86_sse42_codec_runnable(max_level)) {
 		codec->enc = base64_stream_encode_sse42;
@@ -301,9 +333,8 @@ codec_choose_x86 (struct codec *codec)
 		codec->dec = base64_stream_decode_ssse3;
 		return true;
 	}
-
 #else
-	(void)codec;
+	(void) codec;
 #endif
 
 	return false;
