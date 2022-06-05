@@ -84,6 +84,24 @@ BASE64_CODEC_FUNCS(sse41)
 BASE64_CODEC_FUNCS(sse42)
 BASE64_CODEC_FUNCS(avx)
 
+// On x86 platforms, return the max CPUID level.
+static inline unsigned int
+x86_cpuid_max_level (void)
+{
+#ifdef BASE64_X86_SIMD
+#ifdef _MSC_VER
+	int info[4U];
+
+	__cpuidex(info, 0, 0);
+	return info[0U];
+#else
+	return __get_cpuid_max(0, NULL);
+#endif
+#else
+	return 0U;
+#endif
+}
+
 static bool
 codec_choose_forced (struct codec *codec, int flags)
 {
@@ -168,15 +186,9 @@ codec_choose_x86 (struct codec *codec)
 #ifdef BASE64_X86_SIMD
 
 	unsigned int eax, ebx = 0, ecx = 0, edx;
-	unsigned int max_level;
 
-	#ifdef _MSC_VER
-	int info[4];
-	__cpuidex(info, 0, 0);
-	max_level = info[0];
-	#else
-	max_level = __get_cpuid_max(0, NULL);
-	#endif
+	// Get the max CPUID level.
+	const unsigned int max_level = x86_cpuid_max_level();
 
 	#if HAVE_AVX2 || HAVE_AVX
 	// Check for AVX/AVX2 support:
