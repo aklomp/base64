@@ -44,7 +44,6 @@ jobs:
           -Werror=dev
           -DBASE64_BUILD_TESTS=ON
           ${{ runner.os != 'Windows' && '-DCMAKE_BUILD_TYPE=Release' || '' }}
-          ${{ runner.os == 'macOS' && '-DBASE64_WITH_AVX2=OFF' || '' }}
       - name: CMake Build
         run: cmake --build out --config Release --verbose
       - name: CTest
