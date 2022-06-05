@@ -43,12 +43,15 @@
 #endif
 
 // Detect word size:
-#if defined(_INTEGRAL_MAX_BITS)
+#if defined(__x86_64__) && defined(__ILP32__)
+// this is the way to detect x32 ABI per https://wiki.debian.org/X32Port
+#  define BASE64_WORDSIZE 64
+#elif defined(_INTEGRAL_MAX_BITS)
 #  define BASE64_WORDSIZE _INTEGRAL_MAX_BITS
 #elif defined(__WORDSIZE)
 #  define BASE64_WORDSIZE __WORDSIZE
-#elif defined (__LONG_WIDTH__)
-#  define BASE64_WORDSIZE __LONG_WIDTH__
+#elif defined (__SIZE_WIDTH__)
+#  define BASE64_WORDSIZE __SIZE_WIDTH__
 #else
 #  error BASE64_WORDSIZE_NOT_DEFINED
 #endif
