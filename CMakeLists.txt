@@ -252,7 +252,11 @@ endif()
 ########################################################################
 # cmake install
 install(DIRECTORY include/ TYPE INCLUDE)
-install(TARGETS base64 EXPORT base64-targets DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(TARGETS base64
+    EXPORT base64-targets
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
 if (BASE64_BUILD_CLI)
     install(TARGETS base64-bin EXPORT base64-targets DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
