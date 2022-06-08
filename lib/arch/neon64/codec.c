@@ -17,6 +17,11 @@
 #ifdef BASE64_USE_NEON64
 #include <arm_neon.h>
 
+// Only enable inline assembly on supported compilers.
+#if defined(__GNUC__) || defined(__clang__)
+#define BASE64_NEON64_USE_ASM
+#endif
+
 static inline uint8x16x4_t
 load_64byte_table (const uint8_t *p)
 {
