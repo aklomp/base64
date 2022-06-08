@@ -1,9 +1,4 @@
-// Only enable inline assembly on supported compilers.
-#if defined(__GNUC__) || defined(__clang__)
-#define BASE64_NEON32_ENC_USE_ASM
-#endif
-
-#ifdef BASE64_NEON32_ENC_USE_ASM
+#ifdef BASE64_NEON32_USE_ASM
 static inline void
 enc_loop_neon32_inner_asm (const uint8_t **s, uint8_t **o)
 {
@@ -112,7 +107,7 @@ enc_loop_neon32_inner_asm (const uint8_t **s, uint8_t **o)
 static inline void
 enc_loop_neon32_inner (const uint8_t **s, uint8_t **o)
 {
-#ifdef BASE64_NEON32_ENC_USE_ASM
+#ifdef BASE64_NEON32_USE_ASM
 	enc_loop_neon32_inner_asm(s, o);
 #else
 	// Load 48 bytes and deinterleave:
