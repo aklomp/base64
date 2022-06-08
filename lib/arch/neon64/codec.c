@@ -25,14 +25,31 @@
 static inline uint8x16x4_t
 load_64byte_table (const uint8_t *p)
 {
-#if defined(__GNUC__) && !defined(__clang__)
-	// As of October 2016, GCC does not support the 'vld1q_u8_x4()' intrinsic.
-	uint8x16x4_t ret;
-	ret.val[0] = vld1q_u8(p +  0);
-	ret.val[1] = vld1q_u8(p + 16);
-	ret.val[2] = vld1q_u8(p + 32);
-	ret.val[3] = vld1q_u8(p + 48);
-	return ret;
+#ifdef BASE64_NEON64_USE_ASM
+
+	// Force the table to be loaded into contiguous registers. GCC will not
+	// normally allocate contiguous registers for a `uint8x16x4_t'. These
+	// registers are chosen to not conflict with the ones in the enc loop.
+	register uint8x16_t t0 __asm__ ("v8");
+	register uint8x16_t t1 __asm__ ("v9");
+	register uint8x16_t t2 __asm__ ("v10");
+	register uint8x16_t t3 __asm__ ("v11");
+
+	__asm__ (
+		"ld1 {%[t0].16b, %[t1].16b, %[t2].16b, %[t3].16b}, [%[src]], #64 \n\t"
+		: [src] "+r" (p),
+		  [t0]  "=w" (t0),
+		  [t1]  "=w" (t1),
+		  [t2]  "=w" (t2),
+		  [t3]  "=w" (t3)
+	);
+
+	return (uint8x16x4_t) {
+		.val[0] = t0,
+		.val[1] = t1,
+		.val[2] = t2,
+		.val[3] = t3,
+	};
 #else
 	return vld1q_u8_x4(p);
 #endif
