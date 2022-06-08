@@ -11,6 +11,9 @@ enc_loop_neon64_inner_asm (const uint8_t **s, uint8_t **o, const uint8x16x4_t tb
 	// Temporary registers, used as scratch space.
 	uint8x16_t tmp0, tmp1, tmp2, tmp3;
 
+	// Numeric constant.
+	const uint8x16_t n63 = vdupq_n_u8(63);
+
 	__asm__ (
 
 		// Load 48 bytes and deinterleave. The bytes are loaded to
@@ -19,15 +22,14 @@ enc_loop_neon64_inner_asm (const uint8_t **s, uint8_t **o, const uint8x16x4_t tb
 		"ld3 {v12.16b, v13.16b, v14.16b}, [%[src]], #48 \n\t"
 
 		// Reshuffle the bytes using temporaries.
-		"ushr %[t0].16b, v12.16b,   #2 \n\t"
-		"ushr %[t1].16b, v13.16b,   #2 \n\t"
-		"ushr %[t2].16b, v14.16b,   #4 \n\t"
-		"sli  %[t1].16b, v12.16b,   #6 \n\t"
-		"sli  %[t2].16b, v13.16b,   #4 \n\t"
-		"shl  %[t3].16b, v14.16b,   #2 \n\t"
-		"ushr %[t1].16b, %[t1].16b, #2 \n\t"
-		"ushr %[t2].16b, %[t2].16b, #2 \n\t"
-		"ushr %[t3].16b, %[t3].16b, #2 \n\t"
+		"ushr %[t0].16b, v12.16b,   #2         \n\t"
+		"ushr %[t1].16b, v13.16b,   #4         \n\t"
+		"ushr %[t2].16b, v14.16b,   #6         \n\t"
+		"sli  %[t1].16b, v12.16b,   #4         \n\t"
+		"sli  %[t2].16b, v13.16b,   #2         \n\t"
+		"and  %[t1].16b, %[t1].16b, %[n63].16b \n\t"
+		"and  %[t2].16b, %[t2].16b, %[n63].16b \n\t"
+		"and  %[t3].16b, v14.16b,   %[n63].16b \n\t"
 
 		// Translate the values to the Base64 alphabet.
 		"tbl v12.16b, {%[l0].16b, %[l1].16b, %[l2].16b, %[l3].16b}, %[t0].16b \n\t"
@@ -47,10 +49,11 @@ enc_loop_neon64_inner_asm (const uint8_t **s, uint8_t **o, const uint8x16x4_t tb
 		  [t3]  "=&w" (tmp3)
 
 		// Inputs (not modified).
-		: [l0] "w" (tbl_enc.val[0]),
-		  [l1] "w" (tbl_enc.val[1]),
-		  [l2] "w" (tbl_enc.val[2]),
-		  [l3] "w" (tbl_enc.val[3])
+		: [n63] "w" (n63),
+		  [l0]  "w" (tbl_enc.val[0]),
+		  [l1]  "w" (tbl_enc.val[1]),
+		  [l2]  "w" (tbl_enc.val[2]),
+		  [l3]  "w" (tbl_enc.val[3])
 
 		// Clobbers.
 		: "v12", "v13", "v14", "v15"
