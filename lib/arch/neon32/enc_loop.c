@@ -20,9 +20,10 @@ enc_loop_neon32_inner_asm (const uint8_t **s, uint8_t **o)
 		 237U, 240U,   0U,   0U
 	};
 
-	// Two constants.
+	// Numeric constants.
 	const uint8x16_t n51 = vdupq_n_u8(51);
 	const uint8x16_t n25 = vdupq_n_u8(25);
+	const uint8x16_t n63 = vdupq_n_u8(63);
 
 	__asm__ (
 
@@ -33,15 +34,14 @@ enc_loop_neon32_inner_asm (const uint8_t **s, uint8_t **o)
 		"vld3.8 {d25, d27, d29}, [%[src]]! \n\t"
 
 		// Reshuffle the bytes using temporaries.
-		"vshr.u8 %q[t0], q12,    #2 \n\t"
-		"vshr.u8 %q[t1], q13,    #2 \n\t"
-		"vshr.u8 %q[t2], q14,    #4 \n\t"
-		"vsli.8  %q[t1], q12,    #6 \n\t"
-		"vsli.8  %q[t2], q13,    #4 \n\t"
-		"vshl.u8 %q[t3], q14,    #2 \n\t"
-		"vshr.u8 %q[t1], %q[t1], #2 \n\t"
-		"vshr.u8 %q[t2], %q[t2], #2 \n\t"
-		"vshr.u8 %q[t3], %q[t3], #2 \n\t"
+		"vshr.u8 %q[t0], q12,    #2      \n\t"
+		"vshr.u8 %q[t1], q13,    #4      \n\t"
+		"vshr.u8 %q[t2], q14,    #6      \n\t"
+		"vsli.8  %q[t1], q12,    #4      \n\t"
+		"vsli.8  %q[t2], q13,    #2      \n\t"
+		"vand.u8 %q[t1], %q[t1], %q[n63] \n\t"
+		"vand.u8 %q[t2], %q[t2], %q[n63] \n\t"
+		"vand.u8 %q[t3], q14,    %q[n63] \n\t"
 
 		// t0..t3 are the reshuffled inputs. Create LUT indices.
 		"vqsub.u8 q12, %q[t0], %q[n51] \n\t"
@@ -96,7 +96,8 @@ enc_loop_neon32_inner_asm (const uint8_t **s, uint8_t **o)
 		// Inputs (not modified).
 		: [lut] "w" (lut),
 		  [n25] "w" (n25),
-		  [n51] "w" (n51)
+		  [n51] "w" (n51),
+		  [n63] "w" (n63)
 
 		// Clobbers.
 		: "d24", "d25", "d26", "d27", "d28", "d29", "d30", "d31"
