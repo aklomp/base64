@@ -23,6 +23,7 @@ function(detect_target_architecture OUTPUT_VARIABLE)
     string(REGEX MATCH "##arch=([^#]+)##" _IGNORED "${_LOG}")
 
     set(${OUTPUT_VARIABLE} "${CMAKE_MATCH_1}" PARENT_SCOPE)
+    set("${OUTPUT_VARIABLE}_${CMAKE_MATCH_1}" 1 PARENT_SCOPE)
     if (CMAKE_MATCH_1 STREQUAL "unknown")
         message(WARNING "could not detect the target architecture.")
     endif()

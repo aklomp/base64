@@ -51,7 +51,7 @@ cmake_dependent_option(BASE64_WITH_OpenMP "use OpenMP" OFF "OpenMP_FOUND" OFF)
 add_feature_info("OpenMP codec" BASE64_WITH_OpenMP "spreads codec work accross multiple threads")
 cmake_dependent_option(BASE64_REGENERATE_TABLES "regenerate the codec tables" OFF "NOT CMAKE_CROSSCOMPILING" OFF)
 
-set(_IS_X86 "_TARGET_ARCH STREQUAL \"x86\" OR _TARGET_ARCH STREQUAL \"x64\"")
+set(_IS_X86 "_TARGET_ARCH_x86 OR _TARGET_ARCH_x64")
 cmake_dependent_option(BASE64_WITH_SSSE3 "add SSSE 3 codepath" ON ${_IS_X86} OFF)
 add_feature_info(SSSE3 BASE64_WITH_SSSE3 "add SSSE 3 codepath")
 cmake_dependent_option(BASE64_WITH_SSE41 "add SSE 4.1 codepath" ON ${_IS_X86} OFF)
@@ -63,12 +63,10 @@ add_feature_info(AVX BASE64_WITH_AVX "add AVX codepath")
 cmake_dependent_option(BASE64_WITH_AVX2 "add AVX 2 codepath" ON ${_IS_X86} OFF)
 add_feature_info(AVX2 BASE64_WITH_AVX2 "add AVX2 codepath")
 
-set(_IS_ARM "_TARGET_ARCH STREQUAL \"arm\"")
-cmake_dependent_option(BASE64_WITH_NEON32 "add NEON32 codepath" OFF ${_IS_ARM} OFF)
+cmake_dependent_option(BASE64_WITH_NEON32 "add NEON32 codepath" OFF _TARGET_ARCH_arm OFF)
 add_feature_info(NEON32 BASE64_WITH_NEON32 "add NEON32 codepath")
 
-set(_IS_ARM64 "_TARGET_ARCH STREQUAL \"arm64\"")
-cmake_dependent_option(BASE64_WITH_NEON64 "add NEON64 codepath" ON ${_IS_ARM64} OFF)
+cmake_dependent_option(BASE64_WITH_NEON64 "add NEON64 codepath" ON _TARGET_ARCH_arm64 OFF)
 add_feature_info(NEON64 BASE64_WITH_NEON64 "add NEON64 codepath")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
