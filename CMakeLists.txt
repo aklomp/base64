@@ -54,6 +54,8 @@ cmake_dependent_option(BASE64_REGENERATE_TABLES "regenerate the codec tables" OF
 set(_IS_X86 "_TARGET_ARCH STREQUAL \"x86\" OR _TARGET_ARCH STREQUAL \"x64\"")
 cmake_dependent_option(BASE64_WITH_SSSE3 "add SSSE 3 codepath" ON ${_IS_X86} OFF)
 add_feature_info(SSSE3 BASE64_WITH_SSSE3 "add SSSE 3 codepath")
+cmake_dependent_option(BASE64_WITH_SSSE3_ATOM "add SSSE 3 for ATOM codepath" ON ${_IS_X86} OFF)
+add_feature_info(SSSE3 BASE64_WITH_SSSE3_ATOM "add SSSE 3 for codepath")
 cmake_dependent_option(BASE64_WITH_SSE41 "add SSE 4.1 codepath" ON ${_IS_X86} OFF)
 add_feature_info(SSE4.1 BASE64_WITH_SSE41 "add SSE 4.1 codepath")
 cmake_dependent_option(BASE64_WITH_SSE42 "add SSE 4.2 codepath" ON ${_IS_X86} OFF)
@@ -116,6 +118,7 @@ add_library(base64
     lib/arch/generic/codec.c
 
     lib/arch/ssse3/codec.c
+    lib/arch/ssse3_atom/codec.c
     lib/arch/sse41/codec.c
     lib/arch/sse42/codec.c
     lib/arch/avx/codec.c
@@ -204,6 +207,7 @@ if (_TARGET_ARCH STREQUAL "x86" OR _TARGET_ARCH STREQUAL "x64")
     endmacro()
 
     configure_codec(SSSE3 __SSSE3__)
+    configure_codec(SSSE3_ATOM __SSSE3__)
     configure_codec(SSE41 __SSSE4_1__)
     configure_codec(SSE42 __SSSE4_2__)
     configure_codec(AVX)

@@ -213,7 +213,7 @@ main ()
 	}
 
 	// Loop over all buffer sizes:
-	for (size_t i = 0; i < sizeof(sizes) / sizeof(sizes[0]); i++) {
+	for (size_t i = 0; i < sizeof(sizes) / sizeof(sizes[0]) ; i++) {
 		printf("Testing with buffer size %s, fastest of %d * %d\n",
 			sizes[i].label, sizes[i].repeat, sizes[i].batch);
 

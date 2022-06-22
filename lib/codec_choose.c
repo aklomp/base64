@@ -83,12 +83,14 @@ BASE64_CODEC_FUNCS(ssse3)
 BASE64_CODEC_FUNCS(sse41)
 BASE64_CODEC_FUNCS(sse42)
 BASE64_CODEC_FUNCS(avx)
+BASE64_CODEC_FUNCS(ssse3_atom)
 
 static bool avx2_supported(void);
 static bool avx_supported(void);
 static bool sse42_supported(void);
 static bool sse41_supported(void);
 static bool ssse3_supported(void);
+static bool ssse3_atom_supported(void);
 
 static bool
 codec_choose_forced (struct codec *codec, int flags)
@@ -101,7 +103,7 @@ codec_choose_forced (struct codec *codec, int flags)
 
 	check = flags & BASE64_CHECK_SUPPORT;
 	flags = flags & ~BASE64_CHECK_SUPPORT;
-	if (!(flags & 0xFF)) {
+	if (!(flags & 0xFFF)) {
 		return false;
 	}
 	if (flags & BASE64_FORCE_AVX2) {
@@ -156,6 +158,15 @@ codec_choose_forced (struct codec *codec, int flags)
 		if (!check || avx_supported()) {
 			codec->enc = base64_stream_encode_avx;
 			codec->dec = base64_stream_decode_avx;
+		} else {
+			codec->enc = NULL;
+			codec->dec = NULL;
+		}
+	}
+	if (flags & BASE64_FORCE_SSSE3_ATOM) {
+		if (!check || ssse3_atom_supported()) {
+			codec->enc = base64_stream_encode_ssse3_atom;
+			codec->dec = base64_stream_decode_ssse3_atom;
 		} else {
 			codec->enc = NULL;
 			codec->dec = NULL;
@@ -362,6 +373,35 @@ static bool ssse3_supported(void)
 static bool ssse3_supported(void) {return false;}
 #endif
 
+#if HAVE_SSSE3
+static bool ssse3_atom_supported(void)
+{
+	unsigned int eax, ebx = 0, ecx = 0, edx;
+	unsigned int max_level;
+
+#ifdef _MSC_VER
+	int info[4];
+	__cpuidex(info, 0, 0);
+	max_level = info[0];
+#else
+	max_level = __get_cpuid_max(0, NULL);
+#endif
+
+	// Check for SSSE3 support:
+	if (max_level >= 1) {
+		__cpuid(1, eax, ebx, ecx, edx);
+		if (ecx & bit_SSSE3) {
+			return true;
+		}
+	}
+
+	return false;
+}
+#else
+static bool ssse3_atom_supported(void) {return false;}
+#endif
+
+
 static bool
 codec_choose_x86 (struct codec *codec)
 {
@@ -388,6 +428,11 @@ codec_choose_x86 (struct codec *codec)
     if(ssse3_supported()) {
 	    codec->enc = base64_stream_encode_ssse3;
 	    codec->dec = base64_stream_decode_ssse3;
+	    return true;
+    }
+    if(ssse3_atom_supported()) {
+	    codec->enc = base64_stream_encode_ssse3_atom;
+	    codec->dec = base64_stream_decode_ssse3_atom;
 	    return true;
     }
     (void)codec;
