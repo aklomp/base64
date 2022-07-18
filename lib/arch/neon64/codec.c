@@ -18,8 +18,12 @@
 #include <arm_neon.h>
 
 // Only enable inline assembly on supported compilers.
-#if defined(__GNUC__) || defined(__clang__)
-#define BASE64_NEON64_USE_ASM
+#if defined(__clang__)
+#  if defined(__OPTIMIZE__)
+#    define BASE64_NEON64_USE_ASM
+#  endif
+#elif defined(__GNUC__)
+#  define BASE64_NEON64_USE_ASM
 #endif
 
 static inline uint8x16x4_t
