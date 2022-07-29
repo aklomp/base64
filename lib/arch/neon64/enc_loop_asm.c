@@ -5,36 +5,36 @@
 // written out by hand, it would become very large and hard to audit.
 
 // Generate a block of inline assembly that loads three user-defined registers
-// P, Q, R from memory and deinterleaves them, post-incrementing the src
+// A, B, C from memory and deinterleaves them, post-incrementing the src
 // pointer. The register set should be sequential.
-#define LOAD(P, Q, R) \
-	"ld3 {"P".16b, "Q".16b, "R".16b}, [%[src]], #48 \n\t"
+#define LOAD(A, B, C) \
+	"ld3 {"A".16b, "B".16b, "C".16b}, [%[src]], #48 \n\t"
 
 // Generate a block of inline assembly that takes three deinterleaved registers
 // and shuffles the bytes. The output is in temporary registers t0..t3.
-#define SHUF(P, Q, R) \
-	"ushr %[t0].16b, "P".16b,   #2         \n\t" \
-	"ushr %[t1].16b, "Q".16b,   #4         \n\t" \
-	"ushr %[t2].16b, "R".16b,   #6         \n\t" \
-	"sli  %[t1].16b, "P".16b,   #4         \n\t" \
-	"sli  %[t2].16b, "Q".16b,   #2         \n\t" \
+#define SHUF(A, B, C) \
+	"ushr %[t0].16b, "A".16b,   #2         \n\t" \
+	"ushr %[t1].16b, "B".16b,   #4         \n\t" \
+	"ushr %[t2].16b, "C".16b,   #6         \n\t" \
+	"sli  %[t1].16b, "A".16b,   #4         \n\t" \
+	"sli  %[t2].16b, "B".16b,   #2         \n\t" \
 	"and  %[t1].16b, %[t1].16b, %[n63].16b \n\t" \
 	"and  %[t2].16b, %[t2].16b, %[n63].16b \n\t" \
-	"and  %[t3].16b, "R".16b,   %[n63].16b \n\t"
+	"and  %[t3].16b, "C".16b,   %[n63].16b \n\t"
 
 // Generate a block of inline assembly that takes temporary registers t0..t3
 // and translates them to the base64 alphabet, using a table loaded into
-// v8..v11. The output is in user-defined registers P..S.
-#define TRAN(P, Q, R, S) \
-	"tbl "P".16b, {v8.16b-v11.16b}, %[t0].16b \n\t" \
-	"tbl "Q".16b, {v8.16b-v11.16b}, %[t1].16b \n\t" \
-	"tbl "R".16b, {v8.16b-v11.16b}, %[t2].16b \n\t" \
-	"tbl "S".16b, {v8.16b-v11.16b}, %[t3].16b \n\t"
+// v8..v11. The output is in user-defined registers A..D.
+#define TRAN(A, B, C, D) \
+	"tbl "A".16b, {v8.16b-v11.16b}, %[t0].16b \n\t" \
+	"tbl "B".16b, {v8.16b-v11.16b}, %[t1].16b \n\t" \
+	"tbl "C".16b, {v8.16b-v11.16b}, %[t2].16b \n\t" \
+	"tbl "D".16b, {v8.16b-v11.16b}, %[t3].16b \n\t"
 
 // Generate a block of inline assembly that interleaves four registers and
 // stores them, post-incrementing the destination pointer.
-#define STOR(P, Q, R, S) \
-	"st4 {"P".16b, "Q".16b, "R".16b, "S".16b}, [%[dst]], #64 \n\t"
+#define STOR(A, B, C, D) \
+	"st4 {"A".16b, "B".16b, "C".16b, "D".16b}, [%[dst]], #64 \n\t"
 
 // Generate a block of inline assembly that generates a single self-contained
 // encoder round: fetch the data, process it, and store the result.
