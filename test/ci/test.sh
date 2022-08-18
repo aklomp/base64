@@ -9,7 +9,8 @@ if [ "${MACHINE}" == "x86_64" ]; then
 	export AVX_CFLAGS=-mavx
 	# no AVX2 on GHA macOS
 	if [ "$(uname -s)" != "Darwin" ]; then
-		export AVX2_CFLAGS=-mavx2
+	    export AVX2_CFLAGS=-mavx2
+        export AVX512_CFLAGS="-mavx512vl -mavx512vbmi"
 	fi
 elif [ "${MACHINE}" == "aarch64" ]; then
 	export NEON64_CFLAGS="-march=armv8-a"
@@ -22,7 +23,7 @@ if [ "${OPENMP:-}" == "0" ]; then
 fi
 
 uname -a
-${CC} --version
+gcc --version
 
 make
 make -C test
