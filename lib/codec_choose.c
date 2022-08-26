@@ -83,58 +83,96 @@ BASE64_CODEC_FUNCS(ssse3)
 BASE64_CODEC_FUNCS(sse41)
 BASE64_CODEC_FUNCS(sse42)
 BASE64_CODEC_FUNCS(avx)
+BASE64_CODEC_FUNCS(ssse3_atom)
+
+static bool avx2_supported(void);
+static bool avx_supported(void);
+static bool sse42_supported(void);
+static bool sse41_supported(void);
+static bool ssse3_supported(void);
+static bool ssse3_atom_supported(void);
 
 static bool
 codec_choose_forced (struct codec *codec, int flags)
 {
-	// If the user wants to use a certain codec,
-	// always allow it, even if the codec is a no-op.
+	bool check;
+	// If the user wants to use a certain codec, always allow it,
+	// even if the codec is a no-op, except when BASE64_CHECK_SUPPORT
+	// is set.
 	// For testing purposes.
 
-	if (!(flags & 0xFF)) {
+	check = flags & BASE64_CHECK_SUPPORT;
+	flags = flags & ~BASE64_CHECK_SUPPORT;
+	if (!(flags & 0xFFF)) {
 		return false;
 	}
 	if (flags & BASE64_FORCE_AVX2) {
-		codec->enc = base64_stream_encode_avx2;
-		codec->dec = base64_stream_decode_avx2;
-		return true;
+		if (!check || avx2_supported()) {
+			codec->enc = base64_stream_encode_avx2;
+			codec->dec = base64_stream_decode_avx2;
+		} else {
+			codec->enc = NULL;
+			codec->dec = NULL;
+		}
 	}
 	if (flags & BASE64_FORCE_NEON32) {
 		codec->enc = base64_stream_encode_neon32;
 		codec->dec = base64_stream_decode_neon32;
-		return true;
 	}
 	if (flags & BASE64_FORCE_NEON64) {
 		codec->enc = base64_stream_encode_neon64;
 		codec->dec = base64_stream_decode_neon64;
-		return true;
 	}
 	if (flags & BASE64_FORCE_PLAIN) {
 		codec->enc = base64_stream_encode_plain;
 		codec->dec = base64_stream_decode_plain;
-		return true;
 	}
 	if (flags & BASE64_FORCE_SSSE3) {
-		codec->enc = base64_stream_encode_ssse3;
-		codec->dec = base64_stream_decode_ssse3;
-		return true;
+		if (!check || ssse3_supported()) {
+			codec->enc = base64_stream_encode_ssse3;
+			codec->dec = base64_stream_decode_ssse3;
+		} else {
+			codec->enc = NULL;
+			codec->dec = NULL;
+		}
 	}
 	if (flags & BASE64_FORCE_SSE41) {
-		codec->enc = base64_stream_encode_sse41;
-		codec->dec = base64_stream_decode_sse41;
-		return true;
+		if (!check || sse41_supported()) {
+		    codec->enc = base64_stream_encode_sse41;
+		    codec->dec = base64_stream_decode_sse41;
+		} else {
+			codec->enc = NULL;
+			codec->dec = NULL;
+		}
 	}
 	if (flags & BASE64_FORCE_SSE42) {
-		codec->enc = base64_stream_encode_sse42;
-		codec->dec = base64_stream_decode_sse42;
-		return true;
+		if (!check || sse42_supported()) {
+		    codec->enc = base64_stream_encode_sse42;
+		    codec->dec = base64_stream_decode_sse42;
+		} else {
+			codec->enc = NULL;
+			codec->dec = NULL;
+		}
 	}
 	if (flags & BASE64_FORCE_AVX) {
-		codec->enc = base64_stream_encode_avx;
-		codec->dec = base64_stream_decode_avx;
-		return true;
+		if (!check || avx_supported()) {
+			codec->enc = base64_stream_encode_avx;
+			codec->dec = base64_stream_decode_avx;
+		} else {
+			codec->enc = NULL;
+			codec->dec = NULL;
+		}
 	}
-	return false;
+	if (flags & BASE64_FORCE_SSSE3_ATOM) {
+		if (!check || ssse3_atom_supported()) {
+			codec->enc = base64_stream_encode_ssse3_atom;
+			codec->dec = base64_stream_decode_ssse3_atom;
+		} else {
+			codec->enc = NULL;
+			codec->dec = NULL;
+		}
+	}
+	return true;
 }
 
 static bool
@@ -162,23 +200,21 @@ codec_choose_arm (struct codec *codec)
 #endif
 }
 
-static bool
-codec_choose_x86 (struct codec *codec)
-{
-#ifdef BASE64_X86_SIMD
 
+#if HAVE_AVX2
+static bool avx2_supported(void)
+{
 	unsigned int eax, ebx = 0, ecx = 0, edx;
 	unsigned int max_level;
 
-	#ifdef _MSC_VER
+#ifdef _MSC_VER
 	int info[4];
 	__cpuidex(info, 0, 0);
 	max_level = info[0];
-	#else
+#else
 	max_level = __get_cpuid_max(0, NULL);
-	#endif
+#endif
 
-	#if HAVE_AVX2 || HAVE_AVX
 	// Check for AVX/AVX2 support:
 	// Checking for AVX requires 3 things:
 	// 1) CPUID indicates that the OS uses XSAVE and XRSTORE instructions
@@ -195,70 +231,213 @@ codec_choose_x86 (struct codec *codec)
 			uint64_t xcr_mask;
 			xcr_mask = _xgetbv(_XCR_XFEATURE_ENABLED_MASK);
 			if (xcr_mask & _XCR_XMM_AND_YMM_STATE_ENABLED_BY_OS) {
-				#if HAVE_AVX2
 				if (max_level >= 7) {
 					__cpuid_count(7, 0, eax, ebx, ecx, edx);
 					if (ebx & bit_AVX2) {
-						codec->enc = base64_stream_encode_avx2;
-						codec->dec = base64_stream_decode_avx2;
 						return true;
 					}
 				}
-				#endif
-				#if HAVE_AVX
-				__cpuid_count(1, 0, eax, ebx, ecx, edx);
-				if (ecx & bit_AVX) {
-					codec->enc = base64_stream_encode_avx;
-					codec->dec = base64_stream_decode_avx;
-					return true;
-				}
-				#endif
 			}
 		}
 	}
-	#endif
 
-	#if HAVE_SSE42
+	return false;
+}
+#else
+static bool avx2_supported(void) {return false;}
+#endif
+
+#if HAVE_AVX
+static bool avx_supported(void)
+{
+	unsigned int eax, ebx = 0, ecx = 0, edx;
+	unsigned int max_level;
+
+#ifdef _MSC_VER
+	int info[4];
+	__cpuidex(info, 0, 0);
+	max_level = info[0];
+#else
+	max_level = __get_cpuid_max(0, NULL);
+#endif
+
+	// Check for AVX/AVX2 support:
+	// Checking for AVX requires 3 things:
+	// 1) CPUID indicates that the OS uses XSAVE and XRSTORE instructions
+	//    (allowing saving YMM registers on context switch)
+	// 2) CPUID indicates support for AVX
+	// 3) XGETBV indicates the AVX registers will be saved and restored on
+	//    context switch
+	//
+	// Note that XGETBV is only available on 686 or later CPUs, so the
+	// instruction needs to be conditionally run.
+	if (max_level >= 1) {
+		__cpuid_count(1, 0, eax, ebx, ecx, edx);
+		if (ecx & bit_XSAVE_XRSTORE) {
+			uint64_t xcr_mask;
+			xcr_mask = _xgetbv(_XCR_XFEATURE_ENABLED_MASK);
+			if (xcr_mask & _XCR_XMM_AND_YMM_STATE_ENABLED_BY_OS) {
+				__cpuid_count(1, 0, eax, ebx, ecx, edx);
+				if (ecx & bit_AVX) {
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+#else
+static bool avx_supported(void) {return false;}
+#endif
+
+#if HAVE_SSE42
+static bool sse42_supported(void)
+{
+	unsigned int eax, ebx = 0, ecx = 0, edx;
+	unsigned int max_level;
+
+#ifdef _MSC_VER
+	int info[4];
+	__cpuidex(info, 0, 0);
+	max_level = info[0];
+#else
+	max_level = __get_cpuid_max(0, NULL);
+#endif
+
 	// Check for SSE42 support:
 	if (max_level >= 1) {
 		__cpuid(1, eax, ebx, ecx, edx);
 		if (ecx & bit_SSE42) {
-			codec->enc = base64_stream_encode_sse42;
-			codec->dec = base64_stream_decode_sse42;
 			return true;
 		}
 	}
-	#endif
+	return false;
+}
+#else
+static bool sse42_supported(void) {return false;}
+#endif
 
-	#if HAVE_SSE41
+#if HAVE_SSE41
+static bool sse41_supported(void)
+{
+	unsigned int eax, ebx = 0, ecx = 0, edx;
+	unsigned int max_level;
+
+#ifdef _MSC_VER
+	int info[4];
+	__cpuidex(info, 0, 0);
+	max_level = info[0];
+#else
+	max_level = __get_cpuid_max(0, NULL);
+#endif
+
 	// Check for SSE41 support:
 	if (max_level >= 1) {
 		__cpuid(1, eax, ebx, ecx, edx);
 		if (ecx & bit_SSE41) {
-			codec->enc = base64_stream_encode_sse41;
-			codec->dec = base64_stream_decode_sse41;
 			return true;
 		}
 	}
-	#endif
 
-	#if HAVE_SSSE3
+	return false;
+}
+#else
+static bool sse41_supported(void) {return false;}
+#endif
+
+#if HAVE_SSSE3
+static bool ssse3_supported(void)
+{
+	unsigned int eax, ebx = 0, ecx = 0, edx;
+	unsigned int max_level;
+
+#ifdef _MSC_VER
+	int info[4];
+	__cpuidex(info, 0, 0);
+	max_level = info[0];
+#else
+	max_level = __get_cpuid_max(0, NULL);
+#endif
+
 	// Check for SSSE3 support:
 	if (max_level >= 1) {
 		__cpuid(1, eax, ebx, ecx, edx);
 		if (ecx & bit_SSSE3) {
-			codec->enc = base64_stream_encode_ssse3;
-			codec->dec = base64_stream_decode_ssse3;
 			return true;
 		}
 	}
-	#endif
-
-#else
-	(void)codec;
-#endif
 
 	return false;
+}
+#else
+static bool ssse3_supported(void) {return false;}
+#endif
+
+#if HAVE_SSSE3
+static bool ssse3_atom_supported(void)
+{
+	unsigned int eax, ebx = 0, ecx = 0, edx;
+	unsigned int max_level;
+
+#ifdef _MSC_VER
+	int info[4];
+	__cpuidex(info, 0, 0);
+	max_level = info[0];
+#else
+	max_level = __get_cpuid_max(0, NULL);
+#endif
+
+	// Check for SSSE3 support:
+	if (max_level >= 1) {
+		__cpuid(1, eax, ebx, ecx, edx);
+		if (ecx & bit_SSSE3) {
+			return true;
+		}
+	}
+
+	return false;
+}
+#else
+static bool ssse3_atom_supported(void) {return false;}
+#endif
+
+
+static bool
+codec_choose_x86 (struct codec *codec)
+{
+    if(avx2_supported()) {
+	    codec->enc = base64_stream_encode_avx2;
+	    codec->dec = base64_stream_decode_avx2;
+	    return true;
+    };
+    if(avx_supported()) {
+	    codec->enc = base64_stream_encode_avx;
+	    codec->dec = base64_stream_decode_avx;
+	    return true;
+    }
+    if(sse42_supported()) {
+	    codec->enc = base64_stream_encode_sse42;
+	    codec->dec = base64_stream_decode_sse42;
+	    return true;
+    }
+    if(sse41_supported()) {
+	    codec->enc = base64_stream_encode_sse41;
+	    codec->dec = base64_stream_decode_sse41;
+	    return true;
+    }
+    if(ssse3_supported()) {
+	    codec->enc = base64_stream_encode_ssse3;
+	    codec->dec = base64_stream_decode_ssse3;
+	    return true;
+    }
+    if(ssse3_atom_supported()) {
+	    codec->enc = base64_stream_encode_ssse3_atom;
+	    codec->dec = base64_stream_decode_ssse3_atom;
+	    return true;
+    }
+    (void)codec;
+
+    return false;
 }
 
 void

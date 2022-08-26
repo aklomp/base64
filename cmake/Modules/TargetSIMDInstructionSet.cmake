@@ -17,6 +17,7 @@ macro(define_SIMD_compile_flags)
     if (CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "AppleClang")
         # x86
         set(COMPILE_FLAGS_SSSE3 "-mssse3")
+        set(COMPILE_FLAGS_SSSE3_ATOM "-mssse3")
         set(COMPILE_FLAGS_SSE41 "-msse4.1")
         set(COMPILE_FLAGS_SSE42 "-msse4.2")
         set(COMPILE_FLAGS_AVX "-mavx")

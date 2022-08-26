@@ -11,6 +11,7 @@ static char *_codecs[] =
 , "SSE41"
 , "SSE42"
 , "AVX"
+, "SSSE3_ATOM"
 , NULL
 } ;
 
@@ -24,5 +25,6 @@ codec_supported (int flags)
 	char b[10];
 	size_t outlen;
 
+	flags |= BASE64_CHECK_SUPPORT;
 	return (base64_decode(a, strlen(a), b, &outlen, flags) != -1);
 }
