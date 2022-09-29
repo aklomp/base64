@@ -3,7 +3,7 @@
 [![Build Status](https://github.com/aklomp/base64/actions/workflows/test.yml/badge.svg)](https://github.com/aklomp/base64/actions/workflows/test.yml)
 
 This is an implementation of a base64 stream encoding/decoding library in C99
-with SIMD (AVX2, NEON, AArch64/NEON, SSSE3, SSE4.1, SSE4.2, AVX) and
+with SIMD (AVX2, AVX512, NEON, AArch64/NEON, SSSE3, SSE4.1, SSE4.2, AVX) and
 [OpenMP](http://www.openmp.org) acceleration. It also contains wrapper functions
 to encode/decode simple length-delimited strings. This library aims to be:
 
@@ -18,6 +18,10 @@ processor supports AVX2, SSSE3, SSE4.1, SSE4.2 or AVX instructions, the library
 will pick an optimized codec that lets it encode/decode 12 or 24 bytes at a
 time, which gives a speedup of four or more times compared to the "plain"
 bytewise codec.
+
+AVX512 support is only for encoding at present, utilizing the AVX512 VL and VBMI
+instructions. Decoding part reused AVX2 implementations. For CPUs later than
+Cannonlake (manufactured in 2018) supports these instructions.
 
 NEON support is hardcoded to on or off at compile time, because portable
 runtime feature detection is unavailable on ARM.
@@ -59,6 +63,9 @@ optimizations described by Wojciech Muła in a
 [articles](http://0x80.pl/notesen/2016-01-17-sse-base64-decoding.html).
 His own code is [here](https://github.com/WojciechMula/toys/tree/master/base64).
 
+The AVX512 encoder code is also referenced from the project of Wojciech Muła and
+the project code is [here](https://github.com/WojciechMula/base64-avx512)
+
 The OpenMP implementation was added by Ferry Toth (@htot) from [Exalon Delft](http://www.exalondelft.nl).
 
 ## Building
@@ -76,8 +83,8 @@ To compile just the "plain" library without SIMD codecs, type:
 make lib/libbase64.o
 ```
 
-Optional SIMD codecs can be included by specifying the `AVX2_CFLAGS`, `NEON32_CFLAGS`, `NEON64_CFLAGS`,
-`SSSE3_CFLAGS`, `SSE41_CFLAGS`, `SSE42_CFLAGS` and/or `AVX_CFLAGS` environment variables.
+Optional SIMD codecs can be included by specifying the `AVX2_CFLAGS`, `AVX512_CFLAGS`, 
+`NEON32_CFLAGS`, `NEON64_CFLAGS`, `SSSE3_CFLAGS`, `SSE41_CFLAGS`, `SSE42_CFLAGS` and/or `AVX_CFLAGS` environment variables.
 A typical build invocation on x86 looks like this:
 
 ```sh
@@ -91,6 +98,15 @@ Example:
 
 ```sh
 AVX2_CFLAGS=-mavx2 make
+```
+
+### AVX512
+
+To build and include the AVX512 codec, set the `AVX512_CFLAGS` environment variable to a value that will turn on AVX512 support in your compiler, typically `-mavx512vl -mavx512vbmi`.
+Example:
+
+```sh
+AVX512_CFLAGS="-mavx512vl -mavx512vbmi" make
 ```
 
 The codec will only be used if runtime feature detection shows that the target machine supports AVX2.
@@ -208,6 +224,7 @@ Mainly there for testing purposes, this is also useful on ARM where the only way
 The following constants can be used:
 
 - `BASE64_FORCE_AVX2`
+- `BASE64_FORCE_AVX512`
 - `BASE64_FORCE_NEON32`
 - `BASE64_FORCE_NEON64`
 - `BASE64_FORCE_PLAIN`
