@@ -23,7 +23,7 @@ if [ "${OPENMP:-}" == "0" ]; then
 fi
 
 uname -a
-gcc --version
+${CC} --version
 
 make
 make -C test
