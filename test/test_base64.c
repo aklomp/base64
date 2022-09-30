@@ -195,7 +195,7 @@ test_streaming (int flags)
 
 		base64_stream_decode_init(&state, flags);
 		memset(enc, 0, 400);
-		while (base64_stream_decode(&state, &ref[inpos], (inpos + bs > reflen) ? reflen - inpos : bs, &enc[enclen], &partlen)) {
+		while (inpos < 400 && base64_stream_decode(&state, &ref[inpos], (inpos + bs > reflen) ? reflen - inpos : bs, &enc[enclen], &partlen)) {
 			enclen += partlen;
 			inpos += bs;
 		}
