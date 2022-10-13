@@ -195,9 +195,14 @@ test_streaming (int flags)
 
 		base64_stream_decode_init(&state, flags);
 		memset(enc, 0, 400);
-		while (inpos < 400 && base64_stream_decode(&state, &ref[inpos], (inpos + bs > reflen) ? reflen - inpos : bs, &enc[enclen], &partlen)) {
+		while (base64_stream_decode(&state, &ref[inpos], (inpos + bs > reflen) ? reflen - inpos : bs, &enc[enclen], &partlen)) {
 			enclen += partlen;
 			inpos += bs;
+
+			// Has the entire buffer been consumed?
+			if (inpos >= 400) {
+				break;
+			}
 		}
 		if (enclen != 256) {
 			printf("FAIL: stream decoding gave incorrect size: "
