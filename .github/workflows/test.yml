@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: ["ubuntu-18.04"]
+        runner: ["ubuntu-20.04"]
         compiler: ["gcc", "clang"]
         openmp: ["0", "1"]
         include:
@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: ["ubuntu-18.04", "macos-11", "windows-2019"]
+        runner: ["ubuntu-20.04", "macos-11", "windows-2019"]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
