@@ -5,10 +5,9 @@
 // written out by hand, it would become very large and hard to audit.
 
 // Generate a block of inline assembly that loads register R0 from memory. The
-// offset at which the register is loaded is set by the given round and a
-// constant offset.
-#define LOAD(R0, ROUND, OFFSET) \
-	"vlddqu ("#ROUND" * 24 + "#OFFSET")(%[src]), %["R0"] \n\t"
+// offset at which the register is loaded is set by the given round.
+#define LOAD(R0, ROUND) \
+	"vlddqu ("#ROUND" * 12)(%[src]), %["R0"] \n\t"
 
 // Generate a block of inline assembly that deinterleaves and shuffles register
 // R0 using preloaded constants. Outputs in R0 and R1.
@@ -32,18 +31,18 @@
 // Generate a block of inline assembly that stores the given register R0 at an
 // offset set by the given round.
 #define STOR(R0, ROUND) \
-	"vmovdqu %["R0"], ("#ROUND" * 32)(%[dst]) \n\t"
+	"vmovdqu %["R0"], ("#ROUND" * 16)(%[dst]) \n\t"
 
 // Generate a block of inline assembly that generates a single self-contained
 // encoder round: fetch the data, process it, and store the result. Then update
 // the source and destination pointers.
 #define ROUND() \
-	LOAD("a", 0, -4) \
+	LOAD("a", 0) \
 	SHUF("a", "b", "c") \
 	TRAN("a", "b", "c") \
 	STOR("a", 0) \
-	"add $24, %[src] \n\t" \
-	"add $32, %[dst] \n\t"
+	"add $12, %[src] \n\t" \
+	"add $16, %[dst] \n\t"
 
 // Define a macro that initiates a three-way interleaved encoding round by
 // preloading registers a, b and c from memory.
@@ -57,11 +56,11 @@
 //  V  indicates that a register is an input or output to the macro.
 //
 #define ROUND_3_INIT() 			/*  a b c d e f  */ \
-	LOAD("a",   0,  -4)		/*  +            */ \
+	LOAD("a",   0)			/*  +            */ \
 	SHUF("a", "d", "e")		/*  |     + x    */ \
-	LOAD("b",   1,  -4)		/*  | +   |      */ \
+	LOAD("b",   1)			/*  | +   |      */ \
 	TRAN("a", "d", "e")		/*  | |   - x    */ \
-	LOAD("c",   2,  -4)		/*  V V V        */
+	LOAD("c",   2)			/*  V V V        */
 
 // Define a macro that translates, shuffles and stores the input registers A, B
 // and C, and preloads registers D, E and F for the next round.
@@ -71,15 +70,15 @@
 // pipelined performance.
 
 #define ROUND_3(ROUND, A,B,C,D,E,F) 	/*  A B C D E F  */ \
-	LOAD(D, (ROUND + 3), -4)	/*  V V V +      */ \
+	LOAD(D, (ROUND + 3))		/*  V V V +      */ \
 	SHUF(B, E, F)			/*  | | | | + x  */ \
 	STOR(A, (ROUND + 0))		/*  - | | | |    */ \
 	TRAN(B, E, F)			/*    | | | - x  */ \
-	LOAD(E, (ROUND + 4), -4)	/*    | | | +    */ \
+	LOAD(E, (ROUND + 4))		/*    | | | +    */ \
 	SHUF(C, A, F)			/*  + | | | | x  */ \
 	STOR(B, (ROUND + 1))		/*  | - | | |    */ \
 	TRAN(C, A, F)			/*  -   | | | x  */ \
-	LOAD(F, (ROUND + 5), -4)	/*      | | | +  */ \
+	LOAD(F, (ROUND + 5))		/*      | | | +  */ \
 	SHUF(D, A, B)			/*  + + | | | |  */ \
 	STOR(C, (ROUND + 2))		/*  | | - | | |  */ \
 	TRAN(D, A, B)			/*  - -   V V V  */
@@ -120,28 +119,21 @@
 #pragma GCC diagnostic ignored "-Woverlength-strings"
 
 static inline void
-enc_loop_avx2 (const uint8_t **s, size_t *slen, uint8_t **o, size_t *olen)
+enc_loop_avx (const uint8_t **s, size_t *slen, uint8_t **o, size_t *olen)
 {
 	// For a clearer explanation of the algorithm used by this function,
 	// please refer to the plain (not inline assembly) implementation. This
 	// function follows the same basic logic.
 
-	if (*slen < 32) {
+	if (*slen < 16) {
 		return;
 	}
 
-	// Process blocks of 24 bytes at a time. Because blocks are loaded 32
-	// bytes at a time an offset of -4, ensure that there will be at least
-	// 4 remaining bytes after the last round, so that the final read will
-	// not pass beyond the bounds of the input buffer.
-	size_t rounds = (*slen - 4) / 24;
+	// Process blocks of 12 bytes at a time.
+	size_t rounds = *slen / 12;
 
-	*slen -= rounds * 24;   // 24 bytes consumed per round
-	*olen += rounds * 32;   // 32 bytes produced per round
-
-	// Pre-decrement the number of rounds to get the number of rounds
-	// *after* the first round, which is handled as a special case.
-	rounds--;
+	*slen -= rounds * 12;   // 12 bytes consumed per round
+	*olen += rounds * 16;   // 16 bytes produced per round
 
 	// Number of times to go through the 36x loop.
 	size_t loops = rounds / 36;
@@ -150,37 +142,16 @@ enc_loop_avx2 (const uint8_t **s, size_t *slen, uint8_t **o, size_t *olen)
 	rounds %= 36;
 
 	// Lookup tables.
-	const __m256i lut0 = _mm256_set_epi8(
-		10, 11,  9, 10,  7,  8,  6,  7,  4,  5,  3,  4,  1,  2,  0,  1,
-		14, 15, 13, 14, 11, 12, 10, 11,  8,  9,  7,  8,  5,  6,  4,  5);
+	const __m128i lut0 = _mm_set_epi8(
+		10, 11,  9, 10,  7,  8,  6,  7,  4,  5,  3,  4,  1,  2,  0,  1);
 
-	const __m256i lut1 = _mm256_setr_epi8(
-		65, 71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 0, 0,
+	const __m128i lut1 = _mm_setr_epi8(
 		65, 71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 0, 0);
 
 	// Temporary registers.
-	__m256i a, b, c, d, e;
-
-	// Temporary register f doubles as the shift mask for the first round.
-	__m256i f = _mm256_setr_epi32(0, 0, 1, 2, 3, 4, 5, 6);
+	__m128i a, b, c, d, e, f;
 
 	__asm__ volatile (
-
-		// The first loop iteration requires special handling to ensure
-		// that the read, which is normally done at an offset of -4,
-		// does not underflow the buffer. Load the buffer at an offset
-		// of 0 and permute the input to achieve the same effect.
-		LOAD("a", 0, 0)
-		"vpermd %[a], %[f], %[a] \n\t"
-
-		// Perform the standard shuffling and translation steps.
-		SHUF("a", "b", "c")
-		TRAN("a", "b", "c")
-
-		// Store the result and increment the source and dest pointers.
-		"vmovdqu %[a], (%[dst]) \n\t"
-		"add     $24,  %[src]   \n\t"
-		"add     $32,  %[dst]   \n\t"
 
 		// If there are 36 rounds or more, enter a 36x unrolled loop of
 		// interleaved encoding rounds. The rounds interleave memory
@@ -203,8 +174,8 @@ enc_loop_avx2 (const uint8_t **s, size_t *slen, uint8_t **o, size_t *olen)
 		"    " ROUND_3_A(24)
 		"    " ROUND_3_B(27)
 		"    " ROUND_3_A_LAST(30)
-		"    add $(24 * 36), %[src] \n\t"
-		"    add $(32 * 36), %[dst] \n\t"
+		"    add $(12 * 36), %[src] \n\t"
+		"    add $(16 * 36), %[dst] \n\t"
 		"    dec %[loops]           \n\t"
 		"    jnz 36b                \n\t"
 
@@ -218,8 +189,8 @@ enc_loop_avx2 (const uint8_t **s, size_t *slen, uint8_t **o, size_t *olen)
 		"    " ROUND_3_B(9)
 		"    " ROUND_3_A_LAST(12)
 		"    sub $18,        %[rounds] \n\t"
-		"    add $(24 * 18), %[src]    \n\t"
-		"    add $(32 * 18), %[dst]    \n\t"
+		"    add $(12 * 18), %[src]    \n\t"
+		"    add $(16 * 18), %[dst]    \n\t"
 
 		// Enter a 9x unrolled loop for rounds of 9 or more.
 		"9:  cmp $9, %[rounds] \n\t"
@@ -228,8 +199,8 @@ enc_loop_avx2 (const uint8_t **s, size_t *slen, uint8_t **o, size_t *olen)
 		"    " ROUND_3_A(0)
 		"    " ROUND_3_B_LAST(3)
 		"    sub $9,        %[rounds] \n\t"
-		"    add $(24 * 9), %[src]    \n\t"
-		"    add $(32 * 9), %[dst]    \n\t"
+		"    add $(12 * 9), %[src]    \n\t"
+		"    add $(16 * 9), %[dst]    \n\t"
 
 		// Enter a 6x unrolled loop for rounds of 6 or more.
 		"6:  cmp $6, %[rounds] \n\t"
@@ -237,8 +208,8 @@ enc_loop_avx2 (const uint8_t **s, size_t *slen, uint8_t **o, size_t *olen)
 		"    " ROUND_3_INIT()
 		"    " ROUND_3_A_LAST(0)
 		"    sub $6,        %[rounds] \n\t"
-		"    add $(24 * 6), %[src]    \n\t"
-		"    add $(32 * 6), %[dst]    \n\t"
+		"    add $(12 * 6), %[src]    \n\t"
+		"    add $(16 * 6), %[dst]    \n\t"
 
 		// Dispatch the remaining rounds 0..5.
 		"55: cmp $3, %[rounds] \n\t"
@@ -271,17 +242,17 @@ enc_loop_avx2 (const uint8_t **s, size_t *slen, uint8_t **o, size_t *olen)
 		  [c]      "=&x" (c),
 		  [d]      "=&x" (d),
 		  [e]      "=&x" (e),
-		  [f]      "+x"  (f)
+		  [f]      "=&x" (f)
 
 		// Inputs (not modified).
 		: [lut0] "x" (lut0),
 		  [lut1] "x" (lut1),
-		  [msk0] "x" (_mm256_set1_epi32(0x0FC0FC00)),
-		  [msk1] "x" (_mm256_set1_epi32(0x04000040)),
-		  [msk2] "x" (_mm256_set1_epi32(0x003F03F0)),
-		  [msk3] "x" (_mm256_set1_epi32(0x01000010)),
-		  [n51]  "x" (_mm256_set1_epi8(51)),
-		  [n25]  "x" (_mm256_set1_epi8(25))
+		  [msk0] "x" (_mm_set1_epi32(0x0FC0FC00)),
+		  [msk1] "x" (_mm_set1_epi32(0x04000040)),
+		  [msk2] "x" (_mm_set1_epi32(0x003F03F0)),
+		  [msk3] "x" (_mm_set1_epi32(0x01000010)),
+		  [n51]  "x" (_mm_set1_epi8(51)),
+		  [n25]  "x" (_mm_set1_epi8(25))
 	);
 }
 
