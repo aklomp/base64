@@ -45,6 +45,7 @@ jobs:
           -DBASE64_BUILD_TESTS=ON
           ${{ runner.os != 'Windows' && '-DCMAKE_BUILD_TYPE=Release' || '' }}
           ${{ runner.os == 'macOS' && '-DBASE64_WITH_AVX2=OFF' || '' }}
+          -DBASE64_WITH_AVX512=OFF
       - name: CMake Build
         run: cmake --build out --config Release --verbose
       - name: CTest
@@ -76,7 +77,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: CMake Configure
-        run: cmake -B out -Werror=dev -DBASE64_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release
+        run: >
+          cmake
+          -B out
+          -Werror=dev
+          -DBASE64_BUILD_TESTS=ON
+          -DBASE64_WITH_AVX512=OFF
+          -DCMAKE_BUILD_TYPE=Release
       - name: CMake Build
         run: cmake --build out --config Release --verbose
       - name: CTest
