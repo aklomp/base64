@@ -79,9 +79,9 @@
 	STOR(B, (ROUND + 1))		/*  | - | | |    */ \
 	TRAN(C, A, F)			/*  -   | | | x  */ \
 	LOAD(F, (ROUND + 5))		/*      | | | +  */ \
-	SHUF(D, A, B)			/*  + + | | | |  */ \
-	STOR(C, (ROUND + 2))		/*  | | - | | |  */ \
-	TRAN(D, A, B)			/*  - -   V V V  */
+	SHUF(D, A, B)			/*  + x | | | |  */ \
+	STOR(C, (ROUND + 2))		/*  |   - | | |  */ \
+	TRAN(D, A, B)			/*  - x   V V V  */
 
 // Define a macro that terminates a ROUND_3 macro by taking pre-loaded
 // registers D, E and F, and translating, shuffling and storing them.
