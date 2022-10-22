@@ -63,7 +63,7 @@ add_feature_info(AVX BASE64_WITH_AVX "add AVX codepath")
 cmake_dependent_option(BASE64_WITH_AVX2 "add AVX 2 codepath" ON ${_IS_X86} OFF)
 add_feature_info(AVX2 BASE64_WITH_AVX2 "add AVX2 codepath")
 cmake_dependent_option(BASE64_WITH_AVX512 "add AVX 512 codepath" ON ${_IS_X86} OFF)
-add_feature_info(AVX2 BASE64_WITH_AVX512 "add AVX512 codepath")
+add_feature_info(AVX512 BASE64_WITH_AVX512 "add AVX512 codepath")
 
 cmake_dependent_option(BASE64_WITH_NEON32 "add NEON32 codepath" OFF _TARGET_ARCH_arm OFF)
 add_feature_info(NEON32 BASE64_WITH_NEON32 "add NEON32 codepath")
