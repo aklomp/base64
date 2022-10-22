@@ -11,9 +11,9 @@
 #if HAVE_AVX2
 #include <immintrin.h>
 
-// Only enable inline assembly on supported compilers.
+// Only enable inline assembly on supported compilers and on 64-bit CPUs.
 #ifndef BASE64_AVX2_USE_ASM
-# if defined(__GNUC__) || defined(__clang__)
+# if (defined(__GNUC__) || defined(__clang__)) && BASE64_WORDSIZE == 64
 #  define BASE64_AVX2_USE_ASM 1
 # else
 #  define BASE64_AVX2_USE_ASM 0

@@ -28,15 +28,26 @@ jobs:
         run: ./test/ci/test.sh
 
   cmake-test:
-    name: cmake-${{ matrix.runner }}
+    name: cmake-${{ matrix.runner }}-${{ matrix.platform }}
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         runner: ["ubuntu-20.04", "macos-11", "windows-2019"]
+        platform: ["x86_64", "i686"]
+        exclude:
+          - runner: "macos-11"
+            platform: "i686"
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Install Ubuntu i686 support
+        if: runner.os == 'Linux' && matrix.platform == 'i686'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libc6-dev-i386
+          echo "CFLAGS=-m32" >> $GITHUB_ENV
+          echo "LDFLAGS=-m32" >> $GITHUB_ENV
       - name: CMake Configure
         run: >
           cmake
@@ -45,6 +56,7 @@ jobs:
           -DBASE64_BUILD_TESTS=ON
           ${{ runner.os != 'Windows' && '-DCMAKE_BUILD_TYPE=Release' || '' }}
           ${{ runner.os == 'macOS' && '-DBASE64_WITH_AVX2=OFF' || '' }}
+          ${{ runner.os == 'Windows' && matrix.platform == 'i686' && '-A Win32' || '' }}
           -DBASE64_WITH_AVX512=OFF
       - name: CMake Build
         run: cmake --build out --config Release --verbose
