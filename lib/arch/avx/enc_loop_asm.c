@@ -129,8 +129,10 @@ enc_loop_avx (const uint8_t **s, size_t *slen, uint8_t **o, size_t *olen)
 		return;
 	}
 
-	// Process blocks of 12 bytes at a time.
-	size_t rounds = *slen / 12;
+	// Process blocks of 12 bytes at a time. Input is read in blocks of 16
+	// bytes, so "reserve" four bytes from the input buffer to ensure that
+	// we never read beyond the end of the input buffer.
+	size_t rounds = (*slen - 4) / 12;
 
 	*slen -= rounds * 12;   // 12 bytes consumed per round
 	*olen += rounds * 16;   // 16 bytes produced per round
