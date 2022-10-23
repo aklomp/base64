@@ -3,8 +3,22 @@ name: Test
 on: [push, pull_request]
 
 jobs:
+  makefile-analysis:
+    name: makefile-analysis
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: "Install analysis tools"
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-tools valgrind
+      - name: Run tests
+        run: ./test/ci/analysis.sh
+
   makefile-test:
     name: makefile-${{ matrix.runner }}-amd64-${{ matrix.compiler }} ${{ ((matrix.openmp == 1) && '+openmp') || '' }}
+    needs: makefile-analysis
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -29,6 +43,7 @@ jobs:
 
   cmake-test:
     name: cmake-${{ matrix.runner }}-${{ matrix.platform }}
+    needs: makefile-analysis
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -65,6 +80,7 @@ jobs:
 
   alpine-makefile-test:
     name: makefile-alpine-amd64-gcc
+    needs: makefile-analysis
     runs-on: ubuntu-latest
     container:
       image: alpine:3.12
@@ -80,6 +96,7 @@ jobs:
 
   alpine-cmake-test:
     name: cmake-alpine-amd64-gcc
+    needs: makefile-analysis
     runs-on: ubuntu-latest
     container:
       image: alpine:3.12
@@ -104,6 +121,7 @@ jobs:
 
   alpine-alt-arch-makefile-test:
     name: makefile-alpine-${{matrix.arch}}-${{matrix.cc}}
+    needs: makefile-analysis
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -124,6 +142,7 @@ jobs:
 
   alpine-alt-arch-cmake-test:
     name: cmake-alpine-${{matrix.arch}}-${{matrix.cc}}
+    needs: makefile-analysis
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
