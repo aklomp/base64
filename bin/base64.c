@@ -1,3 +1,5 @@
+#define _XOPEN_SOURCE		// IOV_MAX
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -5,6 +7,8 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <errno.h>
+#include <limits.h>
+#include <sys/uio.h>
 #include "../include/libbase64.h"
 
 // Size of the buffer for the "raw" (not base64-encoded) data in bytes.
@@ -25,6 +29,9 @@ struct config {
 
 	// Input file handle.
 	FILE *fp;
+
+	// Wrap width in characters, for encoding only.
+	size_t wrap;
 
 	// Whether to run in decode mode.
 	bool decode;
@@ -65,6 +72,76 @@ buffer_free (struct buffer *buf)
 }
 
 static bool
+writev_retry (const struct config *config, struct iovec *iov, size_t nvec)
+{
+	// Writing nothing always succeeds.
+	if (nvec == 0) {
+		return true;
+	}
+
+	while (true) {
+		ssize_t nwrite;
+
+		// Try to write the vectors to stdout.
+		if ((nwrite = writev(1, iov, nvec)) < 0) {
+
+			// Retry on EINTR.
+			if (errno == EINTR) {
+				continue;
+			}
+
+			// Quit on other errors.
+			fprintf(stderr, "%s: writev: %s\n",
+				config->name, strerror(errno));
+			return false;
+		}
+
+		// The return value of `writev' is the number of bytes written.
+		// To check for success, we traverse the list and remove all
+		// written vectors. The call succeeded if the list is empty.
+		while (true) {
+
+			// Retry if this vector is not or partially written.
+			if (iov->iov_len > (size_t) nwrite) {
+				char *base = iov->iov_base;
+
+				iov->iov_base = (size_t) nwrite + base;
+				iov->iov_len -= (size_t) nwrite;
+				break;
+			}
+
+			// Move to the next vector.
+			nwrite -= iov->iov_len;
+			iov++;
+
+			// Return successfully if all vectors were written.
+			if (--nvec == 0) {
+				return true;
+			}
+		}
+	}
+}
+
+static inline bool
+iov_append (const struct config *config, struct iovec *iov,
+            size_t *nvec, char *base, const size_t len)
+{
+	// Add the buffer to the IO vector array.
+	iov[*nvec].iov_base = base;
+	iov[*nvec].iov_len  = len;
+
+	// Increment the array index. Flush the array if it is full.
+	if (++(*nvec) == IOV_MAX) {
+		if (writev_retry(config, iov, IOV_MAX) == false) {
+			return false;
+		}
+		*nvec = 0;
+	}
+
+	return true;
+}
+
+static bool
 write_stdout (const struct config *config, const char *buf, size_t len)
 {
 	while (len > 0) {
@@ -93,6 +170,65 @@ write_stdout (const struct config *config, const char *buf, size_t len)
 }
 
 static bool
+write_wrapped (const struct config *config, char *buf, size_t len)
+{
+	static size_t col = 0;
+
+	// Special case: if buf is NULL, print final trailing newline.
+	if (buf == NULL) {
+		if (config->wrap > 0 && col > 0) {
+			return write_stdout(config, "\n", 1);
+		}
+		return true;
+	}
+
+	// If no wrap width is given, write the entire buffer.
+	if (config->wrap == 0) {
+		return write_stdout(config, buf, len);
+	}
+
+	// Statically allocated IO vector buffer.
+	static struct iovec iov[IOV_MAX];
+	size_t nvec = 0;
+
+	while (len > 0) {
+
+		// Number of characters to fill the current line.
+		size_t nwrite = config->wrap - col;
+
+		// Do not write more data than is available.
+		if (nwrite > len) {
+			nwrite = len;
+		}
+
+		// Append the data to the IO vector array.
+		if (iov_append(config, iov, &nvec, buf, nwrite) == false) {
+			return false;
+		}
+
+		// Advance the buffer.
+		len -= nwrite;
+		buf += nwrite;
+		col += nwrite;
+
+		// If the line is full, append a newline.
+		if (col == config->wrap) {
+			if (iov_append(config, iov, &nvec, "\n", 1) == false) {
+				return false;
+			}
+			col = 0;
+		}
+	}
+
+	// Write the remaining vectors.
+	if (writev_retry(config, iov, nvec) == false) {
+		return false;
+	}
+
+	return true;
+}
+
+static bool
 encode (const struct config *config, struct buffer *buf)
 {
 	size_t nread, nout;
@@ -108,7 +244,7 @@ encode (const struct config *config, struct buffer *buf)
 		base64_stream_encode(&state, buf->raw, nread, buf->enc, &nout);
 
 		// Append the encoded data to the output stream.
-		if (write_stdout(config, buf->enc, nout) == false) {
+		if (write_wrapped(config, buf->enc, nout) == false) {
 			return false;
 		}
 	}
@@ -124,7 +260,12 @@ encode (const struct config *config, struct buffer *buf)
 	base64_stream_encode_final(&state, buf->enc, &nout);
 
 	// Append this tail to the output stream.
-	if (write_stdout(config, buf->enc, nout) == false) {
+	if (write_wrapped(config, buf->enc, nout) == false) {
+		return false;
+	}
+
+	// Print optional trailing newline.
+	if (write_wrapped(config, NULL, 0) == false) {
 		return false;
 	}
 
@@ -176,10 +317,39 @@ usage (FILE *fp, const struct config *config)
 		"If no FILE is given or is specified as '-', "
 		"read from standard input.\n"
 		"Options:\n"
-		"  -d, --decode   Decode a base64 stream.\n"
-		"  -h, --help     Print this help text.\n";
+		"  -d, --decode     Decode a base64 stream.\n"
+		"  -h, --help       Print this help text.\n"
+		"  -w, --wrap=COLS  Wrap encoded lines at this column. "
+		"Default 76, 0 to disable.\n";
 
 	fprintf(fp, usage, config->name);
+}
+
+static bool
+get_wrap (struct config *config, const char *str)
+{
+	char *eptr;
+
+	// Reject empty strings.
+	if (*str == '\0') {
+		return false;
+	}
+
+	// Convert the input string to a signed long.
+	const long wrap = strtol(str, &eptr, 10);
+
+	// Reject negative numbers.
+	if (wrap < 0) {
+		return false;
+	}
+
+	// Reject strings containing non-digits.
+	if (*eptr != '\0') {
+		return false;
+	}
+
+	config->wrap = (size_t) wrap;
+	return true;
 }
 
 static bool
@@ -187,8 +357,9 @@ parse_opts (int argc, char **argv, struct config *config)
 {
 	int c;
 	static const struct option opts[] = {
-		{ "decode", no_argument, NULL, 'd' },
-		{ "help",   no_argument, NULL, 'h' },
+		{ "decode", no_argument,       NULL, 'd' },
+		{ "help",   no_argument,       NULL, 'h' },
+		{ "wrap",   required_argument, NULL, 'w' },
 		{ NULL }
 	};
 
@@ -196,7 +367,7 @@ parse_opts (int argc, char **argv, struct config *config)
 	config->name = *argv;
 
 	// Parse command line options.
-	while ((c = getopt_long(argc, argv, ":dh", opts, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, ":dhw:", opts, NULL)) != -1) {
 		switch (c) {
 		case 'd':
 			config->decode = true;
@@ -205,6 +376,20 @@ parse_opts (int argc, char **argv, struct config *config)
 		case 'h':
 			config->print_help = true;
 			return true;
+
+		case 'w':
+			if (get_wrap(config, optarg) == false) {
+				fprintf(stderr,
+				        "%s: invalid wrap value '%s'\n",
+				        config->name, optarg);
+				return false;
+			}
+			break;
+
+		case ':':
+			fprintf(stderr, "%s: missing argument for '%c'\n",
+			        config->name, optopt);
+			return false;
 
 		default:
 			fprintf(stderr, "%s: unknown option '%c'\n",
@@ -250,6 +435,7 @@ main (int argc, char **argv)
 	struct config config = {
 		.file       = "stdin",
 		.fp         = stdin,
+		.wrap       = 76,
 		.decode     = false,
 		.print_help = false,
 	};
