@@ -259,6 +259,9 @@ enc_loop_ssse3 (const uint8_t **s, size_t *slen, uint8_t **o, size_t *olen)
 		  [msk3] "x" (_mm_set1_epi32(0x01000010)),
 		  [n51]  "x" (_mm_set1_epi8(51)),
 		  [n25]  "x" (_mm_set1_epi8(25))
+
+		// Clobbers.
+		: "cc", "memory"
 	);
 }
 
