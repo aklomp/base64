@@ -11,7 +11,7 @@ else
   BENCH_LDFLAGS=-lrt
 endif
 
-.PHONY: clean test valgrind
+.PHONY: clean test valgrind fuzz_roundtrip fuzz_decode
 
 test: clean test_base64 benchmark
 	./test_base64
@@ -26,6 +26,12 @@ test_base64: test_base64.c codec_supported.o ../lib/libbase64.o
 benchmark: benchmark.c codec_supported.o ../lib/libbase64.o
 	$(CC) $(CFLAGS) -o $@ $^ $(BENCH_LDFLAGS)
 
+fuzz_roundtrip: fuzz_roundtrip.c codec_supported.o ../lib/libbase64.o
+	$(CC) $(CFLAGS) -o $@ $^ $(BENCH_LDFLAGS) -fsanitize=fuzzer
+
+fuzz_decode: fuzz_decode.c codec_supported.o ../lib/libbase64.o
+	$(CC) $(CFLAGS) -o $@ $^ $(BENCH_LDFLAGS) -fsanitize=fuzzer
+
 ../%:
 	make -C .. $*
 
@@ -33,4 +39,4 @@ benchmark: benchmark.c codec_supported.o ../lib/libbase64.o
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 clean:
-	rm -f benchmark test_base64 *.o
+	rm -f benchmark test_base64 *.o fuzz_roundtrip fuzz_decode
