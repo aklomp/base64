@@ -208,7 +208,7 @@ codec_choose_x86 (struct codec *codec)
 		if (ecx & bit_XSAVE_XRSTORE) {
 			uint64_t xcr_mask;
 			xcr_mask = _xgetbv(_XCR_XFEATURE_ENABLED_MASK);
-			if (xcr_mask & _XCR_XMM_AND_YMM_STATE_ENABLED_BY_OS) {
+			if ((xcr_mask & _XCR_XMM_AND_YMM_STATE_ENABLED_BY_OS) == _XCR_XMM_AND_YMM_STATE_ENABLED_BY_OS) { // check multiple bits at once
 				#if HAVE_AVX512
 				if (max_level >= 7) {
 					__cpuid_count(7, 0, eax, ebx, ecx, edx);
