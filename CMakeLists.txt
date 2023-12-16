@@ -17,7 +17,10 @@ if (POLICY CMP0127)
     cmake_policy(SET CMP0127 NEW)
 endif()
 
-project(base64 LANGUAGES C VERSION 0.5.1)
+project(base64 LANGUAGES C
+    VERSION 0.5.1
+    DESCRIPTION "Fast Base64 stream encoder/decoder in C99, with SIMD acceleration"
+)
 
 include(GNUInstallDirs)
 include(CMakeDependentOption)
@@ -240,6 +243,10 @@ if (BASE64_BUILD_TESTS)
 endif()
 
 ########################################################################
+# pkg-config file
+configure_file("${CMAKE_CURRENT_LIST_DIR}/cmake/base64.pc.in" "${CMAKE_CURRENT_BINARY_DIR}/base64.pc" @ONLY)
+
+########################################################################
 # base64
 if (BASE64_BUILD_CLI)
     add_executable(base64-bin
@@ -279,6 +286,10 @@ install(FILES
         "${CMAKE_CURRENT_BINARY_DIR}/base64-config.cmake"
         "${CMAKE_CURRENT_BINARY_DIR}/base64-config-version.cmake"
     DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
+)
+install(FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/base64.pc"
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig"
 )
 
 install(EXPORT base64-targets
