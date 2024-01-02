@@ -1,4 +1,19 @@
-#define _XOPEN_SOURCE		// IOV_MAX
+// Test for MinGW.
+#if defined(__MINGW32__) || defined(__MINGW64__)
+#  define MINGW
+#endif
+
+// Decide if the writev(2) system call needs to be emulated as a series of
+// write(2) calls. At least MinGW does not support writev(2).
+#ifdef MINGW
+#  define EMULATE_WRITEV
+#endif
+
+// Include the necessary system header when using the system's writev(2).
+#ifndef EMULATE_WRITEV
+#  define _XOPEN_SOURCE		// Unlock IOV_MAX
+#  include <sys/uio.h>
+#endif
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -8,7 +23,7 @@
 #include <getopt.h>
 #include <errno.h>
 #include <limits.h>
-#include <sys/uio.h>
+
 #include "../include/libbase64.h"
 
 // Size of the buffer for the "raw" (not base64-encoded) data in bytes.
@@ -49,6 +64,59 @@ struct buffer {
 	// Runtime-allocated buffer for base64-encoded data.
 	char *enc;
 };
+
+// Optionally emulate writev(2) as a series of write calls.
+#ifdef EMULATE_WRITEV
+
+// Quick and dirty definition of IOV_MAX as it is probably not defined.
+#ifndef IOV_MAX
+#  define IOV_MAX 1024
+#endif
+
+// Quick and dirty definition of this system struct, for local use only.
+struct iovec {
+
+	// Opaque data pointer.
+	void *iov_base;
+
+	// Length of the data in bytes.
+	size_t iov_len;
+};
+
+static ssize_t
+writev (const int fd, const struct iovec *iov, int iovcnt)
+{
+	ssize_t r, nwrite = 0;
+
+	// Reset the error marker.
+	errno = 0;
+
+	while (iovcnt-- > 0) {
+
+		// Write the vector; propagate errors back to the caller. Note
+		// that this loses information about how much vectors have been
+		// successfully written, but that also seems to be the case
+		// with the real function. The API is somewhat flawed.
+		if ((r = write(fd, iov->iov_base, iov->iov_len)) < 0) {
+			return r;
+		}
+
+		// Update the total write count.
+		nwrite += r;
+
+		// Return early after a partial write; the caller should retry.
+		if ((size_t) r != iov->iov_len) {
+			break;
+		}
+
+		// Move to the next vector.
+		iov++;
+	}
+
+	return nwrite;
+}
+
+#endif	// EMULATE_WRITEV
 
 static bool
 buffer_alloc (const struct config *config, struct buffer *buf)
