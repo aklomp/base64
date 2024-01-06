@@ -1,10 +1,12 @@
-CFLAGS += -std=c99 -O3 -Wall -Wextra -pedantic
+CFLAGS += -std=c99 -O3 -Wall -Wextra -pedantic -DBASE64_STATIC_DEFINE
 ifdef OPENMP
   CFLAGS += -fopenmp
 endif
 
 TARGET := $(shell $(CC) -dumpmachine)
 ifneq (, $(findstring darwin, $(TARGET)))
+  BENCH_LDFLAGS=
+else ifneq (, $(findstring mingw, $(TARGET)))
   BENCH_LDFLAGS=
 else
   # default to linux, -lrt needed
@@ -15,7 +17,9 @@ endif
 
 test: clean test_base64 benchmark
 	./test_base64
+ifeq (, $(findstring mingw, $(TARGET)))  # no "/dev/urandom" on Windows
 	./benchmark
+endif
 
 valgrind: clean test_base64
 	valgrind --error-exitcode=2 ./test_base64
