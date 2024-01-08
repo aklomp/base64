@@ -16,6 +16,7 @@
 // Platform-specific includes.
 #if defined(_WIN32) || defined(_WIN64)
 #  include <windows.h>
+#  include <wincrypt.h>
 #else
 #  include <sys/types.h>
 #  include <sys/stat.h>
@@ -67,6 +68,27 @@ bytes_to_mb (size_t bytes)
 static bool
 get_random_data (struct buffers *b, char **errmsg)
 {
+#if defined(_WIN32) || defined(_WIN64)
+	HCRYPTPROV hProvider = 0;
+
+	if (!CryptAcquireContext(&hProvider, 0, 0, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT | CRYPT_SILENT)) {
+		*errmsg = "Error: CryptAcquireContext";
+		return false;
+	}
+
+	if (!CryptGenRandom(hProvider, b->regsz, b->reg)) {
+		CryptReleaseContext(hProvider, 0);
+		*errmsg = "Error: CryptGenRandom";
+		return false;
+	}
+
+	if (!CryptReleaseContext(hProvider, 0)) {
+		*errmsg = "Error: CryptReleaseContext";
+		return false;
+	}
+
+	return true;
+#else
 	int fd;
 	ssize_t nread;
 	size_t total_read = 0;
@@ -87,8 +109,10 @@ get_random_data (struct buffers *b, char **errmsg)
 		}
 		total_read += nread;
 	}
+
 	close(fd);
 	return true;
+#endif
 }
 
 #if defined(__MACH__)
