@@ -8,17 +8,24 @@
 #define _XOPEN_SOURCE   600
 #endif
 
+// Standard cross-platform includes.
 #include <stdbool.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <time.h>
 
-#ifdef __MACH__
-#include <mach/mach_time.h>
+// Platform-specific includes.
+#if defined(_WIN32) || defined(_WIN64)
+#  include <windows.h>
+#else
+#  include <sys/types.h>
+#  include <sys/stat.h>
+#  include <fcntl.h>
+#  include <unistd.h>
+#  include <time.h>
+#endif
+
+#if defined(__MACH__)
+#  include <mach/mach_time.h>
 #endif
 
 #include "../include/libbase64.h"
@@ -84,12 +91,13 @@ get_random_data (struct buffers *b, char **errmsg)
 	return true;
 }
 
-#ifdef __MACH__
+#if defined(__MACH__)
 typedef uint64_t base64_timespec;
+
 static void
-base64_gettime (base64_timespec * o_time)
+base64_gettime (base64_timespec *t)
 {
-	*o_time = mach_absolute_time();
+	*t = mach_absolute_time();
 }
 
 static float
@@ -101,18 +109,39 @@ timediff_sec (base64_timespec *start, base64_timespec *end)
 
 	return (float)((diff * tb.numer) / tb.denom) / 1e9f;
 }
-#else
-typedef struct timespec base64_timespec;
+#elif defined(_WIN32) || defined(_WIN64)
+typedef ULARGE_INTEGER base64_timespec;
+
 static void
-base64_gettime (base64_timespec * o_time)
+base64_gettime (base64_timespec *t)
 {
-	clock_gettime(CLOCK_REALTIME, o_time);
+	FILETIME current_time_ft;
+
+	GetSystemTimePreciseAsFileTime(&current_time_ft);
+
+	t->LowPart  = current_time_ft.dwLowDateTime;
+	t->HighPart = current_time_ft.dwHighDateTime;
 }
 
 static float
 timediff_sec (base64_timespec *start, base64_timespec *end)
 {
-	return (end->tv_sec - start->tv_sec) + ((float)(end->tv_nsec - start->tv_nsec)) / 1e9f;
+	// Timer resolution is 100 nanoseconds (10^-7 sec).
+	return (end->QuadPart - start->QuadPart) / 1e7f;
+}
+#else
+typedef struct timespec base64_timespec;
+
+static void
+base64_gettime (base64_timespec *t)
+{
+	clock_gettime(CLOCK_REALTIME, t);
+}
+
+static float
+timediff_sec (base64_timespec *start, base64_timespec *end)
+{
+	return (end->tv_sec - start->tv_sec) + (end->tv_nsec - start->tv_nsec) / 1e9f;
 }
 #endif
 
