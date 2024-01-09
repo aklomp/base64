@@ -169,3 +169,77 @@ jobs:
             echo "::group::CTest"
             ctest --no-tests=error --test-dir out -VV --build-config Release
             echo "::endgroup::CTest"
+
+  msys2-cmake-test:
+    name: msys2-cmake-${{ matrix.msystem }}
+    needs: makefile-analysis
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { msystem: msys, toolchain: "gcc" }
+          - { msystem: mingw32, env: mingw-w64-i686- }
+          - { msystem: mingw64, env: mingw-w64-x86_64- }
+          - { msystem: ucrt64, env: mingw-w64-ucrt-x86_64- }
+          - { msystem: clang32, env: mingw-w64-clang-i686- }
+          - { msystem: clang64, env: mingw-w64-clang-x86_64- }
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup MSYS2 ${{matrix.msystem}}
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{matrix.msystem}}
+          update: true
+          install: >-
+            make
+            ${{ matrix.env }}${{ matrix.toolchain || 'toolchain' }}
+            ${{ matrix.env }}cmake
+      - name: CMake Configure
+        shell: msys2 {0}
+        run: >
+          cmake
+          -B out
+          -Werror=dev
+          -DBASE64_BUILD_TESTS=ON
+          -DCMAKE_BUILD_TYPE=Release
+          -DBASE64_WITH_AVX512=OFF
+      - name: CMake Build
+        shell: msys2 {0}
+        run: cmake --build out --config Release --verbose
+      - name: CTest
+        shell: msys2 {0}
+        run: ctest --no-tests=error --test-dir out -VV --build-config Release
+
+  msys2-makefile-test:
+    name: msys2-makefile-${{ matrix.msystem }}
+    needs: makefile-analysis
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { msystem: msys, toolchain: "gcc" }
+          - { msystem: mingw32, env: mingw-w64-i686- }
+          - { msystem: mingw64, env: mingw-w64-x86_64- }
+          - { msystem: ucrt64, env: mingw-w64-ucrt-x86_64- }
+          # - { msystem: clang32, env: mingw-w64-clang-i686- }  disabled, lld does not support the "-r" option
+          # - { msystem: clang64, env: mingw-w64-clang-x86_64- }  disabled, lld does not support the "-r" option
+    env:
+      CC: cc.exe
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup MSYS2 ${{matrix.msystem}}
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{matrix.msystem}}
+          update: true
+          install: >-
+            make
+            ${{ matrix.env }}${{ matrix.toolchain || 'toolchain' }}
+      - name: Run tests
+        shell: msys2 {0}
+        run: ./test/ci/test.sh
