@@ -340,10 +340,23 @@ encode (const struct config *config, struct buffer *buf)
 	return true;
 }
 
-static int
+static inline size_t
+find_newline (const char *p, const size_t avail)
+{
+	// This is very naive and can probably be improved by vectorization.
+	for (size_t len = 0; len < avail; len++) {
+		if (p[len] == '\n') {
+			return len;
+		}
+	}
+
+	return avail;
+}
+
+static bool
 decode (const struct config *config, struct buffer *buf)
 {
-	size_t nread, nout;
+	size_t avail;
 	struct base64_state state;
 
 	// Initialize the decoder's state structure.
@@ -351,18 +364,51 @@ decode (const struct config *config, struct buffer *buf)
 
 	// Read encoded data into the buffer. Use the smallest buffer size to
 	// be on the safe side: the decoded output will fit the raw buffer.
-	while ((nread = fread(buf->enc, 1, BUFFER_RAW_SIZE, config->fp)) > 0) {
+	while ((avail = fread(buf->enc, 1, BUFFER_RAW_SIZE, config->fp)) > 0) {
+		char  *start  = buf->enc;
+		char  *outbuf = buf->raw;
+		size_t ototal = 0;
 
-		// Decode the input into the raw buffer.
-		if (base64_stream_decode(&state, buf->enc, nread,
-		                         buf->raw, &nout) == 0) {
-			fprintf(stderr, "%s: %s: decoding error\n",
-			        config->name, config->file);
-			return false;
+		// By popular demand, this utility tries to be bug-compatible
+		// with GNU `base64'. That includes silently ignoring newlines
+		// in the input. Tokenize the input on newline characters.
+		while (avail > 0) {
+
+			// Find the offset of the next newline character, which
+			// is also the length of the next chunk.
+			size_t outlen, len = find_newline(start, avail);
+
+			// Ignore empty chunks.
+			if (len == 0) {
+				start++;
+				avail--;
+				continue;
+			}
+
+			// Decode the chunk into the raw buffer.
+			if (base64_stream_decode(&state, start, len,
+			                         outbuf, &outlen) == 0) {
+				fprintf(stderr, "%s: %s: decoding error\n",
+				        config->name, config->file);
+				return false;
+			}
+
+			// Update the output buffer pointer and total size.
+			outbuf += outlen;
+			ototal += outlen;
+
+			// Bail out if the whole string has been consumed.
+			if (len == avail) {
+				break;
+			}
+
+			// Move the start pointer past the newline.
+			start += len + 1;
+			avail -= len + 1;
 		}
 
 		// Append the raw data to the output stream.
-		if (write_stdout(config, buf->raw, nout) == false) {
+		if (write_stdout(config, buf->raw, ototal) == false) {
 			return false;
 		}
 	}
