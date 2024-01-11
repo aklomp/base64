@@ -57,10 +57,13 @@ base64_dec_stub BASE64_DEC_PARAMS
 	return -1;
 }
 
+typedef void (* base64_enc_fn) BASE64_ENC_PARAMS;
+typedef int  (* base64_dec_fn) BASE64_DEC_PARAMS;
+
 struct codec
 {
-	void (* enc) BASE64_ENC_PARAMS;
-	int  (* dec) BASE64_DEC_PARAMS;
+	base64_enc_fn enc;
+	base64_dec_fn dec;
 };
 
 extern void codec_choose (struct codec *, int flags);
