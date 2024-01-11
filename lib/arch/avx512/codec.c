@@ -25,7 +25,7 @@ BASE64_ENC_FUNCTION(avx512)
 	enc_loop_avx512(&s, &slen, &o, &olen);
 	#include "../generic/enc_tail.c"
 #else
-	BASE64_ENC_STUB
+	base64_enc_stub(state, src, srclen, out, outlen);
 #endif
 }
 
@@ -37,6 +37,6 @@ BASE64_DEC_FUNCTION(avx512)
 	dec_loop_avx2(&s, &slen, &o, &olen);
 	#include "../generic/dec_tail.c"
 #else
-	BASE64_DEC_STUB
+	return base64_dec_stub(state, src, srclen, out, outlen);
 #endif
 }
