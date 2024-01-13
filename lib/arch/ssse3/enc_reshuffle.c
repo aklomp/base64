@@ -1,4 +1,4 @@
-static inline __m128i
+static BASE64_FORCE_INLINE __m128i
 enc_reshuffle (__m128i in)
 {
 	// Input, bytes MSB to LSB:
