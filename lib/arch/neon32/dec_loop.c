@@ -1,4 +1,4 @@
-static inline int
+static BASE64_FORCE_INLINE int
 is_nonzero (const uint8x16_t v)
 {
 	uint64_t u64;
@@ -9,7 +9,7 @@ is_nonzero (const uint8x16_t v)
 	return u64 != 0;
 }
 
-static inline uint8x16_t
+static BASE64_FORCE_INLINE uint8x16_t
 delta_lookup (const uint8x16_t v)
 {
 	const uint8x8_t lut = {
@@ -21,7 +21,7 @@ delta_lookup (const uint8x16_t v)
 		vtbl1_u8(lut, vget_high_u8(v)));
 }
 
-static inline uint8x16_t
+static BASE64_FORCE_INLINE uint8x16_t
 dec_loop_neon32_lane (uint8x16_t *lane)
 {
 	// See the SSSE3 decoder for an explanation of the algorithm.

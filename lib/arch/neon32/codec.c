@@ -22,7 +22,7 @@
 #define BASE64_NEON32_USE_ASM
 #endif
 
-static inline uint8x16_t
+static BASE64_FORCE_INLINE uint8x16_t
 vqtbl1q_u8 (const uint8x16_t lut, const uint8x16_t indices)
 {
 	// NEON32 only supports 64-bit wide lookups in 128-bit tables. Emulate
