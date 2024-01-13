@@ -53,6 +53,9 @@ struct config {
 
 	// Whether to just print the help text and exit.
 	bool print_help;
+
+	// Whether to strip newlines from the input when decoding.
+	bool strip_newlines;
 };
 
 // Input/output buffer structure.
@@ -373,10 +376,17 @@ decode (const struct config *config, struct buffer *buf)
 		// with GNU `base64'. That includes silently ignoring newlines
 		// in the input. Tokenize the input on newline characters.
 		while (avail > 0) {
+			size_t outlen, len;
 
-			// Find the offset of the next newline character, which
-			// is also the length of the next chunk.
-			size_t outlen, len = find_newline(start, avail);
+			// When stripping newlines in the input, find the
+			// offset of the next newline character, which is also
+			// the length of the next chunk. Otherwise treat the
+			// entire input as a single chunk.
+			if (config->strip_newlines) {
+				len = find_newline(start, avail);
+			} else {
+				len = avail;
+			}
 
 			// Ignore empty chunks.
 			if (len == 0) {
@@ -431,10 +441,15 @@ usage (FILE *fp, const struct config *config)
 		"If no FILE is given or is specified as '-', "
 		"read from standard input.\n"
 		"Options:\n"
-		"  -d, --decode     Decode a base64 stream.\n"
-		"  -h, --help       Print this help text.\n"
-		"  -w, --wrap=COLS  Wrap encoded lines at this column. "
-		"Default 76, 0 to disable.\n";
+		"  -d, --decode             Decode a base64 stream.\n"
+		"  -h, --help               Print this help text.\n"
+		"  -n, --no-strip-newlines  When decoding, do not strip "
+		"newlines. Speeds up\n"
+		"                           decoding of inputs that do not "
+		"contain newlines.\n"
+		"  -w, --wrap=COLS          Wrap encoded lines at this "
+		"column. Default 76, 0 to\n"
+		"                           disable.\n";
 
 	fprintf(fp, usage, config->name);
 }
@@ -471,9 +486,10 @@ parse_opts (int argc, char **argv, struct config *config)
 {
 	int c;
 	static const struct option opts[] = {
-		{ "decode", no_argument,       NULL, 'd' },
-		{ "help",   no_argument,       NULL, 'h' },
-		{ "wrap",   required_argument, NULL, 'w' },
+		{ "decode",            no_argument,       NULL, 'd' },
+		{ "help",              no_argument,       NULL, 'h' },
+		{ "no-strip-newlines", no_argument,       NULL, 'n' },
+		{ "wrap",              required_argument, NULL, 'w' },
 		{ NULL }
 	};
 
@@ -481,7 +497,7 @@ parse_opts (int argc, char **argv, struct config *config)
 	config->name = *argv;
 
 	// Parse command line options.
-	while ((c = getopt_long(argc, argv, ":dhw:", opts, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, ":dhnw:", opts, NULL)) != -1) {
 		switch (c) {
 		case 'd':
 			config->decode = true;
@@ -490,6 +506,10 @@ parse_opts (int argc, char **argv, struct config *config)
 		case 'h':
 			config->print_help = true;
 			return true;
+
+		case 'n':
+			config->strip_newlines = false;
+			break;
 
 		case 'w':
 			if (get_wrap(config, optarg) == false) {
@@ -547,11 +567,12 @@ main (int argc, char **argv)
 {
 	// Default program config.
 	struct config config = {
-		.file       = "stdin",
-		.fp         = stdin,
-		.wrap       = 76,
-		.decode     = false,
-		.print_help = false,
+		.file           = "stdin",
+		.fp             = stdin,
+		.wrap           = 76,
+		.decode         = false,
+		.print_help     = false,
+		.strip_newlines = true,
 	};
 	struct buffer buf;
 
