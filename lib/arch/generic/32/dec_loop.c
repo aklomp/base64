@@ -1,4 +1,4 @@
-static inline int
+static BASE64_FORCE_INLINE int
 dec_loop_generic_32_inner (const uint8_t **s, uint8_t **o, size_t *rounds)
 {
 	const uint32_t str
