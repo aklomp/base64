@@ -72,7 +72,8 @@ load_64byte_table (const uint8_t *p)
 // (48 bytes encode, 64 bytes decode) that we inline the
 // uint64 codec to stay performant on smaller inputs.
 
-BASE64_ENC_FUNCTION(neon64)
+void
+base64_stream_encode_neon64 BASE64_ENC_PARAMS
 {
 #ifdef BASE64_USE_NEON64
 	#include "../generic/enc_head.c"
@@ -84,7 +85,8 @@ BASE64_ENC_FUNCTION(neon64)
 #endif
 }
 
-BASE64_DEC_FUNCTION(neon64)
+int
+base64_stream_decode_neon64 BASE64_DEC_PARAMS
 {
 #ifdef BASE64_USE_NEON64
 	#include "../generic/dec_head.c"

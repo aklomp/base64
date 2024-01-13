@@ -52,7 +52,8 @@ vqtbl1q_u8 (const uint8x16_t lut, const uint8x16_t indices)
 // (48 bytes encode, 32 bytes decode) that we inline the
 // uint32 codec to stay performant on smaller inputs.
 
-BASE64_ENC_FUNCTION(neon32)
+void
+base64_stream_encode_neon32 BASE64_ENC_PARAMS
 {
 #ifdef BASE64_USE_NEON32
 	#include "../generic/enc_head.c"
@@ -64,7 +65,8 @@ BASE64_ENC_FUNCTION(neon32)
 #endif
 }
 
-BASE64_DEC_FUNCTION(neon32)
+int
+base64_stream_decode_neon32 BASE64_DEC_PARAMS
 {
 #ifdef BASE64_USE_NEON32
 	#include "../generic/dec_head.c"

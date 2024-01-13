@@ -33,7 +33,8 @@
 
 #endif	// HAVE_AVX
 
-BASE64_ENC_FUNCTION(avx)
+void
+base64_stream_encode_avx BASE64_ENC_PARAMS
 {
 #if HAVE_AVX
 	#include "../generic/enc_head.c"
@@ -54,7 +55,8 @@ BASE64_ENC_FUNCTION(avx)
 #endif
 }
 
-BASE64_DEC_FUNCTION(avx)
+int
+base64_stream_decode_avx BASE64_DEC_PARAMS
 {
 #if HAVE_AVX
 	#include "../generic/dec_head.c"

@@ -78,9 +78,9 @@
 #endif
 
 // Function declarations:
-#define BASE64_CODEC_FUNCS(arch)	\
-	BASE64_ENC_FUNCTION(arch);	\
-	BASE64_DEC_FUNCTION(arch);	\
+#define BASE64_CODEC_FUNCS(arch)					\
+	extern void base64_stream_encode_ ## arch BASE64_ENC_PARAMS;	\
+	extern int  base64_stream_decode_ ## arch BASE64_DEC_PARAMS;
 
 BASE64_CODEC_FUNCS(avx512)
 BASE64_CODEC_FUNCS(avx2)

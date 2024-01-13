@@ -35,7 +35,8 @@
 
 #endif	// HAVE_SSSE3
 
-BASE64_ENC_FUNCTION(ssse3)
+void
+base64_stream_encode_ssse3 BASE64_ENC_PARAMS
 {
 #if HAVE_SSSE3
 	#include "../generic/enc_head.c"
@@ -46,7 +47,8 @@ BASE64_ENC_FUNCTION(ssse3)
 #endif
 }
 
-BASE64_DEC_FUNCTION(ssse3)
+int
+base64_stream_decode_ssse3 BASE64_DEC_PARAMS
 {
 #if HAVE_SSSE3
 	#include "../generic/dec_head.c"

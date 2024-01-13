@@ -18,7 +18,8 @@
 
 #endif	// HAVE_AVX512
 
-BASE64_ENC_FUNCTION(avx512)
+void
+base64_stream_encode_avx512 BASE64_ENC_PARAMS
 {
 #if HAVE_AVX512
 	#include "../generic/enc_head.c"
@@ -30,7 +31,8 @@ BASE64_ENC_FUNCTION(avx512)
 }
 
 // Reuse AVX2 decoding. Not supporting AVX512 at present
-BASE64_DEC_FUNCTION(avx512)
+int
+base64_stream_decode_avx512 BASE64_DEC_PARAMS
 {
 #if HAVE_AVX512
 	#include "../generic/dec_head.c"

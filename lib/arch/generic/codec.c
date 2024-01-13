@@ -18,7 +18,8 @@
 #  include "32/dec_loop.c"
 #endif
 
-BASE64_ENC_FUNCTION(plain)
+void
+base64_stream_encode_plain BASE64_ENC_PARAMS
 {
 	#include "enc_head.c"
 #if BASE64_WORDSIZE == 32
@@ -29,7 +30,8 @@ BASE64_ENC_FUNCTION(plain)
 	#include "enc_tail.c"
 }
 
-BASE64_DEC_FUNCTION(plain)
+int
+base64_stream_decode_plain BASE64_DEC_PARAMS
 {
 	#include "dec_head.c"
 #if BASE64_WORDSIZE >= 32

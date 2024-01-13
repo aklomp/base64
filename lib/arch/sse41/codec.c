@@ -33,7 +33,8 @@
 
 #endif	// HAVE_SSE41
 
-BASE64_ENC_FUNCTION(sse41)
+void
+base64_stream_encode_sse41 BASE64_ENC_PARAMS
 {
 #if HAVE_SSE41
 	#include "../generic/enc_head.c"
@@ -44,7 +45,8 @@ BASE64_ENC_FUNCTION(sse41)
 #endif
 }
 
-BASE64_DEC_FUNCTION(sse41)
+int
+base64_stream_decode_sse41 BASE64_DEC_PARAMS
 {
 #if HAVE_SSE41
 	#include "../generic/dec_head.c"
