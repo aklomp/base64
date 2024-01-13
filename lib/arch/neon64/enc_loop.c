@@ -1,4 +1,4 @@
-static inline void
+static BASE64_FORCE_INLINE void
 enc_loop_neon64_inner (const uint8_t **s, uint8_t **o, const uint8x16x4_t tbl_enc)
 {
 	// Load 48 bytes and deinterleave:
