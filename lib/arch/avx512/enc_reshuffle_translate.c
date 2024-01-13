@@ -1,7 +1,7 @@
 // AVX512 algorithm is based on permutevar and multishift. The code is based on
 // https://github.com/WojciechMula/base64simd which is under BSD-2 license.
 
-static inline __m512i
+static BASE64_FORCE_INLINE __m512i
 enc_reshuffle_translate (const __m512i input)
 {
 	// 32-bit input
