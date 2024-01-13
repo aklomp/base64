@@ -1,4 +1,4 @@
-static inline void
+static BASE64_FORCE_INLINE void
 enc_loop_avx2_inner_first (const uint8_t **s, uint8_t **o)
 {
 	// First load is done at s - 0 to not get a segfault:
@@ -17,7 +17,7 @@ enc_loop_avx2_inner_first (const uint8_t **s, uint8_t **o)
 	*o += 32;
 }
 
-static inline void
+static BASE64_FORCE_INLINE void
 enc_loop_avx2_inner (const uint8_t **s, uint8_t **o)
 {
 	// Load input:

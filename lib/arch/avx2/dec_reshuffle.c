@@ -1,4 +1,4 @@
-static inline __m256i
+static BASE64_FORCE_INLINE __m256i
 dec_reshuffle (const __m256i in)
 {
 	// in, lower lane, bits, upper case are most significant bits, lower

@@ -1,4 +1,4 @@
-static inline int
+static BASE64_FORCE_INLINE int
 dec_loop_avx2_inner (const uint8_t **s, uint8_t **o, size_t *rounds)
 {
 	const __m256i lut_lo = _mm256_setr_epi8(

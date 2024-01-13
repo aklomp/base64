@@ -1,4 +1,4 @@
-static inline __m256i
+static BASE64_FORCE_INLINE __m256i
 enc_reshuffle (const __m256i input)
 {
 	// Translation of the SSSE3 reshuffling algorithm to AVX2. This one
