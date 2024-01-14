@@ -56,6 +56,9 @@ struct config {
 
 	// Whether to strip newlines from the input when decoding.
 	bool strip_newlines;
+
+	// Whether to ignore any character not in the base64 alphabet.
+	bool ignore_garbage;
 };
 
 // Input/output buffer structure.
@@ -344,6 +347,37 @@ encode (const struct config *config, struct buffer *buf)
 }
 
 static inline size_t
+find_garbage (const char *p, const size_t avail)
+{
+	// Use a lookup table to distinguish garbage from non-garbage.
+	static const char lut[256] = {
+		['A'] = 1, ['B'] = 1, ['C'] = 1, ['D'] = 1, ['E'] = 1,
+		['F'] = 1, ['G'] = 1, ['H'] = 1, ['I'] = 1, ['J'] = 1,
+		['K'] = 1, ['L'] = 1, ['M'] = 1, ['N'] = 1, ['O'] = 1,
+		['P'] = 1, ['Q'] = 1, ['R'] = 1, ['S'] = 1, ['T'] = 1,
+		['U'] = 1, ['V'] = 1, ['W'] = 1, ['X'] = 1, ['Y'] = 1,
+		['Z'] = 1,
+		['a'] = 1, ['b'] = 1, ['c'] = 1, ['d'] = 1, ['e'] = 1,
+		['f'] = 1, ['g'] = 1, ['h'] = 1, ['i'] = 1, ['j'] = 1,
+		['k'] = 1, ['l'] = 1, ['m'] = 1, ['n'] = 1, ['o'] = 1,
+		['p'] = 1, ['q'] = 1, ['r'] = 1, ['s'] = 1, ['t'] = 1,
+		['u'] = 1, ['v'] = 1, ['w'] = 1, ['x'] = 1, ['y'] = 1,
+		['z'] = 1,
+		['0'] = 1, ['1'] = 1, ['2'] = 1, ['3'] = 1, ['4'] = 1,
+		['5'] = 1, ['6'] = 1, ['7'] = 1, ['8'] = 1, ['9'] = 1,
+		['+'] = 1, ['/'] = 1, ['"'] = 1,
+	};
+
+	for (size_t len = 0; len < avail; len++) {
+		if (lut[(unsigned char) p[len]] == 0) {
+			return len;
+		}
+	}
+
+	return avail;
+}
+
+static inline size_t
 find_newline (const char *p, const size_t avail)
 {
 	// This is very naive and can probably be improved by vectorization.
@@ -378,11 +412,14 @@ decode (const struct config *config, struct buffer *buf)
 		while (avail > 0) {
 			size_t outlen, len;
 
-			// When stripping newlines in the input, find the
-			// offset of the next newline character, which is also
-			// the length of the next chunk. Otherwise treat the
-			// entire input as a single chunk.
-			if (config->strip_newlines) {
+			// When stripping garbage or newlines in the input,
+			// find the offset of the next garbage/newline
+			// character, which is also the length of the next
+			// chunk. Otherwise treat the entire input as a single
+			// chunk.
+			if (config->ignore_garbage) {
+				len = find_garbage(start, avail);
+			} else if (config->strip_newlines) {
 				len = find_newline(start, avail);
 			} else {
 				len = avail;
@@ -443,6 +480,8 @@ usage (FILE *fp, const struct config *config)
 		"Options:\n"
 		"  -d, --decode             Decode a base64 stream.\n"
 		"  -h, --help               Print this help text.\n"
+		"  -i, --ignore-garbage     When decoding, ignore any "
+		"non-base64 data.\n"
 		"  -n, --no-strip-newlines  When decoding, do not strip "
 		"newlines. Speeds up\n"
 		"                           decoding of inputs that do not "
@@ -488,6 +527,7 @@ parse_opts (int argc, char **argv, struct config *config)
 	static const struct option opts[] = {
 		{ "decode",            no_argument,       NULL, 'd' },
 		{ "help",              no_argument,       NULL, 'h' },
+		{ "ignore-garbage",    no_argument,       NULL, 'i' },
 		{ "no-strip-newlines", no_argument,       NULL, 'n' },
 		{ "wrap",              required_argument, NULL, 'w' },
 		{ NULL }
@@ -497,7 +537,7 @@ parse_opts (int argc, char **argv, struct config *config)
 	config->name = *argv;
 
 	// Parse command line options.
-	while ((c = getopt_long(argc, argv, ":dhnw:", opts, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, ":dhinw:", opts, NULL)) != -1) {
 		switch (c) {
 		case 'd':
 			config->decode = true;
@@ -506,6 +546,10 @@ parse_opts (int argc, char **argv, struct config *config)
 		case 'h':
 			config->print_help = true;
 			return true;
+
+		case 'i':
+			config->ignore_garbage = true;
+			break;
 
 		case 'n':
 			config->strip_newlines = false;
@@ -573,6 +617,7 @@ main (int argc, char **argv)
 		.decode         = false,
 		.print_help     = false,
 		.strip_newlines = true,
+		.ignore_garbage = false,
 	};
 	struct buffer buf;
 
