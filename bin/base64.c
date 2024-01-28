@@ -3,6 +3,11 @@
 #  define MINGW
 #endif
 
+// Test for Windows.
+#if defined(_WIN32) || defined(_WIN64)
+#  define WIN
+#endif
+
 // Decide if the writev(2) system call needs to be emulated as a series of
 // write(2) calls. At least MinGW does not support writev(2).
 #ifdef MINGW
@@ -23,6 +28,12 @@
 #include <getopt.h>
 #include <errno.h>
 #include <limits.h>
+
+// Include Windows-specific headers.
+#ifdef WIN
+#  include <io.h>
+#  include <fcntl.h>
+#endif
 
 #include "../include/libbase64.h"
 
@@ -637,6 +648,15 @@ main (int argc, char **argv)
 	if (buffer_alloc(&config, &buf) == false) {
 		return 1;
 	}
+
+#ifdef WIN
+
+	// On Windows, ensure that stdout is binary-clean, and does not
+	// silently convert newlines to CRLFs. This seems to be the portable
+	// way to do it; freopen() and SetConsoleMode() occasionally result in
+	// permission errors, whereas this always seems to work.
+	_setmode(1, _O_BINARY);
+#endif
 
 	// Encode or decode the input based on the user's choice.
 	const bool ret = config.decode
