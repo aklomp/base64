@@ -249,6 +249,10 @@ if (BASE64_BUILD_CLI)
     set_target_properties(base64-bin PROPERTIES
         OUTPUT_NAME base64
     )
+
+    if (WIN32)
+      target_sources(base64-bin PRIVATE bin/base64.rc)
+    endif ()
 endif()
 
 ########################################################################

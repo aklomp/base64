@@ -212,6 +212,13 @@ jobs:
       - name: CTest
         shell: msys2 {0}
         run: ctest --no-tests=error --test-dir out -VV --build-config Release
+      - name: Test demo utility with unicode filenames and file contents on Windows
+        shell: msys2 {0}
+        run: |
+          out/bin/base64 test/ci/😵‍💫.bin > test/ci/😵‍💫.bin.b64
+          out/bin/base64 -d test/ci/😵‍💫.bin.b64 > test/ci/😵‍💫.bin
+          cd test/ci
+          sha256sum -c checksums.txt
 
   msys2-makefile-test:
     name: msys2-makefile-${{ matrix.msystem }}
