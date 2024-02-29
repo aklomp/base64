@@ -1,5 +1,5 @@
 #ifdef BASE64_NEON32_USE_ASM
-static inline void
+static BASE64_FORCE_INLINE void
 enc_loop_neon32_inner_asm (const uint8_t **s, uint8_t **o)
 {
 	// This function duplicates the functionality of enc_loop_neon32_inner,
@@ -106,7 +106,7 @@ enc_loop_neon32_inner_asm (const uint8_t **s, uint8_t **o)
 }
 #endif
 
-static inline void
+static BASE64_FORCE_INLINE void
 enc_loop_neon32_inner (const uint8_t **s, uint8_t **o)
 {
 #ifdef BASE64_NEON32_USE_ASM

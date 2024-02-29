@@ -71,4 +71,14 @@
 #  define BASE64_FALLTHROUGH
 #endif
 
+// Declare macros to ensure that functions that are intended to be inlined, are
+// actually inlined, even when no optimization is applied. A lot of inner loop
+// code is factored into separate functions for reasons of readability, but
+// that code should always be inlined (and optimized) in the main loop.
+#ifdef _MSC_VER
+#  define BASE64_FORCE_INLINE	__forceinline
+#else
+#  define BASE64_FORCE_INLINE  inline __attribute__((always_inline))
+#endif
+
 #endif	// BASE64_ENV_H

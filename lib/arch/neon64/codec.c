@@ -22,7 +22,7 @@
 #define BASE64_NEON64_USE_ASM
 #endif
 
-static inline uint8x16x4_t
+static BASE64_FORCE_INLINE uint8x16x4_t
 load_64byte_table (const uint8_t *p)
 {
 #ifdef BASE64_NEON64_USE_ASM

@@ -1,4 +1,4 @@
-static inline uint8x16x4_t
+static BASE64_FORCE_INLINE uint8x16x4_t
 enc_reshuffle (uint8x16x3_t in)
 {
 	uint8x16x4_t out;

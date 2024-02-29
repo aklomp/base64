@@ -1,4 +1,4 @@
-static inline uint8x16x4_t
+static BASE64_FORCE_INLINE uint8x16x4_t
 enc_translate (const uint8x16x4_t in)
 {
 	// A lookup table containing the absolute offsets for all ranges:

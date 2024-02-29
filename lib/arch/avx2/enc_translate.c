@@ -1,4 +1,4 @@
-static inline __m256i
+static BASE64_FORCE_INLINE __m256i
 enc_translate (const __m256i in)
 {
 	// A lookup table containing the absolute offsets for all ranges:

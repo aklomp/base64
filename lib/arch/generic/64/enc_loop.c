@@ -1,4 +1,4 @@
-static inline void
+static BASE64_FORCE_INLINE void
 enc_loop_generic_64_inner (const uint8_t **s, uint8_t **o)
 {
 	uint64_t src;
