@@ -7,12 +7,10 @@ if [ "${MACHINE}" == "x86_64" ]; then
 	export SSE41_CFLAGS=-msse4.1
 	export SSE42_CFLAGS=-msse4.2
 	export AVX_CFLAGS=-mavx
-	# no AVX2 or AVX512 on GHA macOS
-	if [ "$(uname -s)" != "Darwin" ]; then
-		export AVX2_CFLAGS=-mavx2
-		# Temporarily disable AVX512; it is not available in CI yet.
-		# export AVX512_CFLAGS="-mavx512vl -mavx512vbmi"
-	fi
+	export AVX2_CFLAGS=-mavx2
+	export AVX512_CFLAGS="-mavx512vl -mavx512vbmi"
+	# Temporarily disable AVX512; it is not available in CI yet.
+	export BASE64_TEST_SKIP_AVX512=1
 elif [ "${MACHINE}" == "aarch64" ]; then
 	export NEON64_CFLAGS="-march=armv8-a"
 elif [ "${MACHINE}" == "armv7l" ]; then

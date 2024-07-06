@@ -1,3 +1,3 @@
 extern char **codecs;
 
-int codec_supported (int flags);
+int codec_supported (size_t index);

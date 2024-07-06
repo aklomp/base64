@@ -313,14 +313,16 @@ test_invalid_dec_input (int flags)
 }
 
 static int
-test_one_codec (const char *codec, int flags)
+test_one_codec (size_t codec_index)
 {
 	bool fail = false;
+	const char *codec = codecs[codec_index];
 
 	printf("Codec %s:\n", codec);
 
 	// Skip if this codec is not supported:
-	if (!codec_supported(flags)) {
+	int flags = codec_supported(codec_index);
+	if (flags == 0) {
 		puts("  skipping");
 		return false;
 	}
@@ -376,12 +378,8 @@ main ()
 
 	// Loop over all codecs:
 	for (size_t i = 0; codecs[i]; i++) {
-
-		// Flags to invoke this codec:
-		int codec_flags = (1 << i);
-
 		// Test this codec, merge the results:
-		fail |= test_one_codec(codecs[i], codec_flags);
+		fail |= test_one_codec(i);
 	}
 
 	return (fail) ? 1 : 0;

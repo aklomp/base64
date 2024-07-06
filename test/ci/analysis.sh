@@ -15,8 +15,9 @@ for USE_ASSEMBLY in 0 1; do
 		export SSE42_CFLAGS="-msse4.2 -DBASE64_SSE42_USE_ASM=${USE_ASSEMBLY}"
 		export AVX_CFLAGS="-mavx -DBASE64_AVX_USE_ASM=${USE_ASSEMBLY}"
 		export AVX2_CFLAGS="-mavx2 -DBASE64_AVX2_USE_ASM=${USE_ASSEMBLY}"
+		export AVX512_CFLAGS="-mavx512vl -mavx512vbmi"
 		# Temporarily disable AVX512; it is not available in CI yet.
-		# export AVX512_CFLAGS="-mavx512vl -mavx512vbmi"
+		export BASE64_TEST_SKIP_AVX512=1
 	elif [ "${MACHINE}" == "aarch64" ]; then
 		export NEON64_CFLAGS="-march=armv8-a"
 	elif [ "${MACHINE}" == "armv7l" ]; then
