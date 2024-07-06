@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: "Install analysis tools"
         run: |
           sudo apt-get update
@@ -27,7 +27,7 @@ jobs:
         compiler: ["gcc", "clang"]
         openmp: ["0", "1"]
         include:
-          - runner: "macos-11"
+          - runner: "macos-12"
             compiler: "clang"
             openmp: "0"
     env:
@@ -37,7 +37,7 @@ jobs:
       OBJCOPY: ${{ (startsWith(matrix.runner, 'macos') && 'echo') || 'objcopy' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Run tests
         run: ./test/ci/test.sh
 
@@ -48,14 +48,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: ["ubuntu-20.04", "macos-11", "windows-2019"]
+        runner: ["ubuntu-20.04", "windows-2019"]
         platform: ["x86_64", "i686"]
-        exclude:
-          - runner: "macos-11"
-            platform: "i686"
+        include:
+          - runner: "macos-12"
+            platform: "x86_64"
+          - runner: "macos-14"
+            platform: "arm64"
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install Ubuntu i686 support
         if: runner.os == 'Linux' && matrix.platform == 'i686'
         run: |
@@ -70,7 +72,6 @@ jobs:
           -Werror=dev
           -DBASE64_BUILD_TESTS=ON
           ${{ runner.os != 'Windows' && '-DCMAKE_BUILD_TYPE=Release' || '' }}
-          ${{ runner.os == 'macOS' && '-DBASE64_WITH_AVX2=OFF' || '' }}
           ${{ runner.os == 'Windows' && matrix.platform == 'i686' && '-A Win32' || '' }}
           -DBASE64_WITH_AVX512=OFF
       - name: CMake Build
@@ -90,7 +91,7 @@ jobs:
       - name: Install deps
         run: apk add --update bash build-base git
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Run tests
         run: ./test/ci/test.sh
 
@@ -104,7 +105,7 @@ jobs:
       - name: Install deps
         run: apk add --update bash build-base cmake git
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: CMake Configure
         run: >
           cmake
@@ -130,7 +131,7 @@ jobs:
         cc: [gcc, clang]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - uses: uraimo/run-on-arch-action@v2
         with:
           arch: ${{matrix.arch}}
@@ -151,7 +152,7 @@ jobs:
         cc: [gcc, clang]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - uses: uraimo/run-on-arch-action@v2
         with:
           arch: ${{matrix.arch}}
@@ -187,7 +188,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Setup MSYS2 ${{matrix.msystem}}
         uses: msys2/setup-msys2@v2
         with:
@@ -238,7 +239,7 @@ jobs:
       CC: cc.exe
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Setup MSYS2 ${{matrix.msystem}}
         uses: msys2/setup-msys2@v2
         with:
