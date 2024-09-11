@@ -271,10 +271,12 @@ main ()
 			sizes[i].label, sizes[i].repeat, sizes[i].batch);
 
 		// Loop over all codecs:
-		for (size_t j = 0; codecs[j]; j++)
-			if (codec_supported(1 << j))
-				codec_bench(&b, &sizes[i], codecs[j], 1 << j);
-	};
+		for (size_t j = 0; codecs[j]; j++) {
+			int flags = codec_supported(j);
+			if (flags)
+				codec_bench(&b, &sizes[i], codecs[j], flags);
+		}
+	}
 
 	// Free memory:
 err2:	free(b.enc);

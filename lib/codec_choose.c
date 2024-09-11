@@ -82,7 +82,7 @@
 
 #define _XCR_XMM_AND_YMM_STATE_ENABLED_BY_OS (bit_XMM | bit_YMM)
 
-#define _AVX_512_ENABLED_BY_OS (bit_XMM | bit_YMM | bit_OPMASK | bit_ZMM | bit bit_HIGH_ZMM)
+#define _AVX_512_ENABLED_BY_OS (bit_XMM | bit_YMM | bit_OPMASK | bit_ZMM | bit_HIGH_ZMM)
 
 #endif
 

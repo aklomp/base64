@@ -73,11 +73,12 @@ jobs:
           -DBASE64_BUILD_TESTS=ON
           ${{ runner.os != 'Windows' && '-DCMAKE_BUILD_TYPE=Release' || '' }}
           ${{ runner.os == 'Windows' && matrix.platform == 'i686' && '-A Win32' || '' }}
-          -DBASE64_WITH_AVX512=OFF
       - name: CMake Build
         run: cmake --build out --config Release --verbose
       - name: CTest
         run: ctest --no-tests=error --test-dir out -VV --build-config Release
+        env:
+          BASE64_TEST_SKIP_AVX512: "1"
 
   alpine-makefile-test:
     name: makefile-alpine-amd64-gcc
@@ -112,13 +113,14 @@ jobs:
           -B out
           -Werror=dev
           -DBASE64_BUILD_TESTS=ON
-          -DBASE64_WITH_AVX512=OFF
           -DCMAKE_BUILD_TYPE=Release
       - name: CMake Build
         run: cmake --build out --config Release --verbose
       - name: CTest
         run: ctest --no-tests=error -VV --build-config Release
         working-directory: ./out
+        env:
+          BASE64_TEST_SKIP_AVX512: "1"
 
   alpine-alt-arch-makefile-test:
     name: makefile-alpine-${{matrix.arch}}-${{matrix.cc}}
@@ -206,13 +208,14 @@ jobs:
           -Werror=dev
           -DBASE64_BUILD_TESTS=ON
           -DCMAKE_BUILD_TYPE=Release
-          -DBASE64_WITH_AVX512=OFF
       - name: CMake Build
         shell: msys2 {0}
         run: cmake --build out --config Release --verbose
       - name: CTest
         shell: msys2 {0}
         run: ctest --no-tests=error --test-dir out -VV --build-config Release
+        env:
+          BASE64_TEST_SKIP_AVX512: "1"
       - name: Test demo utility with unicode filenames and file contents on Windows
         shell: msys2 {0}
         run: |
