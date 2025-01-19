@@ -5,7 +5,7 @@ on: [push, pull_request]
 jobs:
   makefile-analysis:
     name: makefile-analysis
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,11 +23,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: ["ubuntu-20.04"]
+        runner: ["ubuntu-22.04"]
         compiler: ["gcc", "clang"]
         openmp: ["0", "1"]
         include:
-          - runner: "macos-12"
+          - runner: "macos-13"
             compiler: "clang"
             openmp: "0"
     env:
@@ -38,6 +38,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Install Ubuntu libomp support
+        if: runner.os == 'Linux' && matrix.compiler == 'clang' && matrix.openmp == 1
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libomp-dev
       - name: Run tests
         run: ./test/ci/test.sh
 
@@ -48,13 +53,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: ["ubuntu-20.04", "windows-2019"]
+        runner: ["ubuntu-22.04", "windows-2019"]
         platform: ["x86_64", "i686"]
         include:
-          - runner: "macos-12"
+          - runner: "macos-13"
             platform: "x86_64"
           - runner: "macos-14"
             platform: "arm64"
+          - runner: "ubuntu-22.04-arm"
+            platform: "aarch64"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -185,7 +192,6 @@ jobs:
           - { msystem: mingw32, env: mingw-w64-i686- }
           - { msystem: mingw64, env: mingw-w64-x86_64- }
           - { msystem: ucrt64, env: mingw-w64-ucrt-x86_64- }
-          - { msystem: clang32, env: mingw-w64-clang-i686- }
           - { msystem: clang64, env: mingw-w64-clang-x86_64- }
 
     steps:
