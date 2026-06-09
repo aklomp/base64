@@ -71,6 +71,13 @@ add_feature_info(NEON32 BASE64_WITH_NEON32 "add NEON32 codepath")
 cmake_dependent_option(BASE64_WITH_NEON64 "add NEON64 codepath" ON _TARGET_ARCH_arm64 OFF)
 add_feature_info(NEON64 BASE64_WITH_NEON64 "add NEON64 codepath")
 
+if (_TARGET_ARCH STREQUAL "riscv" OR _TARGET_ARCH STREQUAL "riscv64")
+    set(BASE64_TARGET_RISCV ON)
+else()
+    set(BASE64_TARGET_RISCV OFF)
+endif()
+add_feature_info(RISC-V BASE64_TARGET_RISCV "use the portable codec on RISC-V targets")
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
