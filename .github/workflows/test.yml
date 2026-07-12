@@ -1,6 +1,13 @@
 name: Test
 
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   makefile-analysis:
@@ -8,7 +15,9 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
       - name: "Install analysis tools"
         run: |
           sudo apt-get update
@@ -23,11 +32,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: ["ubuntu-22.04"]
+        runner: ["ubuntu-24.04"]
         compiler: ["gcc", "clang"]
         openmp: ["0", "1"]
         include:
-          - runner: "macos-13"
+          - runner: "macos-15-intel"
             compiler: "clang"
             openmp: "0"
     env:
@@ -37,7 +46,9 @@ jobs:
       OBJCOPY: ${{ (startsWith(matrix.runner, 'macos') && 'echo') || 'objcopy' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
       - name: Install Ubuntu libomp support
         if: runner.os == 'Linux' && matrix.compiler == 'clang' && matrix.openmp == 1
         run: |
@@ -53,20 +64,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: ["ubuntu-22.04", "windows-2019"]
+        runner: ["ubuntu-24.04", "windows-2022"]
         platform: ["x86_64", "i686"]
         include:
-          - runner: "macos-13"
+          - runner: "macos-15-intel"
             platform: "x86_64"
-          - runner: "macos-14"
+          - runner: "macos-15"
             platform: "arm64"
-          - runner: "ubuntu-22.04-arm"
+          - runner: "ubuntu-24.04-arm"
             platform: "aarch64"
           - runner: "windows-11-arm"
             platform: "ARM64"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
       - name: Install Ubuntu i686 support
         if: runner.os == 'Linux' && matrix.platform == 'i686'
         run: |
@@ -94,14 +107,16 @@ jobs:
     needs: makefile-analysis
     runs-on: ubuntu-latest
     container:
-      image: alpine:3.12
+      image: alpine:3.21
       env:
         CC: gcc
     steps:
       - name: Install deps
         run: apk add --update bash build-base git
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
       - name: Run tests
         run: ./test/ci/test.sh
 
@@ -110,12 +125,14 @@ jobs:
     needs: makefile-analysis
     runs-on: ubuntu-latest
     container:
-      image: alpine:3.12
+      image: alpine:3.21
     steps:
       - name: Install deps
         run: apk add --update bash build-base cmake git
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
       - name: CMake Configure
         run: >
           cmake
@@ -138,12 +155,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [armv7, aarch64, s390x, ppc64le]
+        arch: [armv7, aarch64, s390x, ppc64le, riscv64]
         cc: [gcc, clang]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-      - uses: uraimo/run-on-arch-action@v3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: uraimo/run-on-arch-action@f9b26e3a1a408d5fd530d20c17b9f3f4428ff8d9 # v3.1.0
         with:
           arch: ${{matrix.arch}}
           distro: alpine_latest
@@ -159,12 +178,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [armv7, aarch64, s390x, ppc64le]
+        arch: [armv7, aarch64, s390x, ppc64le, riscv64]
         cc: [gcc, clang]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-      - uses: uraimo/run-on-arch-action@v3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: uraimo/run-on-arch-action@f9b26e3a1a408d5fd530d20c17b9f3f4428ff8d9 # v3.1.0
         with:
           arch: ${{matrix.arch}}
           distro: alpine_latest
@@ -198,9 +219,11 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
       - name: Setup MSYS2 ${{matrix.msystem}}
-        uses: msys2/setup-msys2@v2
+        uses: msys2/setup-msys2@66cd2cce69caa17b53920067426061ca1de3a884 # v2.32.0
         with:
           msystem: ${{matrix.msystem}}
           update: true
@@ -250,9 +273,11 @@ jobs:
       CC: cc.exe
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
       - name: Setup MSYS2 ${{matrix.msystem}}
-        uses: msys2/setup-msys2@v2
+        uses: msys2/setup-msys2@66cd2cce69caa17b53920067426061ca1de3a884 # v2.32.0
         with:
           msystem: ${{matrix.msystem}}
           update: true
