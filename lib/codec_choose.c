@@ -108,7 +108,7 @@ codec_choose_forced (struct codec *codec, int flags)
 	// always allow it, even if the codec is a no-op.
 	// For testing purposes.
 
-	if (!(flags & 0xFFFF)) {
+	if (!(flags & BASE64_CPU_MASK)) {
 		return false;
 	}
 
