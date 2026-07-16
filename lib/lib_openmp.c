@@ -97,8 +97,9 @@ base64_decode_openmp
 
 			// Split the input string into num_threads parts, each
 			// part a multiple of 4 bytes. The remaining bytes will
-			// be done later:
-			len = srclen / (num_threads * 4);
+			// be done later, always including the last 4 bytes to
+			// process padding correctly:
+			len = (srclen - 4) / (num_threads * 4);
 			len *= 4;
 			last_len = srclen - num_threads * len;
 
@@ -106,6 +107,7 @@ base64_decode_openmp
 			base64_stream_decode_init(&state, flags);
 
 			initial_state = state;
+			state.flags |= BASE64_NO_PADDING;
 		}
 
 		// Single has an implicit barrier to wait here for the above to
@@ -141,9 +143,9 @@ base64_decode_openmp
 	sum += s;
 	*outlen = sum;
 
-	// If when decoding a whole block, we're still waiting for input then fail:
-	if (result && (state.bytes == 0)) {
-		return result;
+	// Final check:
+	if (result) {
+		result = base64_stream_decode_final(&state);
 	}
-	return 0;
+	return result;
 }
