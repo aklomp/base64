@@ -35,10 +35,11 @@
 			break;
 		}
 		if ((q = base64_table_dec_8bit[*s++]) >= 254) {
+			int const pad_check = (state->flags & BASE64_NO_PADDING) ? 0 : 254;
 			st.bytes++;
 			// When q == 254, the input char is '='.
 			// Check if next byte is also '=':
-			if (q == 254) {
+			if (q == pad_check) {
 				if (slen-- != 0) {
 					st.bytes = 0;
 					// EOF:
@@ -70,11 +71,12 @@
 			break;
 		}
 		if ((q = base64_table_dec_8bit[*s++]) >= 254) {
+			int const pad_check = (state->flags & BASE64_NO_PADDING) ? 0 : 254;
 			st.bytes = 0;
 			st.eof = BASE64_EOF;
 			// When q == 254, the input char is '='. Return 1 and EOF.
 			// When q == 255, the input char is invalid. Return 0 and EOF.
-			ret = ((q == 254) && (slen == 0)) ? 1 : 0;
+			ret = ((q == pad_check) && (slen == 0)) ? 1 : 0;
 			break;
 		}
 		*o++ = st.carry | q;

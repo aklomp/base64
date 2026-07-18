@@ -3,8 +3,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "../include/libbase64.h"
+#include "../lib/env.h"
 #include "codec_supported.h"
 #include "moby_dick.h"
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 static char out[2000];
 static size_t outlen;
@@ -54,6 +58,102 @@ assert_dec (int flags, const char *src, const char *dst)
 		out[outlen] = '\0';
 		printf("FAIL: decoding of '%s': expected output '%s', got '%s'\n", src, dst, out);
 		return true;
+	}
+	return false;
+}
+
+static bool
+assert_dec_full (int expected, int flags, const char *src, const char *dst)
+{
+	size_t srclen = strlen(src);
+	size_t dstlen = strlen(dst);
+
+	int ret = base64_decode(src, srclen, out, &outlen, flags);
+
+	if (expected)
+	{
+		if (ret <= 0) {
+			printf("FAIL: decoding of '%s': decoding error\n", src);
+			return true;
+		}
+		if (outlen != dstlen) {
+			printf("FAIL: decoding of '%s': "
+			       "length expected %lu, got %lu\n", src,
+			       (unsigned long)dstlen,
+			       (unsigned long)outlen
+			       );
+			return true;
+		}
+		if (strncmp(dst, out, outlen) != 0) {
+			out[outlen] = '\0';
+			printf("FAIL: decoding of '%s': expected output '%s', got '%s'\n", src, dst, out);
+			return true;
+		}
+		for (size_t bs = 1; bs <= srclen; ++bs) {
+			struct base64_state state;
+			char const* tmpsrc = src;
+			size_t tmpsrclen = srclen;
+			char *tmpout = out;
+			size_t tmpoutlen;
+			outlen = 0;
+
+			base64_stream_decode_init(&state, flags);
+			for (size_t b = 0; b < ((srclen + (bs - 1)) / bs); ++b, tmpsrc += bs, tmpsrclen -= bs) {
+				size_t tmpbs = (tmpsrclen > bs) ? bs : tmpsrclen;
+				ret = base64_stream_decode(&state, tmpsrc, tmpbs, tmpout, &tmpoutlen);
+				if (ret <= 0) {
+					printf("FAIL: decoding of '%s': decoding by %lu error\n", src, (unsigned long)bs);
+					return true;
+				}
+				tmpout += tmpoutlen;
+				outlen += tmpoutlen;
+			}
+			ret = base64_stream_decode_final(&state);
+			if (ret <= 0) {
+				printf("FAIL: decoding of '%s': decoding by %lu error\n", src, (unsigned long)bs);
+				return true;
+			}
+			if (outlen != dstlen) {
+				printf("FAIL: decoding of '%s': "
+				       "length expected %lu, got %lu\n", src,
+				       (unsigned long)dstlen,
+				       (unsigned long)outlen
+				       );
+				return true;
+			}
+			if (strncmp(dst, out, outlen) != 0) {
+				out[outlen] = '\0';
+				printf("FAIL: decoding of '%s': expected output '%s', got '%s'\n", src, dst, out);
+				return true;
+			}
+		}
+	}
+	else {
+		if (ret > 0) {
+			printf("FAIL: decoding of '%s': decoding succeeded\n", src);
+			return true;
+		}
+		for (size_t bs = 1; bs <= srclen; ++bs) {
+			struct base64_state state;
+			char const* tmpsrc = src;
+			size_t tmpsrclen = srclen;
+
+			base64_stream_decode_init(&state, flags);
+			for (size_t b = 0; b < ((srclen + (bs - 1)) / bs); ++b, tmpsrc += bs, tmpsrclen -= bs) {
+				size_t tmpbs = (tmpsrclen > bs) ? bs : tmpsrclen;
+				ret = base64_stream_decode(&state, tmpsrc, tmpbs, out, &outlen);
+				if (ret <= 0) {
+					break;
+				}
+			}
+			if (ret > 0) {
+				ret = base64_stream_decode_final(&state);
+			}
+			if (ret > 0) {
+				printf("FAIL: decoding of '%s': bad no decoding error\n", src);
+				return true;
+			}
+		}
 	}
 	return false;
 }
@@ -150,6 +250,7 @@ test_char_table (int flags, bool use_malloc)
 	return fail;
 }
 
+
 static int
 test_streaming (int flags)
 {
@@ -157,7 +258,6 @@ test_streaming (int flags)
 	char chr[256];
 	char ref[400], enc[400];
 	size_t reflen;
-	struct base64_state state;
 
 	// Fill array with all characters 0..255:
 	for (int i = 0; i < 256; i++)
@@ -172,6 +272,7 @@ test_streaming (int flags)
 		size_t inpos   = 0;
 		size_t partlen = 0;
 		size_t enclen  = 0;
+		struct base64_state state;
 
 		base64_stream_encode_init(&state, flags);
 		memset(enc, 0, 400);
@@ -209,17 +310,28 @@ test_streaming (int flags)
 		size_t inpos   = 0;
 		size_t partlen = 0;
 		size_t enclen  = 0;
+		struct base64_state state;
 
 		base64_stream_decode_init(&state, flags);
 		memset(enc, 0, 400);
-		while (base64_stream_decode(&state, &ref[inpos], (inpos + bs > reflen) ? reflen - inpos : bs, &enc[enclen], &partlen)) {
-			enclen += partlen;
-			inpos += bs;
-
-			// Has the entire buffer been consumed?
-			if (inpos >= 400) {
+		for (size_t b = 0; b < ((reflen + (bs - 1)) / bs); ++b, inpos += bs) {
+			size_t tmpbs = ((reflen - inpos) > bs) ? bs : reflen - inpos;
+			if (base64_stream_decode(&state, &ref[inpos], tmpbs, &enc[enclen], &partlen) <=0) {
+				printf(
+				       "FAIL: stream decoding with blocksize %lu failed at block start %lu\n",
+				       (unsigned long)bs,
+				       (unsigned long)inpos
+				);
+				fail |= true;
 				break;
 			}
+			enclen += partlen;
+		}
+		if (base64_stream_decode_final(&state) <= 0) {
+			printf(
+				"FAIL: final stream decoding with blocksize %lu failed\n",
+				(unsigned long)bs			);
+			fail |= true;
 		}
 		if (enclen != 256) {
 			printf("FAIL: stream decoding gave incorrect size: "
@@ -313,6 +425,146 @@ test_invalid_dec_input (int flags)
 }
 
 static int
+test_canonical (int flags)
+{
+	bool fail = false;
+
+	// Test vectors:
+	struct {
+		const char *in;
+		const char *out;
+		int success;
+	} vec[] = {
+		{"", "", 1},
+		{"Zg==", "f", 1},
+		{"Zm8=", "fo", 1},
+		{"Zm9v", "foo", 1},
+		{"Zh==", "f", 0},
+		{"Zm9=", "fo", 0},
+	};
+
+	for (size_t i = 0; i < sizeof(vec) / sizeof(vec[0]); i++) {
+		fail |= assert_dec_full(1, flags, vec[i].in, vec[i].out);
+		fail |= assert_dec_full(vec[i].success, flags | BASE64_CANONICAL, vec[i].in, vec[i].out);
+	}
+	return fail;
+}
+
+
+static int
+test_padded_option(int flags)
+{
+	bool fail = false;
+
+	// Test vectors:
+	struct {
+		const char *in;
+		const char *out;
+	} vec[] = {
+		{"", ""},
+		{"YQ==", "a"},
+		{"YQ", "a"},
+		{"YWI=", "ab"},
+		{"YWI", "ab"},
+		{"YWJj", "abc"}
+	};
+
+	for (size_t i = 0; i < sizeof(vec) / sizeof(vec[0]); i++) {
+		/* test with padded = false & validation */
+		if (strchr(vec[i].in, '=') != NULL) {
+			fail |= assert_dec_full(0, flags | BASE64_NO_PADDING, vec[i].in, vec[i].out);
+			fail |= assert_dec_full(1, flags, vec[i].in, vec[i].out);
+			fail |= assert_enc(flags, vec[i].out, vec[i].in);
+		}
+		else {
+			fail |= assert_dec_full(1, flags | BASE64_NO_PADDING, vec[i].in, vec[i].out);
+			fail |= assert_enc(flags | BASE64_NO_PADDING, vec[i].out, vec[i].in);
+		}
+	}
+
+	return fail;
+}
+
+static int
+test_openmp_limit(int flags)
+{
+	bool fail = false;
+	size_t const encodedLen = BASE64_OMP_THRESHOLD + 2U * 4U;
+	size_t decodedLen = (encodedLen / 4) * 3;
+	size_t const mobyDickLen = strlen(moby_dick_base64) - 4;
+	char* encoded = malloc(encodedLen);
+	char* decoded = malloc(decodedLen);
+	if ((encoded == NULL) || (decoded == NULL)) {
+		puts("allocation failed");
+		free(encoded);
+		free(decoded);
+		return true;
+	}
+	for (size_t i = 0; i < ((encodedLen + mobyDickLen - 1) / mobyDickLen); ++i) {
+		size_t const len = (((i + 1) * mobyDickLen) < encodedLen) ? mobyDickLen : encodedLen - (i * mobyDickLen);
+		memcpy(encoded + i * mobyDickLen, moby_dick_base64, len);
+	}
+
+	/* fully valid stream */
+	encoded[(encodedLen/2) - 4] = 'Z';
+	encoded[(encodedLen/2) - 3] = 'g';
+	encoded[(encodedLen/2) - 2] = 'g';
+	encoded[(encodedLen/2) - 1] = 'g';
+	encoded[encodedLen - 4] = 'Z';
+	encoded[encodedLen - 3] = 'g';
+	encoded[encodedLen - 2] = '=';
+	encoded[encodedLen - 1] = '=';
+
+	if (base64_decode(encoded, encodedLen, decoded, &decodedLen, flags | BASE64_CANONICAL) <= 0) {
+		puts("test_openmp_limit failed test 1");
+		fail = true;
+	}
+
+	encoded[(encodedLen/2) - 2] = '=';
+	encoded[(encodedLen/2) - 1] = '=';
+
+	if (base64_decode(encoded, encodedLen, decoded, &decodedLen, flags) > 0) {
+		puts("test_openmp_limit failed test 2");
+		fail = true;
+	}
+
+	/* restore fully valid stream  */
+	encoded[(encodedLen/2) - 2] = 'g'; /* valid */
+	encoded[(encodedLen/2) - 1] = 'g'; /* valid */
+	if (base64_decode(encoded, encodedLen - 2, decoded, &decodedLen, flags | BASE64_NO_PADDING | BASE64_CANONICAL) <= 0) {
+		puts("test_openmp_limit failed test 3");
+		fail = true;
+	}
+
+	/* not canonical */
+	encoded[encodedLen - 3] = 'h';
+	if (base64_decode(encoded, encodedLen, decoded, &decodedLen, flags) <= 0) {
+		puts("test_openmp_limit failed test 4");
+		fail = true;
+	}
+	if (base64_decode(encoded, encodedLen, decoded, &decodedLen, flags | BASE64_CANONICAL) > 0) {
+		puts("test_openmp_limit failed test 5");
+		fail = true;
+	}
+	if (base64_decode(encoded, encodedLen, decoded, &decodedLen, flags | BASE64_NO_PADDING) > 0) {
+		puts("test_openmp_limit failed test 6");
+		fail = true;
+	}
+	if (base64_decode(encoded, encodedLen - 2, decoded, &decodedLen, flags | BASE64_NO_PADDING) <= 0) {
+		puts("test_openmp_limit failed test 7");
+		fail = true;
+	}
+	if (base64_decode(encoded, encodedLen - 2, decoded, &decodedLen, flags | BASE64_NO_PADDING | BASE64_CANONICAL) > 0) {
+		puts("test_openmp_limit failed test 8");
+		fail = true;
+	}
+
+	free(encoded);
+	free(decoded);
+	return fail;
+}
+
+static int
 test_one_codec (size_t codec_index)
 {
 	bool fail = false;
@@ -364,6 +616,9 @@ test_one_codec (size_t codec_index)
 	fail |= test_char_table(flags, true); /* test for out-of-bound input read */
 	fail |= test_streaming(flags);
 	fail |= test_invalid_dec_input(flags);
+	fail |= test_canonical(flags);
+	fail |= test_padded_option(flags);
+	fail |= test_openmp_limit(flags);
 
 	if (!fail)
 		puts("  all tests passed.");
@@ -375,6 +630,12 @@ int
 main ()
 {
 	bool fail = false;
+
+#ifdef _OPENMP
+	if (omp_get_max_threads() >= 2) {
+		omp_set_num_threads(2);
+	}
+#endif
 
 	// Loop over all codecs:
 	for (size_t i = 0; codecs[i]; i++) {
