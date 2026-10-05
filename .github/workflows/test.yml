@@ -102,6 +102,34 @@ jobs:
         env:
           BASE64_TEST_SKIP_AVX512: "1"
 
+  cmake-install-test:
+    name: cmake-install-shared-${{ matrix.shared }}-openmp-${{ matrix.openmp }}
+    needs: makefile-analysis
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        shared: ["OFF", "ON"]
+        openmp: ["OFF", "ON"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Build and install
+        run: |
+          cmake -B out -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=${{ matrix.shared }} -DBASE64_WITH_OpenMP=${{ matrix.openmp }}
+          if [ "${{ matrix.openmp }}" = ON ]; then
+            grep -q '^BASE64_WITH_OpenMP:BOOL=ON$' out/CMakeCache.txt
+          fi
+          cmake --build out --parallel 2
+          cmake --install out --prefix "${{ github.workspace }}/install"
+      - name: Test installed package
+        run: |
+          cmake -S test/cmake -B out-consumer -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install" -DCMAKE_DISABLE_FIND_PACKAGE_OpenMP=${{ (matrix.shared == 'ON' || matrix.openmp == 'OFF') && 'ON' || 'OFF' }}
+          cmake --build out-consumer --parallel 2
+          ctest --test-dir out-consumer --output-on-failure --no-tests=error
+
   alpine-makefile-test:
     name: makefile-alpine-amd64-gcc
     needs: makefile-analysis
