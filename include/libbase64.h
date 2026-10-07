@@ -55,6 +55,11 @@ extern "C" {
 #define BASE64_FORCE_AVX	(1 << 7)
 #define BASE64_FORCE_AVX512	(1 << 8)
 
+#define BASE64_CPU_MASK         (0x1FF)
+
+#define BASE64_NO_PADDING       (1 << 13)  /* encoding: do not output padding bytes, decoding: enforce no padding bytes */
+#define BASE64_CANONICAL        (1 << 14)  /* decoding: enforce there are no padding bits (i.e. carry == 0) */
+
 struct base64_state {
 	int eof;
 	int bytes;
@@ -137,6 +142,11 @@ int BASE64_EXPORT base64_stream_decode
 	, size_t		 srclen
 	, char			*out
 	, size_t		*outlen
+	) ;
+
+/* Finalizes checks begun by previous successful calls to `base64_stream_decode()`. */
+int BASE64_EXPORT base64_stream_decode_final
+	( struct base64_state	*state
 	) ;
 
 #ifdef __cplusplus
