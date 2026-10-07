@@ -105,6 +105,7 @@ add_library(base64
     # library files
     lib/lib.c
     lib/codec_choose.c
+    lib/feature_level.c
     include/libbase64.h
 
     lib/tables/tables.c

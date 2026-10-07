@@ -22,10 +22,13 @@ test: clean test_base64 benchmark
 valgrind: clean test_base64
 	valgrind --error-exitcode=2 ./test_base64
 
-test_base64: test_base64.c codec_supported.o ../lib/libbase64.o
+feature_level.o: ../lib/feature_level.c ../lib/config.h
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+test_base64: test_base64.c codec_supported.o feature_level.o ../lib/libbase64.o
 	$(CC) $(CFLAGS) -o $@ $^
 
-benchmark: benchmark.c codec_supported.o ../lib/libbase64.o
+benchmark: benchmark.c codec_supported.o feature_level.o ../lib/libbase64.o
 	$(CC) $(CFLAGS) -o $@ $^ $(BENCH_LDFLAGS)
 
 ../%:

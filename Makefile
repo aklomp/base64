@@ -15,6 +15,7 @@ OBJS = \
   lib/arch/avx/codec.o \
   lib/lib.o \
   lib/codec_choose.o \
+  lib/feature_level.o \
   lib/tables/tables.o
 
 HAVE_AVX512 = 0
