@@ -3,7 +3,7 @@
 [![Build Status](https://github.com/aklomp/base64/actions/workflows/test.yml/badge.svg)](https://github.com/aklomp/base64/actions/workflows/test.yml)
 
 This is an implementation of a base64 stream encoding/decoding library in C99
-with SIMD (AVX2, AVX512, NEON, AArch64/NEON, SSSE3, SSE4.1, SSE4.2, AVX) and
+with SIMD (AVX2, AVX512, NEON, AArch64/NEON, RISC-V Vector, SSSE3, SSE4.1, SSE4.2, AVX) and
 [OpenMP](http://www.openmp.org) acceleration. It also contains wrapper functions
 to encode/decode simple length-delimited strings. This library aims to be:
 
@@ -84,7 +84,7 @@ make lib/libbase64.o
 ```
 
 Optional SIMD codecs can be included by specifying the `AVX2_CFLAGS`, `AVX512_CFLAGS`,
-`NEON32_CFLAGS`, `NEON64_CFLAGS`, `SSSE3_CFLAGS`, `SSE41_CFLAGS`, `SSE42_CFLAGS` and/or `AVX_CFLAGS` environment variables.
+`NEON32_CFLAGS`, `NEON64_CFLAGS`, `RVV_CFLAGS`, `SSSE3_CFLAGS`, `SSE41_CFLAGS`, `SSE42_CFLAGS` and/or `AVX_CFLAGS` environment variables.
 A typical build invocation on x86 looks like this:
 
 ```sh
@@ -121,6 +121,19 @@ SSSE3_CFLAGS=-mssse3 make
 ```
 
 The codec will only be used if runtime feature detection shows that the target machine supports SSSE3.
+
+### RISC-V Vector (RVV)
+
+To build and include the RISC-V Vector codec, set the `RVV_CFLAGS` environment variable to a value that will turn on the V extension in your compiler, typically `-march=rv64gcv`.
+Example:
+
+```sh
+RVV_CFLAGS=-march=rv64gcv make
+```
+
+The codec is vector-length agnostic: it works with any VLEN and needs no per-VLEN tuning.
+It requires the v0.12 or later vector intrinsics (GCC 14+, Clang 17+); the CMake build checks for them and enables the codec by default on 64-bit RISC-V.
+The codec will only be used if runtime feature detection (`riscv_hwprobe(2)`, or the `AT_HWCAP` V bit on older kernels) shows that the target machine supports the V extension.
 
 ### NEON
 
