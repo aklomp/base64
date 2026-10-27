@@ -15,6 +15,8 @@ elif [ "${MACHINE}" == "aarch64" ]; then
 	export NEON64_CFLAGS="-march=armv8-a"
 elif [ "${MACHINE}" == "armv7l" ]; then
 	export NEON32_CFLAGS="-march=armv7-a -mfloat-abi=hard -mfpu=neon"
+elif [ "${MACHINE}" == "riscv64" ]; then
+	export RVV_CFLAGS="-march=rv64gcv"
 fi
 
 if [ "${OPENMP:-}" == "0" ]; then

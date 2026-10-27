@@ -13,6 +13,7 @@ OBJS = \
   lib/arch/sse41/codec.o \
   lib/arch/sse42/codec.o \
   lib/arch/avx/codec.o \
+  lib/arch/rvv/codec.o \
   lib/lib.o \
   lib/codec_choose.o \
   lib/tables/tables.o
@@ -25,6 +26,7 @@ HAVE_SSSE3  = 0
 HAVE_SSE41  = 0
 HAVE_SSE42  = 0
 HAVE_AVX    = 0
+HAVE_RVV    = 0
 
 # The user should supply compiler flags for the codecs they want to build.
 # Check which codecs we're going to include:
@@ -51,6 +53,9 @@ ifdef SSE42_CFLAGS
 endif
 ifdef AVX_CFLAGS
   HAVE_AVX = 1
+endif
+ifdef RVV_CFLAGS
+  HAVE_RVV = 1
 endif
 ifdef OPENMP
   CFLAGS += -fopenmp
@@ -86,6 +91,7 @@ lib/config.h:
 	@echo "#define HAVE_SSE41  $(HAVE_SSE41)"  >> $@
 	@echo "#define HAVE_SSE42  $(HAVE_SSE42)"  >> $@
 	@echo "#define HAVE_AVX    $(HAVE_AVX)"    >> $@
+	@echo "#define HAVE_RVV    $(HAVE_RVV)"    >> $@
 
 $(OBJS): lib/config.h
 $(OBJS): CFLAGS += -Ilib
@@ -98,6 +104,7 @@ lib/arch/ssse3/codec.o:  CFLAGS += $(SSSE3_CFLAGS)
 lib/arch/sse41/codec.o:  CFLAGS += $(SSE41_CFLAGS)
 lib/arch/sse42/codec.o:  CFLAGS += $(SSE42_CFLAGS)
 lib/arch/avx/codec.o:    CFLAGS += $(AVX_CFLAGS)
+lib/arch/rvv/codec.o:    CFLAGS += $(RVV_CFLAGS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $<

@@ -71,6 +71,26 @@ add_feature_info(NEON32 BASE64_WITH_NEON32 "add NEON32 codepath")
 cmake_dependent_option(BASE64_WITH_NEON64 "add NEON64 codepath" ON _TARGET_ARCH_arm64 OFF)
 add_feature_info(NEON64 BASE64_WITH_NEON64 "add NEON64 codepath")
 
+if (_TARGET_ARCH_riscv64)
+    # The RVV codec needs the v0.12 or later vector intrinsics (tuple
+    # types for segmented loads and stores): GCC 14+ or Clang 17+.
+    include(CheckCSourceCompiles)
+    set(CMAKE_REQUIRED_FLAGS "-march=rv64gcv")
+    check_c_source_compiles("
+        #include <riscv_vector.h>
+        int main (void)
+        {
+            unsigned char buf[3] = { 0 };
+            vuint8m1x3_t t = __riscv_vlseg3e8_v_u8m1x3(buf, 1);
+            return (int) __riscv_vmv_x_s_u8m1_u8(__riscv_vget_v_u8m1x3_u8m1(t, 0));
+        }"
+        BASE64_HAVE_RVV_INTRINSICS
+    )
+    unset(CMAKE_REQUIRED_FLAGS)
+endif()
+cmake_dependent_option(BASE64_WITH_RVV "add RVV codepath" ON "_TARGET_ARCH_riscv64;BASE64_HAVE_RVV_INTRINSICS" OFF)
+add_feature_info(RVV BASE64_WITH_RVV "add RVV codepath")
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
@@ -124,6 +144,8 @@ add_library(base64
 
     lib/arch/neon32/codec.c
     lib/arch/neon64/codec.c
+
+    lib/arch/rvv/codec.c
 )
 
 target_include_directories(base64
@@ -222,6 +244,16 @@ elseif (_TARGET_ARCH STREQUAL "arm")
     endif()
 
 #elseif (_TARGET_ARCH STREQUAL "arm64" AND BASE64_WITH_NEON64)
+
+elseif (_TARGET_ARCH STREQUAL "riscv64")
+    set(BASE64_RVV_CFLAGS "${COMPILE_FLAGS_RVV}" CACHE STRING "the RVV compile flags (for 'lib/arch/rvv/codec.c')")
+    mark_as_advanced(BASE64_RVV_CFLAGS)
+
+    if (BASE64_WITH_RVV)
+        set_source_files_properties("lib/arch/rvv/codec.c" PROPERTIES
+            COMPILE_FLAGS "${BASE64_RVV_CFLAGS} "
+        )
+    endif()
 
 endif()
 
