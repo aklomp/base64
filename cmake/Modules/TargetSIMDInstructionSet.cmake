@@ -25,6 +25,9 @@ macro(define_SIMD_compile_flags)
 
         #arm
         set(COMPILE_FLAGS_NEON32 "-mfpu=neon")
+
+        #riscv
+        set(COMPILE_FLAGS_RVV "-march=rv64gcv")
     elseif(MSVC)
         set(COMPILE_FLAGS_SSSE3 " ")
         set(COMPILE_FLAGS_SSE41 " ")

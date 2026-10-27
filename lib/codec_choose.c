@@ -1,3 +1,9 @@
+// The RISC-V codec selection reaches riscv_hwprobe(2) through syscall(2),
+// which glibc and musl only declare with this feature macro under -std=c99:
+#if defined(__riscv) && defined(__linux__) && !defined(_DEFAULT_SOURCE)
+#define _DEFAULT_SOURCE
+#endif
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -14,6 +20,27 @@
   #if (HAVE_SSSE3 || HAVE_SSE41 || HAVE_SSE42 || HAVE_AVX || HAVE_AVX2 || HAVE_AVX512)
     #define BASE64_X86_SIMD
   #endif
+#endif
+
+#if defined(__riscv) && HAVE_RVV && defined(__linux__)
+  #define BASE64_RISCV_RVV
+  #include <unistd.h>
+  #include <sys/syscall.h>
+  #include <sys/auxv.h>
+
+  // The riscv_hwprobe(2) ABI is stable; define what is needed here so
+  // that building does not depend on recent kernel headers.
+  #ifndef __NR_riscv_hwprobe
+  #define __NR_riscv_hwprobe 258
+  #endif
+  #define BASE64_RISCV_HWPROBE_KEY_IMA_EXT_0	4
+  #define BASE64_RISCV_HWPROBE_IMA_V		(1 << 2)
+  #define BASE64_RISCV_HWCAP_V			(1UL << ('V' - 'A'))
+
+  struct base64_riscv_hwprobe {
+	int64_t  key;
+	uint64_t value;
+  };
 #endif
 
 #ifdef BASE64_X86
@@ -100,6 +127,7 @@ BASE64_CODEC_FUNCS(ssse3)
 BASE64_CODEC_FUNCS(sse41)
 BASE64_CODEC_FUNCS(sse42)
 BASE64_CODEC_FUNCS(avx)
+BASE64_CODEC_FUNCS(rvv)
 
 static bool
 codec_choose_forced (struct codec *codec, int flags)
@@ -157,6 +185,11 @@ codec_choose_forced (struct codec *codec, int flags)
 		codec->dec = base64_stream_decode_avx512;
 		return true;
 	}
+	if (flags & BASE64_FORCE_RVV) {
+		codec->enc = base64_stream_encode_rvv;
+		codec->dec = base64_stream_decode_rvv;
+		return true;
+	}
 	return false;
 }
 
@@ -183,6 +216,41 @@ codec_choose_arm (struct codec *codec)
 	(void)codec;
 	return false;
 #endif
+}
+
+static bool
+codec_choose_riscv (struct codec *codec)
+{
+#ifdef BASE64_RISCV_RVV
+
+	// The RVV codec is compiled with the vector extension enabled and
+	// uses vector instructions unconditionally, so it must only be
+	// selected when the running CPU actually has the V extension.
+	// Ask the kernel through riscv_hwprobe(2) (Linux 6.4+), and fall
+	// back to the AT_HWCAP bit on older kernels:
+	bool have_v = false;
+	struct base64_riscv_hwprobe pair = {
+		.key   = BASE64_RISCV_HWPROBE_KEY_IMA_EXT_0,
+		.value = 0,
+	};
+
+	if (syscall(__NR_riscv_hwprobe, &pair, 1, 0, NULL, 0) == 0) {
+		have_v = (pair.key >= 0) && (pair.value & BASE64_RISCV_HWPROBE_IMA_V);
+	} else {
+		have_v = (getauxval(AT_HWCAP) & BASE64_RISCV_HWCAP_V) != 0;
+	}
+
+	if (have_v) {
+		codec->enc = base64_stream_encode_rvv;
+		codec->dec = base64_stream_decode_rvv;
+		return true;
+	}
+
+#else
+	(void)codec;
+#endif
+
+	return false;
 }
 
 static bool
@@ -307,6 +375,9 @@ codec_choose (struct codec *codec, int flags)
 		return;
 	}
 	if (codec_choose_x86(codec)) {
+		return;
+	}
+	if (codec_choose_riscv(codec)) {
 		return;
 	}
 	codec->enc = base64_stream_encode_plain;

@@ -31,6 +31,14 @@
     || defined(_M_IX86)
 #error ##arch=x86##
 
+// RISC-V 64-Bit
+#elif defined(__riscv) && (__riscv_xlen == 64)
+#error ##arch=riscv64##
+
+// RISC-V 32-Bit
+#elif defined(__riscv) && (__riscv_xlen == 32)
+#error ##arch=riscv32##
+
 #else
 #error ##arch=unknown##
 #endif

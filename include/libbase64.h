@@ -54,6 +54,7 @@ extern "C" {
 #define BASE64_FORCE_SSE42	(1 << 6)
 #define BASE64_FORCE_AVX	(1 << 7)
 #define BASE64_FORCE_AVX512	(1 << 8)
+#define BASE64_FORCE_RVV	(1 << 9)
 
 struct base64_state {
 	int eof;
