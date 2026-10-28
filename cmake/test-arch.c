@@ -21,6 +21,15 @@
     || defined(_M_ARM)
 #error ##arch=arm##
 
+// RISC-V 64-Bit
+#elif defined(__riscv) \
+    && __riscv_xlen == 64
+#error ##arch=riscv64##
+
+// RISC-V
+#elif defined(__riscv)
+#error ##arch=riscv##
+
 // x86 64-Bit
 #elif defined(__x86_64__) \
     || defined(_M_X64)

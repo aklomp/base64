@@ -15,16 +15,29 @@ set(TARGET_ARCHITECTURE_TEST_FILE "${CMAKE_CURRENT_LIST_DIR}/../test-arch.c")
 
 function(detect_target_architecture OUTPUT_VARIABLE)
     message(STATUS "${CMAKE_CURRENT_LIST_DIR}")
-    try_compile(_IGNORED "${CMAKE_CURRENT_BINARY_DIR}"
-        "${TARGET_ARCHITECTURE_TEST_FILE}"
-        OUTPUT_VARIABLE _LOG
-    )
+    set(_TARGET_PROCESSOR "${CMAKE_SYSTEM_PROCESSOR}")
+    if (DEFINED CACHE{CMAKE_SYSTEM_PROCESSOR})
+        list(APPEND _TARGET_PROCESSOR "$CACHE{CMAKE_SYSTEM_PROCESSOR}")
+    endif()
+    string(TOLOWER "${_TARGET_PROCESSOR}" _TARGET_PROCESSOR)
 
-    string(REGEX MATCH "##arch=([^#]+)##" _IGNORED "${_LOG}")
+    if (_TARGET_PROCESSOR MATCHES "(^|;)(riscv64|rv64)")
+        set(_TARGET_ARCHITECTURE "riscv64")
+    elseif (_TARGET_PROCESSOR MATCHES "(^|;)(riscv32|rv32|riscv)")
+        set(_TARGET_ARCHITECTURE "riscv")
+    else()
+        try_compile(_IGNORED "${CMAKE_CURRENT_BINARY_DIR}"
+            "${TARGET_ARCHITECTURE_TEST_FILE}"
+            OUTPUT_VARIABLE _LOG
+        )
 
-    set(${OUTPUT_VARIABLE} "${CMAKE_MATCH_1}" PARENT_SCOPE)
-    set("${OUTPUT_VARIABLE}_${CMAKE_MATCH_1}" 1 PARENT_SCOPE)
-    if (CMAKE_MATCH_1 STREQUAL "unknown")
+        string(REGEX MATCH "##arch=([^#]+)##" _IGNORED "${_LOG}")
+        set(_TARGET_ARCHITECTURE "${CMAKE_MATCH_1}")
+    endif()
+
+    set(${OUTPUT_VARIABLE} "${_TARGET_ARCHITECTURE}" PARENT_SCOPE)
+    set("${OUTPUT_VARIABLE}_${_TARGET_ARCHITECTURE}" 1 PARENT_SCOPE)
+    if (_TARGET_ARCHITECTURE STREQUAL "unknown")
         message(WARNING "could not detect the target architecture.")
     endif()
 endfunction()
