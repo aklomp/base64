@@ -62,6 +62,10 @@
 // End-of-file when stream end has been reached or invalid input provided:
 #define BASE64_EOF 2
 
+// Due to the overhead of initializing OpenMP and creating a team of
+// threads, we require the data length to be larger than a threshold:
+#define BASE64_OMP_THRESHOLD 20000
+
 // GCC 7 defaults to issuing a warning for fallthrough in switch statements,
 // unless the fallthrough cases are marked with an attribute. As we use
 // fallthrough deliberately, define an alias for the attribute:
