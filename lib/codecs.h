@@ -55,3 +55,20 @@ struct codec
 };
 
 extern void codec_choose (struct codec *, int flags);
+
+#if (__x86_64__ || __i386__ || _M_X86 || _M_X64)
+enum
+{
+	X86_FEATURE_LEVEL_NONE,
+	X86_FEATURE_LEVEL_SSSE3,
+	X86_FEATURE_LEVEL_SSE41,
+	X86_FEATURE_LEVEL_SSE42,
+	X86_FEATURE_LEVEL_AVX,
+	X86_FEATURE_LEVEL_AVX2,
+	X86_FEATURE_LEVEL_AVX512,
+
+	X86_FEATURE_LEVEL_COUNT
+};
+
+extern int x86_get_cpu_feature_level (void);
+#endif // (__x86_64__ || __i386__ || _M_X86 || _M_X64)
